@@ -1089,7 +1089,7 @@ function copiarAvisoFinanceiro(id){
 function emailBoletimHTML(med){
   var cli = byId("clientes", med.ClienteId), L = linhasDe(med), lines = L.lines || [], n = nfInfo(med);
   var G = "#6e1423", GB = "#fbeef0", BR = "#e5e6e9", T = "#1f2124", T2 = "#6b6f76", RED = "#b02a2a", GRN = "#1e7d38", WH = "#ffffff";
-  var F = "font-family:Segoe UI,Calibri,Arial,Helvetica,sans-serif;";
+  var F = "font-family:Calibri,Arial,Helvetica,sans-serif;";
   // texto branco sobre grena: cor no td, na tag font e no span (Outlook respeita pelo menos uma delas)
   var W = function(t, sz, bold){ return "<font color='#ffffff' style='color:#ffffff;'><span style='color:#ffffff;" + F + "font-size:" + sz + ";" + (bold ? "font-weight:bold;" : "") + "'>" + t + "</span></font>"; };
   var gtd = function(inner, al, pad, w){ return "<td bgcolor='" + G + "'" + (w ? " width='" + w + "'" : "") + " align='" + al + "' valign='middle' style='background-color:" + G + ";color:" + WH + ";padding:" + pad + ";" + F + "white-space:nowrap;'>" + inner + "</td>"; };
@@ -1128,22 +1128,23 @@ function emailBoletimHTML(med){
 }
 function copiarTabelaEmail(id){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId);
+  window.__emailHTML = emailBoletimHTML(med);
   var h = "<h3>Boletim para o e-mail</h3><p class='msub'>É exatamente assim que ele vai aparecer no Outlook. Clique em Copiar e cole no corpo do e-mail com Ctrl+V.</p>" +
-    "<div style='overflow-x:auto;border:1px dashed var(--border);border-radius:10px;padding:14px;background:#fff'><div id='emailPreview' contenteditable='false'>" + emailBoletimHTML(med) + "</div></div>" +
+    "<div style='overflow-x:auto;border:1px dashed var(--border);border-radius:10px;padding:14px;background:#fff'><div id='emailPreview'>" + window.__emailHTML + "</div></div>" +
     "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn' onclick='copiarPreviewEmail()'>Copiar boletim</button></div>";
   openModal(h, true);
 }
 function copiarPreviewEmail(){
   var el = $("emailPreview"); if (!el) return;
-  var ok = false;
-  try {
-    var sel = window.getSelection(), rg = document.createRange();
-    rg.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(rg);
-    ok = document.execCommand("copy");
-    sel.removeAllRanges();
-  } catch(e){ ok = false; }
-  if (ok) showToast("Boletim copiado. Cole no corpo do e-mail com Ctrl+V.");
-  else copyHTML(el.innerHTML, el.innerText, "Boletim copiado. Cole no corpo do e-mail com Ctrl+V.");
+  var html = "<html><head><meta charset='utf-8'></head><body>" + (window.__emailHTML || el.innerHTML) + "</body></html>", txt = el.innerText;
+  // grava o HTML exatamente como foi escrito (cores em hexadecimal), sem a conversao do navegador para rgb()
+  var done = false;
+  var onCopy = function(e){ try { e.clipboardData.setData("text/html", html); e.clipboardData.setData("text/plain", txt); e.preventDefault(); done = true; } catch(err){} };
+  document.addEventListener("copy", onCopy, true);
+  try { document.execCommand("copy"); } catch(e){}
+  document.removeEventListener("copy", onCopy, true);
+  if (done) showToast("Boletim copiado. Cole no corpo do e-mail com Ctrl+V.");
+  else copyHTML(html, txt, "Boletim copiado. Cole no corpo do e-mail com Ctrl+V.");
 }
 
 // ------------------------------------------------------------
