@@ -315,6 +315,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 // ============================================================
 // DADOS FICTICIOS - usados apenas no modo demonstracao.
@@ -1015,7 +1016,7 @@ function openMedicao(cid, comp){
   h += linhasTable(L.lines || []);
   var st = med.Status, id = med.id, a = [];
   a.push('<button class="btn-o" onclick="baixarBoletim(\'' + id + '\')">Baixar boletim (Excel)</button>');
-  a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Copiar boletim para o e-mail</button>');
+  a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Boletim para o e-mail</button>');
   if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
   if (st === "Enviada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
   if (st === "Contestada") a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho e corrigir</button>');
@@ -1092,7 +1093,7 @@ function emailBoletimHTML(med){
   var F = "font-family:Calibri,Arial,Helvetica,sans-serif;";
   // texto branco sobre grena: cor no td, na tag font e no span (Outlook respeita pelo menos uma delas)
   var W = function(t, sz, bold){ return "<font color='#ffffff' style='color:#ffffff;'><span style='color:#ffffff;" + F + "font-size:" + sz + ";" + (bold ? "font-weight:bold;" : "") + "'>" + t + "</span></font>"; };
-  var gtd = function(inner, al, pad, w){ return "<td bgcolor='" + G + "'" + (w ? " width='" + w + "'" : "") + " align='" + al + "' valign='middle' style='background-color:" + G + ";color:" + WH + ";padding:" + pad + ";" + F + "white-space:nowrap;'>" + inner + "</td>"; };
+  var gtd = function(inner, al, pad, w){ return "<td bgcolor='" + G + "'" + (w ? " width='" + w + "'" : "") + " align='" + al + "' valign='middle' style='background-color:" + G + ";color:" + WH + ";padding:" + pad + ";border:1px solid " + G + ";" + F + "white-space:nowrap;'>" + inner + "</td>"; };
   var ajuste = function(l){
     var p = [];
     if (l.desconto) p.push("<span style='color:" + RED + ";'>&minus;" + brl(l.desconto) + "</span>");
@@ -1128,11 +1129,36 @@ function emailBoletimHTML(med){
 }
 function copiarTabelaEmail(id){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId);
-  window.__emailHTML = emailBoletimHTML(med);
-  var h = "<h3>Boletim para o e-mail</h3><p class='msub'>É exatamente assim que ele vai aparecer no Outlook. Clique em Copiar e cole no corpo do e-mail com Ctrl+V.</p>" +
+  window.__emailHTML = emailBoletimHTML(med); window.__emailNome = cli.Title + " " + med.Competencia;
+  var h = "<h3>Boletim para o e-mail</h3><p class='msub'>Clique em <b>Copiar como imagem</b> e cole no corpo do e-mail com Ctrl+V. A imagem chega ao cliente exatamente como aparece aqui, com as cores e o texto branco no grená.</p>" +
     "<div style='overflow-x:auto;border:1px dashed var(--border);border-radius:10px;padding:14px;background:#fff'><div id='emailPreview'>" + window.__emailHTML + "</div></div>" +
-    "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn' onclick='copiarPreviewEmail()'>Copiar boletim</button></div>";
+    "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn-o' onclick='baixarImagemEmail()'>Baixar imagem</button><button class='btn-o' onclick='copiarPreviewEmail()'>Copiar como tabela</button><button class='btn' onclick='copiarImagemEmail()'>Copiar como imagem</button></div>" +
+    "<p class='small muted' style='margin-top:8px'>\"Copiar como tabela\" permite editar o texto no e-mail, mas alguns Outlooks descartam as cores do texto na colagem.</p>";
   openModal(h, true);
+}
+function imagemEmail(){
+  var el = $("emailPreview");
+  if (typeof html2canvas === "undefined") return Promise.reject(new Error("biblioteca de imagem não carregou; recarregue a página"));
+  return html2canvas(el.firstElementChild || el, { scale: 2, backgroundColor: "#ffffff", logging: false }).then(function(cv){
+    return new Promise(function(res, rej){ cv.toBlob(function(b){ b ? res(b) : rej(new Error("falha ao gerar imagem")); }, "image/png"); });
+  });
+}
+function copiarImagemEmail(){
+  if (!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)){ showToast("Este navegador não permite copiar imagem. Use \"Baixar imagem\".", true); return; }
+  setLoading(true, "Gerando imagem...");
+  // a promessa da imagem vai direto no ClipboardItem, ainda dentro do clique (exigencia do Chrome)
+  var blobP = imagemEmail();
+  navigator.clipboard.write([new ClipboardItem({ "image/png": blobP })])
+    .then(function(){ setLoading(false); showToast("Imagem copiada. Cole no corpo do e-mail com Ctrl+V."); })
+    .catch(function(e){ setLoading(false); console.error(e); showToast("Não consegui copiar a imagem (" + e.message + "). Use \"Baixar imagem\" e arraste para o e-mail.", true); });
+}
+function baixarImagemEmail(){
+  setLoading(true, "Gerando imagem...");
+  imagemEmail().then(function(blob){
+    setLoading(false);
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = safeName("Boletim " + (window.__emailNome || "")) + ".png";
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }).catch(function(e){ setLoading(false); showToast("Não consegui gerar a imagem: " + e.message, true); });
 }
 function copiarPreviewEmail(){
   var el = $("emailPreview"); if (!el) return;
