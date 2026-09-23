@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faturamento de Serviços - ElevaLife</title>
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAS4AAACxCAYAAAB6B1BhAAAS50lEQVR4nO3d3W8c13kG8GckUaZsOVRUqk6QBqKh5qJFAFMLFIsCBbwC6hYpipq+8ZVRrZHebG5MY/8AT+5yQ2QFFCWKIskSVeDWshKySJO4duKla7gh7FBLQGhUK4p2bUkJY5rikCI5y9nd6cWcJdcUP3ZmZ+acM/P8AIKIsB+v7fjxe945c8ZwXRdERDo5IrsAIiK/GFxEpB0GFxFph8FFRNphcBGRdhhcRKQdBhcRaYfBRUTaYXARkXaOyS6AiA5mzs3nAr0vm6mEW4k6DN7yQySHOTc/AmAEwCiAU12/TwF4KsSvsgBUAayI3zUANZ2DjcFFFDERUKNdPyMIN5j6UYcXZhUAFTObqcosplcMLqIQmXPzpwDk4AVU5/eQrHoCsOCF2DSAaTObWZFZzH4YXER9EN1UruvnrLxqIjEDBUOMwUXkQ1dHNYZkBtV+LHgBVlJhOcngIjqE6KrGxM/TMmtRxCwAU+Zwn8FFtAdzbn4UQB5eWKWlq/JLWoAxuIgEhlVgMwDGzWymFtcXMrgo1cQycBwMq35Z8LqvUhxfxuCi1BED9jF4gaXKfqqkmAWQj7r7YnBRaohbZ/IALsqtJPEsAGNRzr4YXJRoorvKw+uuuBSM14tmNlOO4oMZXJRIYnZlwlsS6rRzPWkumdnMeNgfyuCiRBHLQRPcb6WSKTObyYf5gQwuSgRzbj4PL7C4HFTTN81sxgzrwxhcpK2uq4MmGFg6CG3mxeAi7YjAGhc/nF/p5XwY9zoyuEgbDKxEqAMY7fekCR7dTMpjYCXKWQBleEv8wNhxkdI4dE+sC/1sUGXHRUoy5+bHAJTAwEqqMrwjrANhx0VK4T6sVHk56E3Z7LhICV073XkfYXqY8Lpq3/hAWJLOnJs34T1phqGVLkNihukbOy6ShnMsgtd1lf2+iTMuip1YFpbBORZ5fG9K5VKRYtW1LGRoUUfe7xu4VKRYiPPcy+CJo/SwMXibi3vGpSJFSux6NwG8JLcSUpyv5SKXihQZsSerCoYWHS7n58VaLRWdYuEUgFEAnd8dnT/bTxXAStf/rojfKwMTk9UQSqMu7LIogBx87OlSdqnoFAs5eIE0Cu/WgCiHuRa8cKuJnwqA2sDEZC3C70wkzrIooLqZzYz0+mJlgsspFkbhDelyUOuK0yy8UKsCqDDM9ieuGL4iuw7Sk5nNGL2+VmpwibDKQ6+HcVrwOrIKvCCryixGBdyXRSHpeUAvJbicYiGP5DyMsxNk00hhRyZ2v5fBc7Kofz0fdRNbcInB+ji8DkuX7iqIBXhBVk56N2bOzZfAATyF5zkzm5nu5YWxBJfosEwkO7D2UofXiSUqxMTScBrJ6JhJHT0/CSjS7RBOsTCCdM8+zsLrSF5yioVEhBiXhqSCyILLKRbG4XVZ/D+4pzvEFuD9y18emJhckVmUH7xqSKoIfakoZlkl8GylXk3BC7CK7EL2IzaUTiO9nTPFQ85SUYRWBZx9+HERwEWxlCxBsS6MG0pJRaHdq8jQ6ttZAN8GUHOKhbKYD0ol5lkV8J8pKSaU4GJohWoIXhd22ykWpsWtT7ETR+r+EJxRUnwqvb4wrI6rAoZWFJ4F8LZTLFTiDDBzbr4M4HtxfR+RX30P551ioQRuQozLLLwZWDmKDxdD+DK8wCSK25NmNlPr5YV9BZdTLIzBW05QvOoA8mFeiRShVQE7Z5LEz03WgZeKYq5VDvp+6stZhLiEFDvhK2BokTwLfl7cz4zLBAe3sj2NnQAbDfIBYrtDFQwtkqvm58WBgktcqudcSx1PA7jmdxuFCK0K+B8gkq/q58VBOy4z4PsoWhcBVJ1iwRRL+X0xtEgxFT8v9h1c4r/ovJ1HXUPw7iesiosnD2FokYKqfl4cpOPKB3gPxe8sgB+K+ddI5w/Fk3cqYGiROhbMbGbFzxsYXMn3NLxd+KbotKbB0CK1VPy+wVdwiStXaTsMMBEWm+1Xjn//e/+Fu3cYWqSait83+O24cn6/gORbbLZRXtnYdKyVM8bMFRhvv7mERkN2WUQAYPV6XHM3BlfCdUKrBZzY/sNfXR82Ln/Xwt07EisjAuCNLnxjcCXYnqHV0bCH2H2RAqaDvKnnexXFvqD7Qb6E4me7Lv5pecOyXffwmdbJx5fcv3l2GMNnYqiMaJtlZjOngrzRT8c1GuQLKH626+I79zeWewotAHiwNmy8dhmo/tKOuDSibtNB3xjaCaikjsvW5pLVdk/7fZ/x3juDxmuXuXSkuJSCvtFPcOWCfgnF5wdr9vLvm+3hwB+w9MmwUf5nm4N7iljdzGaqQd/MjitB5jYd+0aj6bvTekirNWjMXIHxP+9aIZRFtBeznzczuBLiRqO58bP1xmCoH3rt/SFj5gqXjhQ2C33MtwAGVyIsNtuYWbN7Pj3Sl7t3ho1//9clLH0SycdTKpX83pu4G4NLc7br4srq5tKee7XC8mBt2Hj91U3curkR2XdQmpT7/QA/wbXS75dR+K6u2kurbTf4ML5X7dYJ440fPcotE9SnqV4fiHEQP8FV7ffLKFxzm45dd1rRh1YX4713Bo03frQc53dSophhfAiXippabLYR+jC+V7dunuZ+LwoglG4LYMelJdt18X1rU+5WhaVPho3XLi8zvKhHFkI88r3n4BqYmFwRX06SXV21l3q+nSdKa6unjcvftXjFkXpQCqvbAvwvFathfTEFc6PR3Ih7rnWghj1kvP7qJsOLDmChj9t79uI3uCphfjn5Y7Ui3K/Vj3brBMOLDjDe776t3dhxaeTKmh3tfq1+MLxobwtmNlMO+0PZcWmiajubfd08HQeGFz1sPIoP9RVcYkC/EEUhtD/bdfHGekO9JeJeGF6045KZzVSi+OAg+7gqYRdBB7u6ai+1XMjZsxUEw4tC3v6wW5DgKoddBO2v7rSg1FXEXjG80i4f9kC+m+/gGpiYrAKoh18K7eXqqq3v3jmGV1rNBHnkmB9Bb/mZDrMI2tvcpmMrsdG0H+3WCWPmdYs77FPDQgxPuw8aXKUwi6CH2a6Lynqjt0cwqa5hD/H2oNQYi3KJ2BEouAYmJmsAZsMthbr9bH1L3T1bQaytnjZ++h9LssugSEV2FXG3fk6HKIdVBH2W1WpjwXb0G8gf5u6dYR6Jk1gLZjYzHteXBQ6ugYnJMnjTdSTeXN9alF1DZG7dPI3/vb4puwwKVSxzrW79nsdVCqMI2mG12vhwq/mE7DqiZFTePMErjYky3s+jxoIII7jYdYUo0d1WF+PqqzaH9YlwKYp7EQ/TV3CJW4BKoVRCqei2trVag8Zrlznv0lusc61uYRzdXAK7rlB8YDup6La2ra2eNt5+k1ca9WRB4tPt+w4udl3hsF0XH2w6n5NdR+x+dX2Yjz3TjgUgF8d+rf2E9bCMEth19eVGo7mZqH1bPhhv/eQI511aiX0Yv1sowSW6rvEwPiut3tnYWpVdgzSt1iA3p2rjZRnD+N1CezyZ2NfFs7oCWGy28aDtpmMov5+7d4b5sFnlTZnZTEl2EUD4z1UcD/nzUuG/N9KxBeIwxi/ebWMtvY2n4mbMbCYvu4iOUINrYGKyAmAqzM9Mg1tbzfQN5ffSbj9q/PwNLhnVs4CYd8YfJoonWY+Dg/qefbjVRFqH8nu6e4dXGdWyAMlXEPcSenCJQX0+7M9Nqmu287HsGlRjVN5yeJVRCXUoGFpANB0XBiYmpwHMRPHZSVPb0vBY5qg17CFj/n127XJZiOlsrSAiCS4hDy4ZD7TYbHOZuJ9r7w9xUC9NZ4NpVXYh+4ksuMSScSyqz0+C642U3eLjk/FuhX9/4qd8aAHRdlydq4yXovwOnf16q9WUXYPSbt96gsffxEqL0AIiDi4AGJiYHAc3pu7p01b7S7JrUJ3x1k/YdcVDm9ACYgguYQycd31G3WnJLkEPy58+gbt3ZFeRdJ2rh1XZhfQqluASD9cYi+O7dHGv2bovuwZdGNUPuGUkOgsARnUKLSC+jqsz73o5ru9T3UdO64HsGrRRv/1lXmGMhJKbS3sRW3ABwMDEZAm8JQgAsNxy27Jr0Inx3js8LTVcs9A0tICYgwsABiYm8+CwHqut9h/KrkErt39zgrvpQzNlZjPahhYgIbiEHFIeXtx46lO7dQK3bvKxZv27pNIpD0FJCa6u+xlTeaVxsclVYhDGB79Yl12D5l6U9XCLsMnquDAwMVmF13mlLrxs15Vdgp4erA1zSB+IBeCCCieXhkVacAHb4TUmswbSzM3/4zYSfzpXDiuyCwmT1OACtrdJvCi7DtKDcX2BO3d717lyWJVdSNikBxewfV49w4sOx+Viry7pfuXwIEoEF8DwIh8+/ohXF/dnAXguKUP4/SgTXADDi3pj3P41z6XfW2eeNS27kKgpFVwAw4t68Nt7J2WXoKApJHSetRflggtgeNEhthqf5y76bRa8/Vn5pM6z9qJkcAHb4XUeCdzndeqIIbsE/fGAQWBnaViWXUjclA0uILmbVIeOKv23XQtG7TdpP2DwkpnNaHccTViU/zeoK7zqcisJ12NHjHuya9CavZnWY687u+DHZRcik/LBBWyH1ygSdGP2qSNHuJGyH7+7l8bgmgEwkrRd8EFoEVzA9o3ZOSTkPK8/GjhyXHYNpI3O3ixln3MYN22CC/DCS5znpf2Tg/74+LEnZNegtY2NtGyJ6HRZ07ILUYlWwdUhnhz0IjQe2p8dOIqjAHeAB+Vs/YHsEiLGLusAWgYXsL1dIgeNh/ZfOHaUO8BpL1Ngl3UgbYML+MzQflZuJcE8NXhsWHYNpJQ6vCuGqdpMGoThJuRQO6dYMAG8IrsOP2zXxaVP1zd5jHMw7jcS89AoC0DJzGZMyXVoQ+uOq9vAxKQJ4AI0mnsNGgbOHT/GM1qCeOxkUjagzsB7rqEpuQ6tJCa4gO1DCUeg0dLxmceO8+piEMeO2bJL6FNnWThmZjM12cXoJjFLxd2cYmEcwLdl19GL11ftxQ+3mgwwP774pd+5zz3/BdllBGABMM1spiS7EJ0lquPqJh4+ex4a7LZn1xXA8Bkdj4f4JryrhSXZhegusR1XN6dYKAF4SXYdB/nPB42lBdvhVcYeuV/7O+DJc7LL6NUUvC6rJruQpEhFcAGAUyzkAJQBnJVbyd5s18Wl5XW75WJQdi06cL/+DeCRR2SXcZhZAHkGVvgSu1TcTQzuR+G168oZNAw8e3KQT4rtxWMnFxUPrVl4g/ccQysaqem4ujnFwii87uspuZU87Adr9vKNRvO07DqU9idfXXIvPKPisnoW3pKwIruQpEtlcHWIK48mgCG5leywXRffub+xbLVdhtc+3OdfAIbPyC6jGwMrZqkOLgBwioURACUAz8qtZAfnXQc4+fiS+/f/oEq3NQVvx3tVdiFpk/rg6hDD+xIUWT4uNtsor2zwdqBd3Nwzm/jTr8r8e2IBmAavEkrF4NrFKRby8AJM+vKR4bXLI4OW+/WCrH8udXhz0RJvgJaPwbUHp1g4BWBc/EgNMIbXDknd1iyAchqfpKMyBtcBxPzLBHBRZh1Wq43L1ma6B/bxzrY6y0HOrxTF4OqBCgFmuy5+/KCR2q0SMV1JXIA3JpjmclBtDC4fVAiwqu1s/vRBw20Dj8qqIXbn/8xy//wvolqy17HTXdUi+g4KGYMrANkBZrXauLJmL/2+2VZlW0B0hs8suc+/EPZfZ2cpOM3jkfXE4OqD7AC70Whu/PhBw7FdV/oV0Eg8/rll9/kXTod0ew/DKkEYXCEQAZaHpKuQVdvZ/Pn61laiAiyc0KoDqIBhlTgMrhCJbRRj8Lqw2E+hSEyA9RdaC9jprKphlkXqYHBFROzEz0PCMrLutFBZ3/r4brP15bi/u2/+Q2u7qwJQ4dXAdGBwRUwsI8fgLSNj7cJs18WNRnNzwW4uaRFi576y7P713x623WMBXlBV4QVVLeKqSEEMrhh1dWFjiHkWZrsuPnJauGY7H99x2icbrvv5OL//QEeP2u5ffq2Nc1/ZvcVjAUANOyFVibkyUhSDSxKnWBiDF2JSTqWwWm0sttqoOa367a3WsZVW+7SU24qePLfoXvirTzA4+Cm8TqoGoMaQooMwuCTrGujnIKET62a7LhabbTRcFzWnVW+03WP3mm20gSYA3G+1fS11Bw3DOnHEWAGARw3jyBcHjrQBYGTg6FkDWGi4+Nb5f/yXfwv9L4QSj8GlGNGJ5eCFmJLn4/dpFoApjtImCoTBpbCuwX5O/Oi6zWH7DKuBicma3FIoCRhcGhFn5efgPfQjB7U7su2d6gMTk9NyS6GkYXBpTMzHRrETZiOQd4KrBXH1D15YVSXVQSnA4Eog0Zmdghdo6Po9iv6Xm3WIK3/Y2apQ5RKQ4sTgSikxPxvp8eUr7KBIJQwuItJOap5kTUTJweAiIu0wuIhIOwwuItIOg4uItMPgIiLtMLiISDsMLiLSDoOLiLTz/3yZzlcfBW+uAAAAAElFTkSuQmCC">
+<style>
+:root{
+  color-scheme: light;
+  --grena:#6e1423; --grena-dark:#4d0e19; --grena-bg:#fbeef0;
+  --bg:#f4f5f7; --card:#ffffff; --text:#1f2124; --text2:#6b6f76; --border:#e5e6e9;
+  --green-bg:#e6f4ea; --green-tx:#1e7d38;
+  --blue-bg:#e8f0fe; --blue-tx:#1a56c4;
+  --amber-bg:#fef3e0; --amber-tx:#a8620a;
+  --red-bg:#fdeaea; --red-tx:#b02a2a;
+  --gray-bg:#eef0f2; --gray-tx:#5f636b;
+  --purple-bg:#efeafd; --purple-tx:#5b3cc4;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);font-size:15px;}
+button{font-family:inherit;}
+.shell{display:flex;align-items:stretch;min-height:100vh;}
+/* ---------- sidebar ---------- */
+.sidebar{width:236px;flex-shrink:0;background:linear-gradient(180deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;padding:18px 0;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width .15s;}
+.sidebar-top{display:flex;padding:0 20px;}
+.sidebar-toggle{width:36px;height:36px;border:none;border-radius:9px;background:rgba(255,255,255,0.14);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;}
+.sidebar-toggle:hover{background:rgba(255,255,255,0.26);}
+.sidebar-toggle span{display:block;width:17px;height:2px;border-radius:2px;background:#fff;}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:0 20px;}
+.sidebar-logo-icon{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sidebar-title{font-size:14.5px;font-weight:700;margin:0;line-height:1.3;}
+.sidebar-sub{font-size:12px;margin:2px 0 0;opacity:.8;}
+.tabs{display:flex;flex-direction:column;gap:2px;padding:0 12px;}
+.tab-group-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:0 0 6px rgba(255,255,255,.6);margin:14px 0 4px;padding:0 10px;}
+.tab{display:flex;align-items:center;gap:11px;padding:11px 14px;font-size:14.5px;font-weight:500;color:rgba(255,255,255,.8);cursor:pointer;border-radius:9px;border-left:3px solid transparent;user-select:none;}
+.tab:hover{background:rgba(255,255,255,.09);color:#fff;}
+.tab.active{background:rgba(255,255,255,.18);color:#fff;font-weight:600;border-left-color:#fff;}
+.tab-icon{font-size:16.5px;width:20px;text-align:center;flex-shrink:0;}
+.tab-badge{margin-left:auto;background:#fff;color:var(--grena);font-size:11px;font-weight:800;border-radius:10px;padding:1px 8px;}
+body.sidebar-collapsed .sidebar{width:76px;}
+body.sidebar-collapsed .sidebar-top,body.sidebar-collapsed .sidebar-logo{justify-content:center;padding:0;}
+body.sidebar-collapsed .sidebar-logo > div:not(.sidebar-logo-icon){display:none;}
+body.sidebar-collapsed .tabs{padding:0 10px;}
+body.sidebar-collapsed .tab{font-size:0;gap:0;justify-content:center;padding:12px 0;}
+body.sidebar-collapsed .tab-icon{font-size:18px;}
+body.sidebar-collapsed .tab-badge{display:none;}
+body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:10px 6px;background:rgba(255,255,255,.3);}
+/* ---------- app / header ---------- */
+.app{flex:1;min-width:0;padding:20px 28px 40px;}
+.header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;}
+.header-brand{display:flex;align-items:center;gap:18px;min-width:0;}
+.header-logo{height:30px;width:auto;display:block;flex-shrink:0;}
+.header-tagline{margin:0;font-size:13px;color:rgba(255,255,255,.85);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.user-chip{font-size:13px;opacity:.92;text-align:right;}
+.btn-h{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;padding:8px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-h:hover{background:rgba(255,255,255,.26);}
+.demo-banner{background:var(--amber-bg);color:var(--amber-tx);border:1px solid #f3d9a8;border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:600;margin-bottom:18px;}
+.gate{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:56px 40px;text-align:center;}
+.gate h2{font-size:21px;font-weight:700;margin:0 0 8px;}
+.gate p{font-size:14px;color:var(--text2);margin:0 auto 22px;max-width:560px;line-height:1.5;}
+.gate .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+/* ---------- generic ---------- */
+.panel{display:none;}
+.panel.active{display:block;}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+.page-title{font-size:24px;font-weight:800;color:var(--grena);margin:0;}
+.page-sub{font-size:13.5px;color:var(--text2);margin:4px 0 0;}
+.toolbar{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:18px;flex-wrap:wrap;}
+.toolbar label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.02em;}
+.toolbar select,.toolbar input{font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);font-family:inherit;}
+.toolbar .spacer{flex:1;}
+.btn{background:var(--grena);color:#fff;border:1px solid var(--grena);padding:9px 16px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn:hover{background:var(--grena-dark);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-o{background:#fff;color:var(--grena);border:1px solid var(--grena);padding:8px 14px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-o:hover{background:var(--grena-bg);}
+.btn-s{padding:5px 10px;font-size:12.5px;border-radius:7px;}
+.btn-ghost{background:none;border:none;color:var(--grena);font-weight:600;cursor:pointer;padding:4px 6px;font-size:13px;border-radius:6px;}
+.btn-ghost:hover{background:var(--grena-bg);}
+.btn-danger{background:#fff;color:var(--red-tx);border:1px solid var(--red-tx);}
+.btn-danger:hover{background:var(--red-bg);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:18px;}
+.card-title{font-size:16.5px;font-weight:700;margin:0 0 3px;}
+.card-sub{font-size:13px;color:var(--text2);margin:0 0 14px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+.kpi-label{font-size:12px;letter-spacing:.03em;color:var(--text2);font-weight:700;text-transform:uppercase;margin:0 0 8px;}
+.kpi-value{font-size:27px;font-weight:800;margin:0 0 6px;font-variant-numeric:tabular-nums;}
+.kpi-sub{font-size:13px;color:var(--text2);margin:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.chart-wrap{position:relative;height:280px;}
+.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:12px;}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;}
+.tbl th{text-align:left;padding:11px 12px;color:var(--text2);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;border-bottom:2px solid var(--border);white-space:nowrap;background:#fafbfc;}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr.click{cursor:pointer;}
+.tbl tr.click:hover td{background:var(--bg);}
+.tbl tfoot td{font-weight:800;background:#fafbfc;border-top:2px solid var(--border);}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.neg{color:var(--red-tx);}
+.pos{color:var(--green-tx);}
+.muted{color:var(--text2);}
+.small{font-size:12.5px;}
+.empty{padding:36px;text-align:center;color:var(--text2);font-size:14px;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;}
+.b-gray{background:var(--gray-bg);color:var(--gray-tx);}
+.b-blue{background:var(--blue-bg);color:var(--blue-tx);}
+.b-amber{background:var(--amber-bg);color:var(--amber-tx);}
+.b-green{background:var(--green-bg);color:var(--green-tx);}
+.b-red{background:var(--red-bg);color:var(--red-tx);}
+.b-purple{background:var(--purple-bg);color:var(--purple-tx);}
+.b-grena{background:var(--grena-bg);color:var(--grena);}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text2);}
+.chip:hover{border-color:var(--grena);color:var(--grena);}
+.chip.active{background:var(--grena);border-color:var(--grena);color:#fff;}
+.alert{border-radius:10px;padding:10px 14px;font-size:13.5px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;}
+.alert-red{background:var(--red-bg);color:var(--red-tx);}
+.alert-amber{background:var(--amber-bg);color:var(--amber-tx);}
+.alert-green{background:var(--green-bg);color:var(--green-tx);}
+.alert-blue{background:var(--blue-bg);color:var(--blue-tx);}
+/* ---------- clients layout ---------- */
+.split{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start;}
+.list{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.list-search{padding:12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.list-search input,.list-search select{width:100%;font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-family:inherit;}
+.list-items{max-height:68vh;overflow-y:auto;}
+.list-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;}
+.list-item:hover{background:var(--bg);}
+.list-item.active{background:var(--grena-bg);border-left:4px solid var(--grena);padding-left:10px;}
+.list-item-title{font-size:14.5px;font-weight:700;}
+.list-item-sub{font-size:12.5px;color:var(--text2);margin-top:3px;}
+.dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 18px;margin:0;}
+.dl dt{font-size:11.5px;font-weight:700;text-transform:uppercase;color:var(--text2);letter-spacing:.02em;}
+.dl dd{margin:2px 0 0;font-size:14px;word-break:break-word;}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;}
+.section-head h4{margin:0;font-size:15px;font-weight:700;}
+.version-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+/* ---------- modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:70;padding:16px;}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:14px;padding:24px 26px;width:560px;max-width:100%;max-height:90vh;overflow-y:auto;position:relative;}
+.modal.wide{width:820px;}
+.modal h3{font-size:18px;font-weight:700;margin:0 0 4px;}
+.modal .msub{font-size:13px;color:var(--text2);margin:0 0 16px;}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:22px;line-height:1;color:var(--text2);cursor:pointer;padding:4px;}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;}
+.form .full{grid-column:1/-1;}
+.form label{display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px;}
+.form input,.form select,.form textarea{width:100%;font-size:14px;padding:9px 11px;border-radius:8px;border:1px solid var(--border);font-family:inherit;background:#fff;color:var(--text);}
+.form textarea{min-height:70px;resize:vertical;}
+.form input:focus,.form select:focus,.form textarea:focus{outline:2px solid var(--grena-bg);border-color:var(--grena);}
+.form .hint{font-size:12px;color:var(--text2);margin-top:4px;}
+.form .check{display:flex;align-items:center;gap:8px;font-size:14px;text-transform:none;font-weight:500;color:var(--text);}
+.form .check input{width:auto;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+.calc-box{grid-column:1/-1;background:var(--grena-bg);border-radius:10px;padding:12px 14px;font-size:13.5px;}
+.calc-box .v{font-size:22px;font-weight:800;color:var(--grena);}
+.calc-box .d{color:var(--text2);font-size:12.5px;margin-top:4px;white-space:pre-line;}
+.copy-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.copy-row:last-child{border-bottom:none;}
+.copy-row .k{font-size:11.5px;font-weight:700;color:var(--text2);text-transform:uppercase;width:170px;flex-shrink:0;}
+.copy-row .val{flex:1;word-break:break-word;}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px;}
+.step{font-size:12px;font-weight:700;padding:5px 11px;border-radius:20px;background:var(--gray-bg);color:var(--gray-tx);}
+.step.done{background:var(--green-bg);color:var(--green-tx);}
+.step.cur{background:var(--grena);color:#fff;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--text);color:#fff;border-radius:12px;padding:13px 24px;font-size:14.5px;font-weight:600;box-shadow:0 12px 36px rgba(0,0,0,.25);display:none;z-index:90;max-width:90%;}
+.toast.show{display:block;}
+.toast.error{background:var(--red-tx);}
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.6);display:none;align-items:center;justify-content:center;z-index:80;font-weight:700;color:var(--grena);font-size:15px;}
+.loading.show{display:flex;}
+.hidden{display:none !important;}
+@media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.grid2,.split{grid-template-columns:1fr;}.dl{grid-template-columns:1fr 1fr;}}
+@media (max-width:760px){.shell{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;}.app{padding:14px;}.header{flex-direction:column;align-items:flex-start;}.form{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:1fr;}}
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-top"><button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="Recolher/expandir menu" aria-label="Recolher/expandir menu"><span></span><span></span><span></span></button></div>
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><img src="data:image/png;base64,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" alt="" style="width:26px;height:auto;"></div>
+      <div><p class="sidebar-title">Faturamento de Serviços</p><p class="sidebar-sub">ElevaLife</p></div>
+    </div>
+    <nav class="tabs" id="nav">
+      <p class="tab-group-label">Visão Executiva</p>
+      <div class="tab active" data-tab="dashboard"><span class="tab-icon">&#128200;</span>Dashboard</div>
+      <p class="tab-group-label">Faturamento</p>
+      <div class="tab" data-tab="medicoes"><span class="tab-icon">&#129534;</span>Medições do mês</div>
+      <div class="tab" data-tab="ocorrencias"><span class="tab-icon">&#128221;</span>Ocorrências</div>
+      <p class="tab-group-label">Contratos</p>
+      <div class="tab" data-tab="clientes"><span class="tab-icon">&#127970;</span>Clientes e contratos</div>
+      <div class="tab" data-tab="renovacoes"><span class="tab-icon">&#128197;</span>Renovações<span class="tab-badge hidden" id="renovBadge"></span></div>
+      <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Tabela de variáveis</div>
+      <p class="tab-group-label gestor-only">Gestão</p>
+      <div class="tab gestor-only" data-tab="margem"><span class="tab-icon">&#128202;</span>Margem</div>
+      <div class="tab gestor-only" data-tab="parametros"><span class="tab-icon">&#9881;</span>Parâmetros</div>
+      <div class="tab gestor-only" data-tab="config"><span class="tab-icon">&#128295;</span>Configuração</div>
+    </nav>
+  </aside>
+
+  <div class="app">
+    <div class="header">
+      <div class="header-brand"><img src="data:image/png;base64,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" alt="elevalife" class="header-logo"><p class="header-tagline">15 anos elevando pessoas e resultados · faturamento de serviços recorrentes · atualizado em <span id="headerUpdatedAt">--</span></p></div>
+      <div class="header-right">
+        <div class="user-chip hidden" id="userChip"></div>
+        <button class="btn-h hidden" id="refreshBtn" onclick="reloadAll()">Atualizar</button>
+        <button class="btn-h hidden" id="logoutBtn" onclick="logout()">Sair</button>
+      </div>
+    </div>
+
+    <div id="demoBanner" class="demo-banner hidden">Modo demonstração: dados de exemplo, nada é gravado no SharePoint. Para usar de verdade, recarregue a página e entre com a conta Microsoft.</div>
+
+    <div id="gate" class="gate">
+      <h2>Entre com sua conta Microsoft da ElevaLife</h2>
+      <p>Os dados ficam nas listas do SharePoint do site BPM. Suas permissões são as mesmas que você já tem lá.</p>
+      <div class="row">
+        <button class="btn" onclick="login()">Entrar com Microsoft</button>
+        <button class="btn-o" onclick="startDemo()">Ver demonstração</button>
+      </div>
+    </div>
+
+    <div id="mainArea" class="hidden">
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="page-head"><div><h1 class="page-title">Dashboard</h1><p class="page-sub">Visão consolidada do faturamento da competência selecionada.</p></div></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="dashComp" onchange="renderDashboard()"><label>Área</label><select id="dashArea" onchange="renderDashboard()"></select></div>
+        <div class="kpi-grid" id="dashKpis"></div>
+        <div class="grid2">
+          <div class="card"><p class="card-title">Medições por status</p><p class="card-sub">Clientes ativos na competência.</p><div class="chart-wrap"><canvas id="chStatus"></canvas></div></div>
+          <div class="card"><p class="card-title">Valor a faturar por cliente</p><p class="card-sub">Medições geradas na competência.</p><div class="chart-wrap"><canvas id="chClientes"></canvas></div></div>
+        </div>
+        <div class="grid2">
+          <div class="card"><p class="card-title">Pendências</p><p class="card-sub">O que precisa de ação agora.</p><div id="dashPend"></div></div>
+          <div class="card"><p class="card-title">Contratos vencendo em até 90 dias</p><p class="card-sub">Apoio ao comercial na renovação.</p><div id="dashRenov"></div></div>
+        </div>
+      </div>
+
+      <!-- MEDICOES -->
+      <div class="panel" id="panel-medicoes">
+        <div class="page-head"><div><h1 class="page-title">Medições do mês</h1><p class="page-sub">Gere o boletim de cada cliente a partir do contrato vigente e das ocorrências lançadas.</p></div>
+          <button class="btn" onclick="gerarTodas()">Gerar rascunhos da competência</button></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="medComp" onchange="renderMedicoes()"><label>Área</label><select id="medArea" onchange="renderMedicoes()"></select><label>Status</label><select id="medStatus" onchange="renderMedicoes()"></select></div>
+        <div class="tbl-wrap"><table class="tbl" id="medTable"></table></div>
+      </div>
+
+      <!-- OCORRENCIAS -->
+      <div class="panel" id="panel-ocorrencias">
+        <div class="page-head"><div><h1 class="page-title">Ocorrências</h1><p class="page-sub">Faltas, atrasos, horas extras, coberturas e ajustes. Lance no dia em que acontecem.</p></div>
+          <button class="btn" onclick="openOcorrencia()">+ Lançar ocorrência</button></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="ocoComp" onchange="renderOcorrencias()"><label>Cliente</label><select id="ocoCliente" onchange="renderOcorrencias()"></select><label>Tipo</label><select id="ocoTipo" onchange="renderOcorrencias()"></select><div class="spacer"></div><button class="btn-o" onclick="exportOcorrencias()">Exportar Excel</button></div>
+        <div class="tbl-wrap"><table class="tbl" id="ocoTable"></table></div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div class="panel" id="panel-clientes">
+        <div class="page-head"><div><h1 class="page-title">Clientes e contratos</h1><p class="page-sub">Cadastro, versões de contrato, itens e regras de desconto de cada cliente.</p></div>
+          <button class="btn" onclick="openCliente()">+ Novo cliente</button></div>
+        <div class="split">
+          <div class="list"><div class="list-search"><input type="search" id="cliSearch" placeholder="Buscar cliente..." oninput="renderClientesList()"><select id="cliArea" onchange="renderClientesList()"></select></div><div class="list-items" id="cliList"></div></div>
+          <div id="cliDetail"><div class="card empty">Selecione um cliente na lista.</div></div>
+        </div>
+      </div>
+
+      <!-- RENOVACOES -->
+      <div class="panel" id="panel-renovacoes">
+        <div class="page-head"><div><h1 class="page-title">Renovações</h1><p class="page-sub">Vigência dos contratos. Alertas aos 90, 60 e 30 dias do vencimento.</p></div></div>
+        <div class="toolbar"><label>Área</label><select id="renArea" onchange="renderRenovacoes()"></select><div class="chip-row" id="renChips"></div></div>
+        <div class="tbl-wrap"><table class="tbl" id="renTable"></table></div>
+      </div>
+
+      <!-- VARIAVEIS -->
+      <div class="panel" id="panel-variaveis">
+        <div class="page-head"><div><h1 class="page-title">Tabela de variáveis</h1><p class="page-sub">Preço de hora extra e cobertura por cliente, cargo e período. Usada no cálculo automático das ocorrências.</p></div>
+          <button class="btn" onclick="openVariavel()">+ Novo preço</button></div>
+        <div class="toolbar"><label>Cliente</label><select id="varCliente" onchange="renderVariaveis()"></select></div>
+        <div class="tbl-wrap"><table class="tbl" id="varTable"></table></div>
+      </div>
+
+      <!-- MARGEM -->
+      <div class="panel" id="panel-margem">
+        <div class="page-head"><div><h1 class="page-title">Margem dos serviços variáveis</h1><p class="page-sub">Horas extras e coberturas: valor faturado, custo de mão de obra, imposto e margem. Visível só para a gestão.</p></div></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="marComp" onchange="renderMargem()"></div>
+        <div class="kpi-grid" id="marKpis"></div>
+        <div class="tbl-wrap"><table class="tbl" id="marTable"></table></div>
+      </div>
+
+      <!-- PARAMETROS -->
+      <div class="panel" id="panel-parametros">
+        <div class="page-head"><div><h1 class="page-title">Parâmetros</h1><p class="page-sub">Custo/hora por cargo, alíquota da NF, feriados e gestores.</p></div>
+          <button class="btn" onclick="openParametro()">+ Novo parâmetro</button></div>
+        <div class="toolbar"><div class="chip-row" id="parChips"></div></div>
+        <div class="tbl-wrap"><table class="tbl" id="parTable"></table></div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="panel" id="panel-config">
+        <div class="page-head"><div><h1 class="page-title">Configuração</h1><p class="page-sub">Base de dados do sistema no SharePoint (site BPM).</p></div></div>
+        <div id="cfgBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal"><div class="modal" id="modalBox"><button class="modal-close" onclick="closeModal()" aria-label="Fechar">&times;</button><div id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading">Carregando...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+// ============================================================
+// DADOS FICTICIOS - usados apenas no modo demonstracao.
+// Os dados reais (clientes, valores, custos) NAO ficam neste
+// arquivo publico: eles sao carregados uma unica vez a partir do
+// arquivo "dados-iniciais-faturamento.json" na tela Configuracao.
+// ============================================================
+var DEMO_SEED = {
+  clientes: [
+    { key:"a", Title:"Indústria Alfa – Suzano", RazaoSocial:"Indústria Alfa Ltda.", CNPJ:"00.000.000/0001-01", Unidade:"Suzano", Local:"Suzano", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"30 dias",
+      itens:[["Enfermeiro RT","Enfermeiro",15000,"DiasFixos",21,8,"PED-1001"],["Técnico de Enfermagem Manhã","Técnico de Enfermagem",11000,"DiasFixos",21,9,"PED-1001"],["Fisioterapia","Fisioterapeuta",12000,"DiasCorridos",0,6,"PED-1001"],["Atividades Físicas","Profissional de Educação Física",25000,"DiasCorridos",0,8,"PED-1001"]],
+      variaveis:[["Técnico de Enfermagem","HE","Unico",80],["Enfermeiro","HE","Unico",90]] },
+    { key:"b", Title:"Química Beta", RazaoSocial:"Química Beta S.A.", CNPJ:"00.000.000/0002-02", Unidade:"São Paulo", Local:"São Paulo", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
+      itens:[["Enfermagem","Enfermeiro",5000,"DiasFixos",21,8,""],["Técnico de Enfermagem ADM","Técnico de Enfermagem",12000,"DiasFixos",21,8,""],["Fisioterapia","Fisioterapeuta",15000,"DiasFixos",21,8,""],["Ergonomia","Ergonomista",6000,"DiasFixos",21,6,""]],
+      variaveis:[["Enfermeiro","Cobertura","Unico",130],["Médico do Trabalho","Cobertura","Unico",300]] },
+    { key:"c", Title:"Siderúrgica Gama", RazaoSocial:"Siderúrgica Gama Ltda.", CNPJ:"00.000.000/0003-03", Unidade:"Planta 1 + Planta 2", Local:"Pindamonhangaba", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
+      itens:[["Enfermagem","Enfermeiro",45000,"DiasFixos",30,24,"",""],["Aux. ADM Saúde Ocupacional","Auxiliar Administrativo",7000,"DiasFixos",30,8,"","70% Planta 1 / 30% Planta 2"],["Fisioterapia","Fisioterapeuta",18000,"DiasFixos",30,8,"","70% Planta 1 / 30% Planta 2"],["Medicina do Trabalho","Médico do Trabalho",28000,"HorasContratadas",84,4,"",""]],
+      variaveis:[["Enfermeiro","HE","Diurno",100],["Enfermeiro","HE","Noturno",130],["Enfermeiro","HE","DomFerDiurno",120],["Enfermeiro","HE","DomFerNoturno",150],["Enfermeiro","Cobertura","Diurno",70],["Enfermeiro","Cobertura","Noturno",90]] },
+    { key:"d", Title:"Metalúrgica Delta", RazaoSocial:"Metalúrgica Delta Ltda.", CNPJ:"00.000.000/0004-04", Unidade:"Mogi das Cruzes", Local:"Mogi das Cruzes", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
+      itens:[["Técnico de Enfermagem","Técnico de Enfermagem",9500,"DiasFixos",30,8,""],["Medicina do Trabalho","Médico do Trabalho",15000,"DiasFixos",20,6,""]],
+      variaveis:[["Técnico de Enfermagem","HE","Diurno",100],["Técnico de Enfermagem","HE","Noturno",130]] },
+    { key:"e", Title:"Tintas Épsilon", RazaoSocial:"Tintas Épsilon Ltda.", CNPJ:"00.000.000/0005-05", Unidade:"Guaratinguetá", Local:"Guaratinguetá", Area:"Atividades Físicas", ModeloBoletim:"Cliente", CondicaoPagamento:"",
+      itens:[["Academia","Profissional de Educação Física",6000,"DiasFixos",17,6,""],["Ginástica Laboral","Profissional de Educação Física",4300,"DiasFixos",22,3,""]], variaveis:[] },
+    { key:"f", Title:"Logística Zeta – Ergonomia", RazaoSocial:"Logística Zeta S.A.", CNPJ:"00.000.000/0006-06", Unidade:"Cotia", Local:"Cotia", Area:"Ergonomia", ModeloBoletim:"Eleva", CondicaoPagamento:"",
+      itens:[["Ergonomia","Ergonomista",4200,"DiasFixos",4,8,""]], variaveis:[] }
+  ],
+  parametros: [
+    { Title:"Custo/hora – Técnico de Enfermagem", Tipo:"CustoHora", Cargo:"Técnico de Enfermagem", Valor:25 },
+    { Title:"Custo/hora – Enfermeiro", Tipo:"CustoHora", Cargo:"Enfermeiro", Valor:30 },
+    { Title:"Custo/hora – Médico do Trabalho", Tipo:"CustoHora", Cargo:"Médico do Trabalho", Valor:190 },
+    { Title:"Alíquota NF (padrão)", Tipo:"Aliquota", Cargo:"", Valor:16 },
+    { Title:"Alíquota NF – Médico do Trabalho", Tipo:"Aliquota", Cargo:"Médico do Trabalho", Valor:21 },
+    { Title:"Independência", Tipo:"Feriado", Data:"2026-09-07" },
+    { Title:"Nossa Senhora Aparecida", Tipo:"Feriado", Data:"2026-10-12" },
+    { Title:"Finados", Tipo:"Feriado", Data:"2026-11-02" },
+    { Title:"Proclamação da República", Tipo:"Feriado", Data:"2026-11-15" },
+    { Title:"Consciência Negra", Tipo:"Feriado", Data:"2026-11-20" },
+    { Title:"Natal", Tipo:"Feriado", Data:"2026-12-25" }
+  ]
+};
+
+// ============================================================
+// FATURAMENTO DE SERVICOS - ElevaLife
+// Nucleo: configuracao, login Microsoft, acesso ao SharePoint,
+// modo demonstracao e motor de calculo.
+// ============================================================
+
+// ---- Configuracao (mesmo registro de app do painel de implantacao) ----
+var MSAL_CLIENT_ID = "fa1e77d1-f0b6-4294-80cf-3fadd39ba867";
+var MSAL_TENANT_ID = "cfb770f9-787a-45dd-8368-a47edc43fc12";
+var GRAPH_SCOPES = ["Sites.ReadWrite.All", "User.Read"];
+var MANAGE_SCOPES = ["Sites.Manage.All"]; // so para criar as listas (Configuracao)
+var SITE_HOST = "elevalife.sharepoint.com";
+var SITE_PATH = "/sites/BUSINESSPROCESSMANAGEMENT";
+var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + SITE_PATH + ":";
+
+// ---- Estrutura das listas no SharePoint ----
+// tipos: t = texto, ml = texto longo, n = numero, b = sim/nao
+var SCHEMA = {
+  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"]] },
+  contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"]] },
+  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"]] },
+  variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
+  parametros: { list:"FAT_Parametros", label:"Parâmetros", cols:[["Tipo","t"],["Cargo","t"],["Valor","n"],["Data","t"],["Local","t"],["Texto","t"]] },
+  ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"]] },
+  medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"]] }
+};
+var NUMERIC = {}; var BOOLS = {};
+Object.keys(SCHEMA).forEach(function(k){ SCHEMA[k].cols.forEach(function(c){ if (c[1]==="n") NUMERIC[c[0]] = 1; if (c[1]==="b") BOOLS[c[0]] = 1; }); });
+
+// ---- Dominio ----
+var AREAS = ["Terapias","Atividades Físicas","Ergonomia"];
+var REGRAS = {
+  DiasCorridos:     { label:"Valor ÷ dias do mês (corridos)", divisor:null },
+  DiasFixos:        { label:"Valor ÷ nº fixo de dias", divisor:"Nº de dias (ex.: 21, 22, 30)" },
+  HorasContratadas: { label:"Valor ÷ horas contratadas no mês", divisor:"Horas contratadas no mês" },
+  ValorHora:        { label:"Valor fixo por hora", divisor:"Valor da hora (R$)" }
+};
+var TIPOS = {
+  "Falta":                     { sinal:-1, grupo:"desconto", modo:"dias" },
+  "Atraso / saída antecipada": { sinal:-1, grupo:"desconto", modo:"horario" },
+  "Serviço suspenso":          { sinal:-1, grupo:"desconto", modo:"dias" },
+  "Hora extra":                { sinal: 1, grupo:"variavel", modo:"horario", varTipo:"HE" },
+  "Cobertura":                 { sinal: 1, grupo:"variavel", modo:"horario", varTipo:"Cobertura" },
+  "Reembolso":                 { sinal: 1, grupo:"manual" },
+  "Consumo":                   { sinal: 1, grupo:"manual" },
+  "Ajuste (acréscimo)":        { sinal: 1, grupo:"manual" },
+  "Ajuste (desconto)":         { sinal:-1, grupo:"manual" }
+};
+var PERIODOS = { Unico:"Único (qualquer horário)", Diurno:"Diurno dia de semana", Noturno:"Noturno dia de semana (22h–6h)", DomFerDiurno:"Domingo/feriado diurno", DomFerNoturno:"Domingo/feriado noturno" };
+var PERIODO_FALLBACK = { Diurno:["Diurno","Unico"], Noturno:["Noturno","Diurno","Unico"], DomFerDiurno:["DomFerDiurno","Diurno","Unico"], DomFerNoturno:["DomFerNoturno","Noturno","DomFerDiurno","Diurno","Unico"] };
+var STATUS_MED = ["Rascunho","Enviada","Contestada","Aprovada","NF emitida"];
+var STATUS_BADGE = { "Não gerada":"b-gray", "Rascunho":"b-blue", "Enviada":"b-amber", "Contestada":"b-red", "Aprovada":"b-purple", "NF emitida":"b-green" };
+
+// ---- Estado ----
+var S = { clientes:[], contratos:[], itens:[], variaveis:[], parametros:[], ocorrencias:[], medicoes:[] };
+var LIST_IDS = {};          // chave -> id da lista no SharePoint
+var MISSING_LISTS = [];     // chaves das listas que ainda nao existem
+var DEMO = false;
+var CURRENT_USER = { name:"", email:"" };
+var msalInstance = null;
+
+// ============================================================
+// Utilitarios
+// ============================================================
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function r2(n){ return Math.round((Number(n)||0) * 100) / 100; }
+function brl(n){ return (Number(n)||0).toLocaleString("pt-BR", { style:"currency", currency:"BRL" }); }
+function num(n, d){ return (Number(n)||0).toLocaleString("pt-BR", { minimumFractionDigits: d==null?2:d, maximumFractionDigits: d==null?2:d }); }
+function parseNum(v){
+  if (v == null || v === "") return 0;
+  if (typeof v === "number") return v;
+  var s = String(v).trim().replace(/[R$\s]/g, "");
+  if (s.indexOf(",") >= 0) s = s.replace(/\./g, "").replace(",", ".");
+  var n = parseFloat(s); return isNaN(n) ? 0 : n;
+}
+function pad(n){ return (n < 10 ? "0" : "") + n; }
+function isoDate(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+function todayISO(){ return isoDate(new Date()); }
+function parseISO(s){ var p = String(s).split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+function addDays(iso, n){ var d = parseISO(iso); d.setDate(d.getDate() + n); return isoDate(d); }
+function fmtDate(iso){ if (!iso) return ""; var p = String(iso).slice(0,10).split("-"); return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso; }
+function compOf(iso){ return String(iso || "").slice(0,7); }
+function curComp(){ return todayISO().slice(0,7); }
+function prevComp(comp){ var p = comp.split("-"); var d = new Date(+p[0], +p[1]-2, 1); return d.getFullYear() + "-" + pad(d.getMonth()+1); }
+function compLabel(comp){ if (!comp) return ""; var m = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"]; var p = comp.split("-"); return m[+p[1]-1] + "/" + p[0]; }
+function daysInMonth(comp){ var p = comp.split("-"); return new Date(+p[0], +p[1], 0).getDate(); }
+function lastDay(comp){ return comp + "-" + pad(daysInMonth(comp)); }
+function toMin(hhmm){ if (!hhmm) return null; var p = String(hhmm).split(":"); return (+p[0])*60 + (+p[1]||0); }
+function hFmt(h){ var tot = Math.round((Number(h)||0) * 60); var hh = Math.floor(tot/60), mm = tot % 60; return hh + "h" + (mm ? pad(mm) : ""); }
+function daysBetween(a, b){ return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
+function byId(key, id){ id = String(id); for (var i = 0; i < S[key].length; i++) if (String(S[key][i].id) === id) return S[key][i]; return null; }
+function norm(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+function jparse(s, def){ try { return s ? JSON.parse(s) : def; } catch(e){ return def; } }
+
+function showToast(msg, isError){
+  var t = $("toast"); t.textContent = msg; t.className = "toast show" + (isError ? " error" : "");
+  clearTimeout(window.__tt); window.__tt = setTimeout(function(){ t.className = "toast"; }, isError ? 9000 : 3500);
+}
+function setLoading(on, msg){ var l = $("loading"); l.textContent = msg || "Carregando..."; l.classList.toggle("show", !!on); }
+function stampHeader(){ var d = new Date(); $("headerUpdatedAt").textContent = d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}); }
+
+// ============================================================
+// Login Microsoft (MSAL) e Graph
+// ============================================================
+function initMsal(){
+  if (typeof msal === "undefined") return Promise.resolve(null);
+  msalInstance = new msal.PublicClientApplication({
+    auth: { clientId: MSAL_CLIENT_ID, authority: "https://login.microsoftonline.com/" + MSAL_TENANT_ID, redirectUri: window.location.origin + window.location.pathname },
+    cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
+  });
+  return msalInstance.initialize().then(function(){ return msalInstance.handleRedirectPromise(); }).then(function(resp){
+    if (resp && resp.account) msalInstance.setActiveAccount(resp.account);
+    var acc = msalInstance.getActiveAccount() || msalInstance.getAllAccounts()[0];
+    if (acc) msalInstance.setActiveAccount(acc);
+    return acc || null;
+  });
+}
+async function login(){
+  if (!msalInstance){ showToast("Não consegui carregar o login da Microsoft. Verifique a internet e recarregue.", true); return; }
+  try {
+    var resp = await msalInstance.loginPopup({ scopes: GRAPH_SCOPES, prompt: "select_account" });
+    msalInstance.setActiveAccount(resp.account);
+    await afterLogin(resp.account);
+  } catch (e){ console.error(e); showToast("Login não concluído: " + (e.message || e), true); }
+}
+function logout(){ if (DEMO){ location.reload(); return; } msalInstance.logoutRedirect(); }
+async function getToken(scopes){
+  var account = msalInstance.getActiveAccount();
+  var req = { scopes: scopes || GRAPH_SCOPES, account: account };
+  try { return (await msalInstance.acquireTokenSilent(req)).accessToken; }
+  catch (e){
+    try { return (await msalInstance.acquireTokenPopup(req)).accessToken; }
+    catch (e2){ throw new Error("Não foi possível renovar sua autorização. Clique em Sair e entre novamente."); }
+  }
+}
+async function graph(url, options, scopes){
+  var token = await getToken(scopes);
+  options = options || {};
+  options.headers = Object.assign({}, options.headers, { "Authorization": "Bearer " + token, "Content-Type": "application/json" });
+  var resp = await fetch(url, options);
+  if (!resp.ok){ var text = await resp.text(); var err = new Error("Erro " + resp.status + ": " + text.slice(0, 300)); err.status = resp.status; throw err; }
+  if (resp.status === 204 || resp.status === 202) return null;
+  var raw = await resp.text(); return raw ? JSON.parse(raw) : null;
+}
+
+// ============================================================
+// Camada de dados (SharePoint ou demonstracao)
+// ============================================================
+function fromSP(it){
+  var f = it.fields || {}; var o = { id: String(it.id) };
+  Object.keys(f).forEach(function(k){ if (k.charAt(0) !== "@" && k.indexOf("odata") < 0) o[k] = f[k]; });
+  return o;
+}
+function toSP(key, fields){
+  var allowed = { Title:1 }; SCHEMA[key].cols.forEach(function(c){ allowed[c[0]] = 1; });
+  var out = {};
+  Object.keys(fields).forEach(function(k){
+    if (!allowed[k]) return;
+    var v = fields[k];
+    if (NUMERIC[k]) v = (v === "" || v == null) ? null : Number(v);
+    else if (BOOLS[k]) v = !!v;
+    else v = (v == null) ? "" : String(v);
+    out[k] = v;
+  });
+  return out;
+}
+var api = {
+  resolveLists: async function(){
+    LIST_IDS = {}; MISSING_LISTS = [];
+    if (DEMO){ Object.keys(SCHEMA).forEach(function(k){ LIST_IDS[k] = "demo-" + k; }); return; }
+    var data = await graph(GRAPH_SITE + "/lists?$select=id,displayName&$top=500");
+    var map = {}; (data.value || []).forEach(function(l){ map[l.displayName] = l.id; });
+    Object.keys(SCHEMA).forEach(function(k){ if (map[SCHEMA[k].list]) LIST_IDS[k] = map[SCHEMA[k].list]; else MISSING_LISTS.push(k); });
+  },
+  load: async function(key){
+    if (DEMO) return S[key];
+    if (!LIST_IDS[key]) return [];
+    var url = GRAPH_SITE + "/lists/" + LIST_IDS[key] + "/items?expand=fields&$top=999", out = [];
+    while (url){ var data = await graph(url); (data.value || []).forEach(function(it){ out.push(fromSP(it)); }); url = data["@odata.nextLink"] || null; }
+    return out;
+  },
+  create: async function(key, fields){
+    var clean = toSP(key, fields);
+    Object.keys(clean).forEach(function(k){ if (clean[k] === null) delete clean[k]; });
+    if (DEMO){ var o = Object.assign({ id: String(++api._seq), Modified: new Date().toISOString() }, clean); S[key].push(o); return o; }
+    var it = await graph(GRAPH_SITE + "/lists/" + LIST_IDS[key] + "/items", { method:"POST", body: JSON.stringify({ fields: clean }) });
+    var obj = fromSP(it); obj.Modified = obj.Modified || new Date().toISOString(); S[key].push(obj); return obj;
+  },
+  update: async function(key, id, fields){
+    var clean = toSP(key, fields);
+    if (!DEMO) await graph(GRAPH_SITE + "/lists/" + LIST_IDS[key] + "/items/" + id + "/fields", { method:"PATCH", body: JSON.stringify(clean) });
+    var o = byId(key, id); if (o){ Object.assign(o, clean); o.Modified = new Date().toISOString(); } return o;
+  },
+  remove: async function(key, id){
+    if (!DEMO) await graph(GRAPH_SITE + "/lists/" + LIST_IDS[key] + "/items/" + id, { method:"DELETE" });
+    S[key] = S[key].filter(function(o){ return String(o.id) !== String(id); });
+  },
+  createList: async function(key){
+    var sc = SCHEMA[key];
+    var cols = sc.cols.map(function(c){
+      if (c[1] === "n") return { name:c[0], number:{} };
+      if (c[1] === "b") return { name:c[0], boolean:{} };
+      if (c[1] === "ml") return { name:c[0], text:{ allowMultipleLines:true, linesForEditing:6 } };
+      return { name:c[0], text:{} };
+    });
+    var l = await graph(GRAPH_SITE + "/lists", { method:"POST", body: JSON.stringify({ displayName: sc.list, columns: cols, list:{ template:"genericList" } }) }, MANAGE_SCOPES);
+    LIST_IDS[key] = l.id;
+  },
+  _seq: 1000
+};
+
+async function loadAll(){
+  await api.resolveLists();
+  var keys = Object.keys(SCHEMA);
+  var res = await Promise.all(keys.map(function(k){ return api.load(k); }));
+  keys.forEach(function(k, i){ S[k] = res[i]; });
+  stampHeader();
+}
+
+// ============================================================
+// Permissoes
+// ============================================================
+function isGestor(){
+  if (DEMO) return true;
+  var gest = S.parametros.filter(function(p){ return p.Tipo === "Gestor"; }).map(function(p){ return norm(p.Texto); });
+  if (!gest.length) return true; // base recem-criada: todos configuram
+  return gest.indexOf(norm(CURRENT_USER.email)) >= 0;
+}
+
+// ============================================================
+// Motor de calculo
+// ============================================================
+function clientesAtivos(area){
+  return S.clientes.filter(function(c){ return c.Ativo !== false && (!area || c.Area === area); })
+    .sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
+}
+function contratosDoCliente(cid){
+  return S.contratos.filter(function(c){ return String(c.ClienteId) === String(cid); }).sort(function(a, b){ return (b.Versao||0) - (a.Versao||0); });
+}
+function contratoCobre(ct, comp){
+  var ini = comp + "-01", fim = lastDay(comp);
+  return (!ct.Inicio || ct.Inicio <= fim) && (!ct.Fim || ct.Fim >= ini);
+}
+function contratoVigente(cid, comp){
+  var list = contratosDoCliente(cid).filter(function(c){ return c.Status !== "Encerrado" || (c.Fim && contratoCobre(c, comp)); });
+  for (var i = 0; i < list.length; i++) if (contratoCobre(list[i], comp)) return list[i];
+  return null;
+}
+function contratoAtual(cid){ return contratoVigente(cid, curComp()) || contratosDoCliente(cid)[0] || null; }
+function itensDoContrato(ctId){
+  return S.itens.filter(function(i){ return String(i.ContratoId) === String(ctId); }).sort(function(a, b){ return (a.Ordem||0) - (b.Ordem||0); });
+}
+function totalContrato(ctId){ return r2(itensDoContrato(ctId).reduce(function(s, i){ return s + (Number(i.ValorMensal)||0); }, 0)); }
+function feriados(local){
+  var set = {};
+  S.parametros.forEach(function(p){ if (p.Tipo === "Feriado" && p.Data && (!p.Local || norm(p.Local) === norm(local))) set[p.Data] = p.Title || "Feriado"; });
+  return set;
+}
+function custoHora(cargo){
+  var p = S.parametros.filter(function(x){ return x.Tipo === "CustoHora" && norm(x.Cargo) === norm(cargo); })[0];
+  return p ? Number(p.Valor)||0 : 0;
+}
+function aliquota(cargo){
+  var p = S.parametros.filter(function(x){ return x.Tipo === "Aliquota" && x.Cargo && norm(x.Cargo) === norm(cargo); })[0]
+       || S.parametros.filter(function(x){ return x.Tipo === "Aliquota" && !x.Cargo; })[0];
+  return p ? (Number(p.Valor)||0) / 100 : 0;
+}
+// divide um intervalo de horario em diurno/noturno e dia util/domingo-feriado
+function splitHoras(dateISO, hi, hf, hol){
+  var a = toMin(hi), b = toMin(hf); var out = { Diurno:0, Noturno:0, DomFerDiurno:0, DomFerNoturno:0 };
+  if (a == null || b == null) return { cats: out, total: 0 };
+  if (b <= a) b += 1440;
+  for (var m = a; m < b; m++){
+    var day = addDays(dateISO, Math.floor(m / 1440)), hour = Math.floor((m % 1440) / 60);
+    var domFer = parseISO(day).getDay() === 0 || !!hol[day];
+    var noite = hour >= 22 || hour < 6;
+    out[(domFer ? "DomFer" : "") + (noite ? "Noturno" : "Diurno")] += 1/60;
+  }
+  return { cats: out, total: (b - a) / 60 };
+}
+function precoVariavel(cid, cargo, varTipo, periodo, dateISO){
+  var cands = S.variaveis.filter(function(v){ return String(v.ClienteId) === String(cid) && norm(v.Cargo) === norm(cargo) && v.Tipo === varTipo && (!v.VigenciaInicio || !dateISO || v.VigenciaInicio <= dateISO); })
+    .sort(function(a, b){ return String(b.VigenciaInicio||"").localeCompare(String(a.VigenciaInicio||"")); });
+  var chain = PERIODO_FALLBACK[periodo] || [periodo, "Unico"];
+  for (var i = 0; i < chain.length; i++){
+    var hit = cands.filter(function(v){ return v.Periodo === chain[i]; })[0];
+    if (hit) return { valor: Number(hit.Valor)||0, periodo: chain[i] };
+  }
+  return null;
+}
+function descontoItem(item, comp, dias, horas){
+  var VM = Number(item.ValorMensal)||0, div = Number(item.Divisor)||0, jorn = Number(item.JornadaDiaria)||8, regra = item.RegraDesconto || "DiasCorridos";
+  var dv, hv, det;
+  if (regra === "DiasCorridos"){ var dim = daysInMonth(comp); dv = VM / dim; det = brl(VM) + " ÷ " + dim + " dias do mês = " + brl(dv) + "/dia"; }
+  else if (regra === "DiasFixos"){ if (!div) return { erro:"Item sem divisor cadastrado" }; dv = VM / div; det = brl(VM) + " ÷ " + num(div, div % 1 ? 1 : 0) + " dias = " + brl(dv) + "/dia"; }
+  else if (regra === "HorasContratadas"){ if (!div) return { erro:"Item sem horas contratadas cadastradas" }; hv = VM / div; det = brl(VM) + " ÷ " + num(div, 0) + " h = " + brl(hv) + "/h"; }
+  else if (regra === "ValorHora"){ hv = div; det = "Valor da hora: " + brl(hv); }
+  var val;
+  if (dv != null){
+    if (dias){ val = dv * dias; det += "\n× " + num(dias, dias % 1 ? 1 : 0) + " dia(s)"; }
+    else { val = dv / jorn * horas; det += "\n÷ jornada de " + num(jorn, jorn % 1 ? 2 : 0) + " h × " + hFmt(horas); }
+  } else {
+    if (horas){ val = hv * horas; det += "\n× " + hFmt(horas); }
+    else { val = hv * jorn * dias; det += "\n× " + num(jorn, 0) + " h × " + num(dias, 0) + " dia(s)"; }
+  }
+  return { valor: r2(val), detalhe: det };
+}
+// calcula valor (com sinal), custo e detalhe de uma ocorrencia
+function calcOcorrencia(o){
+  var t = TIPOS[o.Tipo]; if (!t) return { erro:"Tipo inválido" };
+  var cli = byId("clientes", o.ClienteId); if (!cli) return { erro:"Selecione o cliente" };
+  var comp = o.Competencia || compOf(o.Data);
+  var res = { valor:0, custo:0, horas:0, detalhe:"" };
+  if (t.modo === "horario" && o.HoraInicio && o.HoraFim){
+    var sp = splitHoras(o.Data, o.HoraInicio, o.HoraFim, feriados(cli.Local));
+    res.horas = r2(sp.total); res.cats = sp.cats;
+  }
+  if (o.Manual){
+    res.valor = r2(Math.abs(parseNum(o.Valor)) * t.sinal); res.detalhe = "Valor informado manualmente";
+    if (t.grupo === "variavel") res.custo = r2(res.horas * custoHora(o.Cargo));
+    return res;
+  }
+  if (t.grupo === "manual") return { erro:"Informe o valor" };
+  if (t.grupo === "desconto"){
+    var item = byId("itens", o.ItemId); if (!item) return { erro:"Selecione o serviço afetado" };
+    var dias = t.modo === "dias" ? parseNum(o.Dias) : 0;
+    if (t.modo === "dias" && !dias) return { erro:"Informe a quantidade de dias" };
+    if (t.modo === "horario" && !res.horas) return { erro:"Informe o horário de início e fim" };
+    var d = descontoItem(item, comp, dias, res.horas); if (d.erro) return d;
+    res.valor = -d.valor; res.detalhe = d.detalhe; return res;
+  }
+  // variavel: HE / Cobertura
+  if (!o.Cargo) return { erro:"Informe o cargo" };
+  if (!res.horas) return { erro:"Informe o horário de início e fim" };
+  var total = 0, linhas = [];
+  Object.keys(res.cats).forEach(function(cat){
+    var h = res.cats[cat]; if (h < 0.0001) return;
+    var p = precoVariavel(o.ClienteId, o.Cargo, t.varTipo, cat, o.Data);
+    if (!p){ linhas.push("SEM PREÇO: " + t.varTipo + " / " + o.Cargo + " / " + PERIODOS[cat]); total = NaN; return; }
+    total += h * p.valor; linhas.push(hFmt(h) + " " + PERIODOS[cat].toLowerCase() + " × " + brl(p.valor) + (p.periodo !== cat ? " (preço " + (p.periodo === "Unico" ? "único" : PERIODOS[p.periodo].toLowerCase()) + ")" : ""));
+  });
+  if (isNaN(total)) return { erro:"Não há preço cadastrado na Tabela de variáveis para este cliente/cargo.", detalhe: linhas.join("\n") };
+  res.valor = r2(total); res.detalhe = linhas.join("\n");
+  res.custo = r2(res.horas * custoHora(o.Cargo));
+  return res;
+}
+function ocorrenciasDe(cid, comp){
+  return S.ocorrencias.filter(function(o){ return String(o.ClienteId) === String(cid) && o.Competencia === comp; })
+    .sort(function(a, b){ return String(a.Data).localeCompare(String(b.Data)); });
+}
+function medicaoDe(cid, comp){ return S.medicoes.filter(function(m){ return String(m.ClienteId) === String(cid) && m.Competencia === comp; })[0] || null; }
+function linhasDe(med){ return jparse(med && med.Linhas, { lines:[], ocorrIds:[] }); }
+function historicoDe(med){ return jparse(med && med.Historico, []); }
+
+// monta as linhas do boletim de um cliente numa competencia
+function montarMedicao(cid, comp){
+  var ct = contratoVigente(cid, comp);
+  if (!ct) return { erro:"Não há contrato vigente para " + compLabel(comp) + "." };
+  var itens = itensDoContrato(ct.id);
+  if (!itens.length) return { erro:"O contrato vigente não tem itens cadastrados." };
+  var lines = itens.map(function(it){ return { tipo:"item", itemId:String(it.id), servico:it.Title, cargo:it.Cargo||"", padrao:r2(it.ValorMensal), desconto:0, acrescimo:0, horas:0, just:[] }; });
+  var byItem = {}; lines.forEach(function(l){ byItem[l.itemId] = l; });
+  var extra = {}; var ocs = ocorrenciasDe(cid, comp); var ids = [];
+  ocs.forEach(function(o){
+    ids.push(String(o.id));
+    var v = Number(o.Valor)||0; var txt = fmtDate(o.Data) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
+    var target = o.ItemId && byItem[String(o.ItemId)];
+    if (target && (TIPOS[o.Tipo] || {}).grupo !== "variavel"){
+      if (v < 0) target.desconto = r2(target.desconto - v); else target.acrescimo = r2(target.acrescimo + v);
+      target.just.push(txt); return;
+    }
+    var k = o.Tipo + "|" + (o.Cargo || "");
+    if (!extra[k]) extra[k] = { tipo:"variavel", itemId:"", servico: o.Tipo + (o.Cargo ? " – " + o.Cargo : ""), cargo:o.Cargo||"", padrao:0, desconto:0, acrescimo:0, horas:0, just:[] };
+    if (v < 0) extra[k].desconto = r2(extra[k].desconto - v); else extra[k].acrescimo = r2(extra[k].acrescimo + v);
+    extra[k].horas = r2(extra[k].horas + (Number(o.Horas)||0));
+    extra[k].just.push(txt);
+  });
+  Object.keys(extra).forEach(function(k){ lines.push(extra[k]); });
+  lines.forEach(function(l){ l.final = r2(l.padrao - l.desconto + l.acrescimo); });
+  var tot = lines.reduce(function(a, l){ a.p += l.padrao; a.d += l.desconto; a.a += l.acrescimo; return a; }, { p:0, d:0, a:0 });
+  return { contrato: ct, lines: lines, ocorrIds: ids, ValorPadrao: r2(tot.p), Descontos: r2(tot.d), Acrescimos: r2(tot.a), ValorFaturar: r2(tot.p - tot.d + tot.a) };
+}
+// conferencia automatica antes do envio
+function conferir(cid, comp, med){
+  var out = []; var cli = byId("clientes", cid); var ct = contratoVigente(cid, comp);
+  if (!ct){ out.push({ n:"red", t:"Não há contrato vigente para " + compLabel(comp) + "." }); return out; }
+  if (!ct.Fim) out.push({ n:"blue", t:"Contrato sem data de término cadastrada. O comercial precisa informar a vigência." });
+  else if (ct.Fim < todayISO()) out.push({ n:"red", t:"O contrato venceu em " + fmtDate(ct.Fim) + ". Verifique a renovação com o comercial." });
+  itensDoContrato(ct.id).forEach(function(i){ if (i.RegraDesconto !== "DiasCorridos" && !Number(i.Divisor)) out.push({ n:"amber", t:"O item \"" + i.Title + "\" está sem divisor da regra de desconto." }); });
+  var ocs = ocorrenciasDe(cid, comp);
+  if (med){
+    var inc = linhasDe(med).ocorrIds || [];
+    var novas = ocs.filter(function(o){ return inc.indexOf(String(o.id)) < 0 || (o.Modified && med.GeradoEm && String(o.Modified) > String(med.GeradoEm)); });
+    var sumidas = inc.filter(function(id){ return !ocs.some(function(o){ return String(o.id) === id; }); });
+    if (novas.length) out.push({ n:"red", t: novas.length + " ocorrência(s) lançada(s) ou alterada(s) depois da geração, fora do boletim. Gere a medição novamente." });
+    if (sumidas.length) out.push({ n:"red", t: sumidas.length + " ocorrência(s) do boletim foram excluídas. Gere a medição novamente." });
+  }
+  var semJust = ocs.filter(function(o){ return !String(o.Justificativa||"").trim(); });
+  if (semJust.length) out.push({ n:"amber", t: semJust.length + " ocorrência(s) sem justificativa. O cliente vai ver o motivo no boletim." });
+  var semEvid = ocs.filter(function(o){ return (TIPOS[o.Tipo]||{}).grupo === "variavel" && !String(o.Evidencia||"").trim(); });
+  if (semEvid.length) out.push({ n:"amber", t: semEvid.length + " hora(s) extra(s)/cobertura(s) sem evidência (ex.: e-mail do cliente solicitando)." });
+  if (cli && !cli.AprovadorEmail) out.push({ n:"amber", t:"Cliente sem e-mail do aprovador cadastrado." });
+  return out;
+}
+
+// ============================================================
+// Interface
+// ============================================================
+var CURRENT_TAB = "dashboard";
+var SEL = { cliente:null, contrato:null };
+var CHARTS = {};
+var REN_FILTER = "todos", PAR_FILTER = "todos";
+
+function toggleSidebar(){ document.body.classList.toggle("sidebar-collapsed"); try { localStorage.setItem("fatSidebar", document.body.classList.contains("sidebar-collapsed") ? "1" : "0"); } catch(e){} }
+try { if (localStorage.getItem("fatSidebar") === "1") document.body.classList.add("sidebar-collapsed"); } catch(e){}
+
+document.addEventListener("DOMContentLoaded", function(){
+  document.querySelectorAll("#nav .tab").forEach(function(t){
+    t.title = t.textContent.trim();
+    t.addEventListener("click", function(){ showTab(t.getAttribute("data-tab")); });
+  });
+  $("modal").addEventListener("mousedown", function(e){ if (e.target.id === "modal") closeModal(); });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeModal(); });
+  var dc = prevComp(curComp());
+  ["dashComp","medComp"].forEach(function(id){ $(id).value = dc; });
+  ["ocoComp","marComp"].forEach(function(id){ $(id).value = curComp(); });
+  if (/[?&]demo=1/.test(location.search)) { startDemo(); return; }
+  initMsal().then(function(acc){ if (acc) afterLogin(acc); }).catch(function(e){ console.error(e); });
+});
+
+function showTab(name){
+  if (!name) return;
+  CURRENT_TAB = name;
+  document.querySelectorAll("#nav .tab").forEach(function(t){ t.classList.toggle("active", t.getAttribute("data-tab") === name); });
+  document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active", p.id === "panel-" + name); });
+  renderCurrent();
+  window.scrollTo(0, 0);
+}
+function renderCurrent(){
+  var f = { dashboard:renderDashboard, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig }[CURRENT_TAB];
+  if (f) f();
+  renderRenovBadge();
+}
+
+// ------------------------------------------------------------
+// Entrada: login real ou demonstracao
+// ------------------------------------------------------------
+async function afterLogin(acc){
+  CURRENT_USER = { name: acc.name || acc.username, email: acc.username || "" };
+  $("userChip").textContent = CURRENT_USER.name; $("userChip").classList.remove("hidden");
+  $("refreshBtn").classList.remove("hidden"); $("logoutBtn").classList.remove("hidden");
+  setLoading(true, "Carregando dados do SharePoint...");
+  try { await loadAll(); }
+  catch (e){ setLoading(false); console.error(e); showToast("Não consegui ler o SharePoint: " + e.message, true); return; }
+  setLoading(false);
+  enterApp();
+  if (MISSING_LISTS.length){
+    if (isGestor()){ showTab("config"); showToast("Primeiro acesso: crie a base de dados do sistema nesta tela."); }
+    else { $("mainArea").classList.add("hidden"); $("gate").classList.remove("hidden"); $("gate").innerHTML = "<h2>O sistema ainda não foi configurado</h2><p>A base de dados no SharePoint ainda não foi criada. Peça ao BPM para concluir a configuração.</p>"; }
+  }
+}
+function enterApp(){
+  $("gate").classList.add("hidden"); $("mainArea").classList.remove("hidden");
+  document.querySelectorAll(".gestor-only").forEach(function(el){ el.classList.toggle("hidden", !isGestor()); });
+  fillSelects();
+  showTab(CURRENT_TAB);
+}
+async function reloadAll(){
+  if (DEMO){ renderCurrent(); stampHeader(); return; }
+  setLoading(true, "Atualizando...");
+  try { await loadAll(); } catch (e){ showToast("Erro ao atualizar: " + e.message, true); }
+  setLoading(false); fillSelects(); renderCurrent();
+}
+function startDemo(){
+  DEMO = true;
+  CURRENT_USER = { name:"Usuário demonstração", email:"demo@elevalife.com.br" };
+  $("userChip").textContent = CURRENT_USER.name; $("userChip").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden"); $("logoutBtn").textContent = "Sair";
+  $("demoBanner").classList.remove("hidden");
+  buildDemoData(); stampHeader(); enterApp();
+}
+
+// ------------------------------------------------------------
+// Selects comuns
+// ------------------------------------------------------------
+function opt(v, l, sel){ return '<option value="' + esc(v) + '"' + (String(v) === String(sel) ? " selected" : "") + ">" + esc(l) + "</option>"; }
+function areaOptions(sel){ return opt("", "Todas as áreas", sel) + AREAS.map(function(a){ return opt(a, a, sel); }).join(""); }
+function clienteOptions(sel, allLabel){ return (allLabel ? opt("", allLabel, sel) : opt("", "Selecione...", sel)) + clientesAtivos().map(function(c){ return opt(c.id, c.Title, sel); }).join(""); }
+function fillSelects(){
+  ["dashArea","medArea","cliArea","renArea"].forEach(function(id){ var v = $(id).value; $(id).innerHTML = areaOptions(v); });
+  ["ocoCliente","varCliente"].forEach(function(id){ var v = $(id).value; $(id).innerHTML = clienteOptions(v, "Todos os clientes"); });
+  var ms = $("medStatus").value; $("medStatus").innerHTML = opt("", "Todos", ms) + ["Não gerada"].concat(STATUS_MED).map(function(s){ return opt(s, s, ms); }).join("");
+  var ot = $("ocoTipo").value; $("ocoTipo").innerHTML = opt("", "Todos", ot) + Object.keys(TIPOS).map(function(t){ return opt(t, t, ot); }).join("");
+}
+function cargosConhecidos(){
+  var set = {};
+  S.itens.forEach(function(i){ if (i.Cargo) set[i.Cargo] = 1; });
+  S.variaveis.forEach(function(v){ if (v.Cargo) set[v.Cargo] = 1; });
+  S.parametros.forEach(function(p){ if (p.Cargo) set[p.Cargo] = 1; });
+  return Object.keys(set).sort();
+}
+function cargoDatalist(){ return '<datalist id="dlCargos">' + cargosConhecidos().map(function(c){ return '<option value="' + esc(c) + '">'; }).join("") + "</datalist>"; }
+
+// ------------------------------------------------------------
+// Modal e confirmacao
+// ------------------------------------------------------------
+function openModal(html, wide){ $("modalBody").innerHTML = html; $("modalBox").className = "modal" + (wide ? " wide" : ""); $("modal").classList.add("show"); var f = $("modalBody").querySelector("input:not([type=checkbox]),select,textarea"); if (f) setTimeout(function(){ try { f.focus(); } catch(e){} }, 50); }
+function closeModal(){ $("modal").classList.remove("show"); $("modalBody").innerHTML = ""; }
+function askConfirm(msg, onYes, yesLabel){
+  window.__confirmYes = onYes;
+  openModal("<h3>Confirmar</h3><p class='msub'>" + esc(msg) + "</p><div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick='var f=window.__confirmYes;closeModal();f&&f();'>" + esc(yesLabel || "Confirmar") + "</button></div>");
+}
+function v(id){ var el = $(id); if (!el) return ""; return el.type === "checkbox" ? el.checked : el.value.trim(); }
+async function safe(fn, okMsg){
+  setLoading(true, "Salvando...");
+  try { var r = await fn(); setLoading(false); if (okMsg) showToast(okMsg); return r; }
+  catch (e){ setLoading(false); console.error(e); showToast("Não consegui salvar: " + e.message, true); throw e; }
+}
+
+// ------------------------------------------------------------
+// Copiar para a area de transferencia
+// ------------------------------------------------------------
+function copyText(t, msg){
+  var done = function(){ showToast(msg || "Copiado."); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, function(){ fallbackCopy(t); done(); });
+  else { fallbackCopy(t); done(); }
+}
+function fallbackCopy(t){ var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch(e){} document.body.removeChild(ta); }
+function copyHTML(html, text, msg){
+  try {
+    if (window.ClipboardItem && navigator.clipboard && window.isSecureContext){
+      navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type:"text/html" }), "text/plain": new Blob([text], { type:"text/plain" }) })]).then(function(){ showToast(msg || "Copiado."); }, function(){ copyText(text, msg); });
+      return;
+    }
+  } catch(e){}
+  copyText(text, msg);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function statusDe(cid, comp){ var m = medicaoDe(cid, comp); return m ? m.Status : "Não gerada"; }
+function renderDashboard(){
+  var comp = $("dashComp").value || prevComp(curComp()), area = $("dashArea").value;
+  var clis = clientesAtivos(area).filter(function(c){ return contratoVigente(c.id, comp) || medicaoDe(c.id, comp); });
+  var meds = clis.map(function(c){ return medicaoDe(c.id, comp); }).filter(Boolean);
+  var total = meds.reduce(function(s, m){ return s + (Number(m.ValorFaturar)||0); }, 0);
+  var desc = meds.reduce(function(s, m){ return s + (Number(m.Descontos)||0); }, 0);
+  var acr = meds.reduce(function(s, m){ return s + (Number(m.Acrescimos)||0); }, 0);
+  var concl = meds.filter(function(m){ return m.Status === "Aprovada" || m.Status === "NF emitida"; }).length;
+  $("dashKpis").innerHTML =
+    kpi("Valor a faturar", brl(total), meds.length + " de " + clis.length + " clientes com medição gerada") +
+    kpi("Aprovadas / NF emitida", concl + " de " + clis.length, clis.length ? Math.round(concl / clis.length * 100) + "% da competência concluída" : "") +
+    kpi("Descontos", brl(desc), "faltas, atrasos e serviços suspensos") +
+    kpi("Acréscimos", brl(acr), "horas extras, coberturas e reembolsos");
+  // graficos
+  var counts = {}; ["Não gerada"].concat(STATUS_MED).forEach(function(s){ counts[s] = 0; });
+  clis.forEach(function(c){ counts[statusDe(c.id, comp)]++; });
+  var colors = { "Não gerada":"#9aa0a6", "Rascunho":"#1a56c4", "Enviada":"#a8620a", "Contestada":"#b02a2a", "Aprovada":"#5b3cc4", "NF emitida":"#1e7d38" };
+  drawChart("chStatus", { type:"bar", data:{ labels:Object.keys(counts), datasets:[{ data:Object.values(counts), backgroundColor:Object.keys(counts).map(function(k){ return colors[k]; }), borderRadius:6 }] },
+    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ precision:0 }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
+  var rows = meds.map(function(m){ var c = byId("clientes", m.ClienteId); return { n: c ? c.Title : "?", v: Number(m.ValorFaturar)||0 }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 12);
+  drawChart("chClientes", { type:"bar", data:{ labels: rows.map(function(r){ return r.n; }), datasets:[{ data: rows.map(function(r){ return r.v; }), backgroundColor:"#6e1423", borderRadius:6 }] },
+    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ return brl(ctx.raw); } } } }, scales:{ x:{ ticks:{ callback:function(v){ return "R$ " + (v/1000).toLocaleString("pt-BR") + " mil"; } }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
+  // pendencias
+  var pend = [];
+  var semMed = clis.filter(function(c){ return !medicaoDe(c.id, comp); });
+  if (semMed.length) pend.push(["red", semMed.length + " cliente(s) sem medição gerada em " + compLabel(comp) + ": " + semMed.map(function(c){ return c.Title; }).join(", ") + "."]);
+  var rasc = meds.filter(function(m){ return m.Status === "Rascunho"; });
+  if (rasc.length) pend.push(["blue", rasc.length + " medição(ões) em rascunho, aguardando revisão e envio ao cliente."]);
+  var aguard = meds.filter(function(m){ return m.Status === "Enviada" && m.DataEnvio && daysBetween(m.DataEnvio, todayISO()) > 2; });
+  if (aguard.length) pend.push(["amber", aguard.length + " medição(ões) enviadas há mais de 2 dias sem resposta do cliente."]);
+  var cont = meds.filter(function(m){ return m.Status === "Contestada"; });
+  if (cont.length) pend.push(["red", cont.length + " medição(ões) contestadas pelo cliente."]);
+  var aprov = meds.filter(function(m){ return m.Status === "Aprovada"; });
+  if (aprov.length) pend.push(["amber", aprov.length + " medição(ões) aprovadas aguardando emissão da NF pelo coordenador."]);
+  var sj = S.ocorrencias.filter(function(o){ return o.Competencia === comp && !String(o.Justificativa||"").trim() && clis.some(function(c){ return String(c.id) === String(o.ClienteId); }); });
+  if (sj.length) pend.push(["amber", sj.length + " ocorrência(s) de " + compLabel(comp) + " sem justificativa."]);
+  $("dashPend").innerHTML = pend.length ? pend.map(function(p){ return '<div class="alert alert-' + p[0] + '">' + esc(p[1]) + "</div>"; }).join("") : '<div class="alert alert-green">Nada pendente nesta competência.</div>';
+  var ren = renovacoesRows(area).filter(function(r){ return r.dias != null && r.dias <= 90; }).sort(function(a, b){ return a.dias - b.dias; });
+  $("dashRenov").innerHTML = ren.length ? '<table class="tbl"><thead><tr><th>Cliente</th><th>Término</th><th>Prazo</th></tr></thead><tbody>' + ren.map(function(r){ return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td>" + esc(r.c.Title) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + "</td></tr>"; }).join("") + "</tbody></table>" : '<div class="alert alert-green">Nenhum contrato vence nos próximos 90 dias.</div>' + (renovacoesRows(area).some(function(r){ return r.dias == null; }) ? '<div class="alert alert-blue">Há contratos sem data de término cadastrada. Veja em Renovações.</div>' : "");
+}
+function kpi(l, val, sub){ return '<div class="kpi"><p class="kpi-label">' + esc(l) + '</p><p class="kpi-value">' + esc(val) + '</p><p class="kpi-sub">' + esc(sub || "") + "</p></div>"; }
+function drawChart(id, cfg){ if (typeof Chart === "undefined") return; if (CHARTS[id]) CHARTS[id].destroy(); CHARTS[id] = new Chart($(id), cfg); }
+function goCliente(cid){ closeModal(); SEL.cliente = String(cid); SEL.contrato = null; showTab("clientes"); }
+
+// ============================================================
+// MEDICOES
+// ============================================================
+function renderMedicoes(){
+  var comp = $("medComp").value || prevComp(curComp()), area = $("medArea").value, st = $("medStatus").value;
+  var rows = clientesAtivos(area).filter(function(c){ return contratoVigente(c.id, comp) || medicaoDe(c.id, comp); })
+    .map(function(c){ var m = medicaoDe(c.id, comp); var prev = m ? null : montarMedicao(c.id, comp); return { c:c, m:m, prev:prev, status: m ? m.Status : "Não gerada", conf: conferir(c.id, comp, m) }; })
+    .filter(function(r){ return !st || r.status === st; });
+  if (!rows.length){ $("medTable").innerHTML = '<tr><td class="empty">Nenhum cliente com contrato vigente em ' + compLabel(comp) + ".</td></tr>"; return; }
+  var tot = { p:0, d:0, a:0, f:0 };
+  var body = rows.map(function(r){
+    var src = r.m || r.prev || {}; var p = Number(src.ValorPadrao)||0, d = Number(src.Descontos)||0, a = Number(src.Acrescimos)||0, f = Number(src.ValorFaturar)||0;
+    tot.p += p; tot.d += d; tot.a += a; tot.f += f;
+    var nRed = r.conf.filter(function(x){ return x.n === "red"; }).length, nAmb = r.conf.filter(function(x){ return x.n === "amber"; }).length;
+    var confB = nRed ? '<span class="badge b-red">' + nRed + " crítica(s)</span>" : nAmb ? '<span class="badge b-amber">' + nAmb + " alerta(s)</span>" : '<span class="badge b-green">OK</span>';
+    return "<tr class='click' onclick=\"openMedicao('" + r.c.id + "','" + comp + "')\"><td><b>" + esc(r.c.Title) + "</b><div class='small muted'>" + esc(r.c.Area || "") + "</div></td>" +
+      "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? "" : "<div class='small muted'>prévia</div>") + "</td>" +
+      "<td class='num'>" + brl(p) + "</td><td class='num " + (d ? "neg" : "muted") + "'>" + (d ? "−" + brl(d) : "–") + "</td><td class='num " + (a ? "pos" : "muted") + "'>" + (a ? "+" + brl(a) : "–") + "</td><td class='num'><b>" + brl(f) + "</b></td><td>" + confB + "</td>" +
+      "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();openMedicao('" + r.c.id + "','" + comp + "')\">Abrir</button></td></tr>";
+  }).join("");
+  $("medTable").innerHTML = "<thead><tr><th>Cliente</th><th>Status</th><th class='num'>Valor contrato</th><th class='num'>Descontos</th><th class='num'>Acréscimos</th><th class='num'>Valor a faturar</th><th>Conferência</th><th></th></tr></thead><tbody>" + body +
+    "</tbody><tfoot><tr><td>Total (" + rows.length + " clientes)</td><td></td><td class='num'>" + brl(tot.p) + "</td><td class='num neg'>−" + brl(tot.d) + "</td><td class='num pos'>+" + brl(tot.a) + "</td><td class='num'>" + brl(tot.f) + "</td><td></td><td></td></tr></tfoot>";
+}
+async function gerarMedicao(cid, comp, silent){
+  var cli = byId("clientes", cid); var m = montarMedicao(cid, comp);
+  if (m.erro){ if (!silent) showToast(cli.Title + ": " + m.erro, true); return false; }
+  var ex = medicaoDe(cid, comp);
+  if (ex && ex.Status !== "Rascunho"){ if (!silent) showToast("Esta medição já está como \"" + ex.Status + "\". Volte para rascunho antes de gerar de novo.", true); return false; }
+  var hist = historicoDe(ex); hist.push({ s:"Rascunho", d:new Date().toISOString(), p:CURRENT_USER.name, o: ex ? "Gerada novamente" : "Gerada" });
+  var fields = { Title: cli.Title + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:String(m.contrato.id), ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:"Rascunho",
+    Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:m.contrato.Versao }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString() };
+  if (ex) await api.update("medicoes", ex.id, fields); else await api.create("medicoes", fields);
+  return true;
+}
+async function gerarTodas(){
+  var comp = $("medComp").value, area = $("medArea").value;
+  var alvo = clientesAtivos(area).filter(function(c){ var m = medicaoDe(c.id, comp); return contratoVigente(c.id, comp) && (!m || m.Status === "Rascunho"); });
+  if (!alvo.length){ showToast("Não há medições para gerar nesta competência."); return; }
+  askConfirm("Gerar (ou atualizar) o rascunho de " + alvo.length + " cliente(s) em " + compLabel(comp) + "? Medições já enviadas não são alteradas.", async function(){
+    var ok = 0;
+    await safe(async function(){ for (var i = 0; i < alvo.length; i++){ setLoading(true, "Gerando " + (i+1) + " de " + alvo.length + "..."); if (await gerarMedicao(alvo[i].id, comp, true)) ok++; } });
+    showToast(ok + " rascunho(s) gerado(s)."); renderMedicoes();
+  }, "Gerar rascunhos");
+}
+function stepsHtml(status){
+  var flow = ["Rascunho","Enviada","Aprovada","NF emitida"]; var idx = flow.indexOf(status === "Contestada" ? "Enviada" : status);
+  return '<div class="steps">' + flow.map(function(s, i){ var cls = i < idx ? "done" : i === idx ? "cur" : ""; var lbl = (s === "Enviada" && status === "Contestada") ? "Contestada" : s; return '<span class="step ' + cls + '">' + (i+1) + ". " + esc(lbl) + "</span>"; }).join("") + "</div>";
+}
+function linhasTable(lines, compact){
+  var t = { p:0, d:0, a:0, f:0 };
+  var body = lines.map(function(l){ t.p += l.padrao; t.d += l.desconto; t.a += l.acrescimo; t.f += l.final;
+    return "<tr><td><b>" + esc(l.servico) + "</b>" + (l.horas ? " <span class='muted small'>(" + hFmt(l.horas) + ")</span>" : "") + (l.just && l.just.length && !compact ? "<div class='small muted'>" + l.just.map(esc).join("<br>") + "</div>" : "") + "</td><td class='num'>" + (l.padrao ? brl(l.padrao) : "–") + "</td><td class='num " + (l.desconto ? "neg" : "muted") + "'>" + (l.desconto ? "−" + brl(l.desconto) : "–") + "</td><td class='num " + (l.acrescimo ? "pos" : "muted") + "'>" + (l.acrescimo ? "+" + brl(l.acrescimo) : "–") + "</td><td class='num'><b>" + brl(l.final) + "</b></td></tr>"; }).join("");
+  return "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th class='num'>Valor mensal</th><th class='num'>Desconto</th><th class='num'>Acréscimo</th><th class='num'>Valor final</th></tr></thead><tbody>" + body +
+    "</tbody><tfoot><tr><td>Total a faturar</td><td class='num'>" + brl(t.p) + "</td><td class='num neg'>−" + brl(t.d) + "</td><td class='num pos'>+" + brl(t.a) + "</td><td class='num'>" + brl(t.f) + "</td></tr></tfoot></table></div>";
+}
+function openMedicao(cid, comp){
+  var cli = byId("clientes", cid), med = medicaoDe(cid, comp), conf = conferir(cid, comp, med);
+  var h = "<h3>" + esc(cli.Title) + " · " + compLabel(comp) + "</h3><p class='msub'>" + esc(cli.RazaoSocial || "") + (cli.CNPJ ? " · CNPJ " + esc(cli.CNPJ) : "") + "</p>";
+  h += stepsHtml(med ? med.Status : "Rascunho");
+  h += conf.map(function(x){ return '<div class="alert alert-' + x.n + '">' + esc(x.t) + "</div>"; }).join("");
+  if (!med){
+    var pv = montarMedicao(cid, comp);
+    if (pv.erro){ h += '<div class="alert alert-red">' + esc(pv.erro) + '</div><div class="modal-actions"><button class="btn-o" onclick="goCliente(\'' + cid + '\')">Abrir cadastro do cliente</button></div>'; openModal(h, true); return; }
+    h += "<p class='small muted'>Prévia calculada agora (ainda não salva). Contrato versão " + esc(pv.contrato.Versao || 1) + ".</p>" + linhasTable(pv.lines);
+    h += '<div class="modal-actions"><button class="btn-o" onclick="closeModal()">Fechar</button><button class="btn" onclick="acaoGerar(\'' + cid + "','" + comp + '\')">Gerar rascunho</button></div>';
+    openModal(h, true); return;
+  }
+  var L = linhasDe(med);
+  h += "<p class='small muted'>Gerada em " + new Date(med.GeradoEm || Date.now()).toLocaleString("pt-BR") + " · contrato versão " + esc(L.versao || 1) + "</p>";
+  h += linhasTable(L.lines || []);
+  var st = med.Status, id = med.id, a = [];
+  a.push('<button class="btn-o" onclick="baixarBoletim(\'' + id + '\')">Baixar boletim (Excel)</button>');
+  a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Copiar tabela para o e-mail</button>');
+  if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
+  if (st === "Enviada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
+  if (st === "Contestada") a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho e corrigir</button>');
+  if (st === "Aprovada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Enviada\')">Desfazer aprovação</button>'); a.push('<button class="btn" onclick="dadosNF(\'' + id + '\')">Conferir e emitir a NF</button>'); }
+  if (st === "NF emitida"){ a.push('<button class="btn-o" onclick="dadosNF(\'' + id + '\')">Dados da NF</button>'); a.push('<button class="btn" onclick="copiarAvisoFinanceiro(\'' + id + '\')">Copiar aviso ao financeiro</button>'); }
+  h += '<div class="modal-actions">' + a.join("") + "</div>";
+  var hist = historicoDe(med);
+  if (hist.length) h += "<div style='margin-top:16px'><p class='card-title' style='font-size:14px'>Histórico</p>" + hist.slice().reverse().map(function(x){ return "<div class='small' style='padding:4px 0;border-bottom:1px solid var(--border)'><span class='badge " + (STATUS_BADGE[x.s] || "b-gray") + "'>" + esc(x.s) + "</span> " + new Date(x.d).toLocaleString("pt-BR") + " · " + esc(x.p || "") + (x.o ? " · " + esc(x.o) : "") + "</div>"; }).join("") + "</div>";
+  openModal(h, true);
+}
+async function acaoGerar(cid, comp){
+  var ok = await safe(function(){ return gerarMedicao(cid, comp); });
+  if (ok){ showToast("Rascunho gerado."); openMedicao(cid, comp); renderMedicoes(); }
+}
+function formStatus(id, novo){
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), h = "";
+  var back = "<button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button>";
+  if (novo === "Enviada" && med.Status === "Rascunho"){
+    h = "<h3>Marcar como enviada</h3><p class='msub'>Registre o envio do boletim ao cliente.</p><div class='form'><div><label>Data do envio</label><input type='date' id='fDt' value='" + todayISO() + "'></div><div><label>Enviado para</label><input id='fObs' value='" + esc(cli.AprovadorEmail || cli.AprovadorNome || "") + "'></div></div>";
+  } else if (novo === "Aprovada"){
+    h = "<h3>Aprovação do cliente</h3><p class='msub'>Registre quem aprovou e quando.</p><div class='form'><div><label>Aprovado por</label><input id='fObs' value='" + esc(cli.AprovadorNome || "") + "'></div><div><label>Data da aprovação</label><input type='date' id='fDt' value='" + todayISO() + "'></div></div>";
+  } else if (novo === "Contestada"){
+    h = "<h3>Contestação do cliente</h3><p class='msub'>Descreva o que o cliente questionou. A medição volta para correção.</p><div class='form'><div class='full'><label>Motivo</label><textarea id='fObs'></textarea></div><input type='hidden' id='fDt' value='" + todayISO() + "'></div>";
+  } else {
+    h = "<h3>Mudar para \"" + esc(novo) + "\"</h3><p class='msub'>Opcional: registre o motivo.</p><div class='form'><div class='full'><label>Observação</label><textarea id='fObs'></textarea></div><input type='hidden' id='fDt' value='" + todayISO() + "'></div>";
+  }
+  h += "<div class='modal-actions'>" + back + "<button class='btn' onclick=\"salvarStatus('" + id + "','" + novo + "')\">Confirmar</button></div>";
+  openModal(h);
+}
+async function salvarStatus(id, novo){
+  var med = byId("medicoes", id), obs = v("fObs"), dt = v("fDt") || todayISO();
+  if (novo === "Contestada" && !obs){ showToast("Descreva o motivo da contestação.", true); return; }
+  var hist = historicoDe(med); hist.push({ s:novo, d:new Date().toISOString(), p:CURRENT_USER.name, o:obs });
+  var f = { Status:novo, Historico: JSON.stringify(hist) };
+  if (novo === "Enviada" && med.Status === "Rascunho") f.DataEnvio = dt;
+  if (novo === "Aprovada"){ f.DataAprovacao = dt; f.AprovadoPor = obs; }
+  await safe(function(){ return api.update("medicoes", id, f); }, "Status atualizado para " + novo + ".");
+  openMedicao(med.ClienteId, med.Competencia); renderCurrent();
+}
+function nfInfo(med){
+  var cli = byId("clientes", med.ClienteId), L = linhasDe(med), itens = (L.lines || []).map(function(l){ return l.itemId ? byId("itens", l.itemId) : null; }).filter(Boolean);
+  var uniq = function(arr){ return arr.filter(function(x, i){ return x && arr.indexOf(x) === i; }).join(" / "); };
+  var disc = "Prestação de serviços referente a " + compLabel(med.Competencia) + ":\n" + (L.lines || []).map(function(l){ return "- " + l.servico + ": " + brl(l.final); }).join("\n") + "\nTotal: " + brl(med.ValorFaturar);
+  return { cli:cli, tomador: cli.RazaoSocial || cli.Title, cnpj: cli.CNPJ || "", valor: med.ValorFaturar, codigos: uniq(itens.map(function(i){ return i.CodigoServicoNF; })), retencoes: uniq(itens.map(function(i){ return i.Retencoes; })), pedidos: uniq(itens.map(function(i){ return i.NumPedido; })), rateio: uniq(itens.map(function(i){ return i.Rateio ? i.Title + ": " + i.Rateio : ""; })), disc: disc };
+}
+function dadosNF(id){
+  var med = byId("medicoes", id), n = nfInfo(med), emitida = med.Status === "NF emitida";
+  var row = function(k, val, copy){ return "<div class='copy-row'><span class='k'>" + esc(k) + "</span><span class='val'>" + (val ? esc(val).replace(/\n/g, "<br>") : "<span class='muted'>não cadastrado</span>") + "</span>" + (val && copy !== false ? "<button class='btn-ghost' onclick='copyText(" + JSON.stringify(String(val)).replace(/'/g, "&#39;") + ")'>Copiar</button>" : "") + "</div>"; };
+  var h = "<h3>" + (emitida ? "Dados da NF emitida" : "Conferir e emitir a NF") + "</h3><p class='msub'>" + esc(n.cli.Title) + " · " + compLabel(med.Competencia) + (emitida ? "" : ". Confira os dados, emita no site da prefeitura e registre o número abaixo.") + "</p>";
+  h += row("Tomador", n.tomador) + row("CNPJ", n.cnpj) + row("Valor", num(n.valor)) + row("Código do serviço", n.codigos) + row("Retenções", n.retencoes) + row("Nº do pedido", n.pedidos) + (n.rateio ? row("Rateio", n.rateio) : "") + row("Discriminação", n.disc);
+  h += "<div class='form' style='margin-top:14px'><div class='full'><label>Observação para a NF</label><textarea id='fObsNF' placeholder='Ex.: horas extras em nota separada; informar folha de registro...'>" + esc(med.ObsNF || "") + "</textarea></div>";
+  if (emitida) h += "<div><label>Nº da NF</label><input value='" + esc(med.NumNF || "") + "' disabled></div><div><label>Data de emissão</label><input value='" + fmtDate(med.DataNF) + "' disabled></div></div>";
+  else h += "<div><label>Nº da NF emitida</label><input id='fNum'></div><div><label>Data de emissão</label><input type='date' id='fDtNF' value='" + todayISO() + "'></div></div>";
+  h += "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn-o' onclick=\"salvarObsNF('" + id + "')\">Salvar observação</button>" + (emitida ? "" : "<button class='btn' onclick=\"registrarNF('" + id + "')\">Registrar NF emitida</button>") + "</div>";
+  h += "<p class='small muted' style='margin-top:10px'>Fase 4: o robô do Power Automate Desktop vai preencher estes campos no site da prefeitura depois do login do coordenador.</p>";
+  openModal(h, true);
+}
+async function salvarObsNF(id){ await safe(function(){ return api.update("medicoes", id, { ObsNF: v("fObsNF") }); }, "Observação salva."); }
+async function registrarNF(id){
+  var med = byId("medicoes", id), nf = v("fNum"), dt = v("fDtNF");
+  if (!nf){ showToast("Informe o número da NF emitida.", true); return; }
+  var hist = historicoDe(med); hist.push({ s:"NF emitida", d:new Date().toISOString(), p:CURRENT_USER.name, o:"NF " + nf });
+  await safe(function(){ return api.update("medicoes", id, { Status:"NF emitida", NumNF:nf, DataNF:dt, ObsNF:v("fObsNF"), Historico: JSON.stringify(hist) }); }, "NF registrada.");
+  openMedicao(med.ClienteId, med.Competencia); renderCurrent();
+}
+function copiarAvisoFinanceiro(id){
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId);
+  var t = "NF emitida – " + cli.Title + " – " + compLabel(med.Competencia) + "\nNF nº " + (med.NumNF || "?") + " de " + fmtDate(med.DataNF) + "\nValor: " + brl(med.ValorFaturar) + "\nAprovada pelo cliente em " + fmtDate(med.DataAprovacao) + (med.AprovadoPor ? " (" + med.AprovadoPor + ")" : "") + (med.ObsNF ? "\nObs.: " + med.ObsNF : "");
+  copyText(t, "Aviso copiado. Cole no chat do financeiro no Teams.");
+}
+function copiarTabelaEmail(id){
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), L = linhasDe(med);
+  var td = "border:1px solid #ccc;padding:6px 10px;font-family:Calibri,Arial;font-size:11pt;", th = td + "background:#6e1423;color:#fff;text-align:left;";
+  var html = "<p style='font-family:Calibri,Arial;font-size:11pt'>Boletim de medição – " + esc(cli.Title) + " – " + compLabel(med.Competencia) + "</p><table style='border-collapse:collapse'><tr><th style='" + th + "'>Serviço</th><th style='" + th + "'>Valor mensal</th><th style='" + th + "'>Desconto</th><th style='" + th + "'>Acréscimo</th><th style='" + th + "'>Valor final</th><th style='" + th + "'>Justificativa</th></tr>" +
+    (L.lines || []).map(function(l){ return "<tr><td style='" + td + "'>" + esc(l.servico) + "</td><td style='" + td + "text-align:right'>" + brl(l.padrao) + "</td><td style='" + td + "text-align:right'>" + (l.desconto ? "-" + brl(l.desconto) : "") + "</td><td style='" + td + "text-align:right'>" + (l.acrescimo ? brl(l.acrescimo) : "") + "</td><td style='" + td + "text-align:right'><b>" + brl(l.final) + "</b></td><td style='" + td + "'>" + (l.just || []).map(esc).join("<br>") + "</td></tr>"; }).join("") +
+    "<tr><td style='" + td + "'><b>Total</b></td><td style='" + td + "text-align:right'><b>" + brl(med.ValorPadrao) + "</b></td><td style='" + td + "text-align:right'><b>-" + brl(med.Descontos) + "</b></td><td style='" + td + "text-align:right'><b>" + brl(med.Acrescimos) + "</b></td><td style='" + td + "text-align:right'><b>" + brl(med.ValorFaturar) + "</b></td><td style='" + td + "'></td></tr></table>";
+  var txt = "Boletim de medição – " + cli.Title + " – " + compLabel(med.Competencia) + "\n" + (L.lines || []).map(function(l){ return l.servico + "\t" + brl(l.padrao) + "\t" + (l.desconto ? "-" + brl(l.desconto) : "") + "\t" + (l.acrescimo ? brl(l.acrescimo) : "") + "\t" + brl(l.final) + "\t" + (l.just || []).join(" | "); }).join("\n") + "\nTotal\t" + brl(med.ValorPadrao) + "\t-" + brl(med.Descontos) + "\t" + brl(med.Acrescimos) + "\t" + brl(med.ValorFaturar);
+  copyHTML(html, txt, "Tabela copiada. Cole no corpo do e-mail ao cliente.");
+}
+
+// ------------------------------------------------------------
+// Excel (boletim e ocorrencias)
+// ------------------------------------------------------------
+function safeName(n){ return String(n).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[–—]/g, "-").replace(/[^A-Za-z0-9 ._-]/g, "").replace(/\s+/g, " ").trim(); }
+function saveWorkbook(wb, name){
+  name = safeName(name);
+  return wb.xlsx.writeBuffer().then(function(buf){
+    var blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+}
+function styleHeader(row){ row.eachCell(function(c){ c.font = { bold:true, color:{ argb:"FFFFFFFF" } }; c.fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FF6E1423" } }; c.alignment = { vertical:"middle", wrapText:true }; }); }
+function baixarBoletim(id){
+  if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou. Recarregue a página.", true); return; }
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), L = linhasDe(med), n = nfInfo(med);
+  var wb = new ExcelJS.Workbook(); var ws = wb.addWorksheet("Boletim");
+  ws.columns = [{ width:44 }, { width:16 }, { width:16 }, { width:16 }, { width:16 }, { width:60 }];
+  ws.mergeCells("A1:F1"); ws.getCell("A1").value = "BOLETIM DE MEDIÇÃO"; ws.getCell("A1").font = { bold:true, size:16, color:{ argb:"FF6E1423" } };
+  var info = [["Fornecedor", "ELEVALIFE SAÚDE E EDUCAÇÃO LTDA – CNPJ 15.447.255/0001-74"], ["Cliente", n.tomador + (cli.Unidade ? " – " + cli.Unidade : "")], ["CNPJ do cliente", n.cnpj], ["Competência", compLabel(med.Competencia)], ["Nº do pedido", n.pedidos], ["Status", med.Status + (med.DataAprovacao ? " em " + fmtDate(med.DataAprovacao) : "")]];
+  info.forEach(function(r, i){ ws.getCell("A" + (i+3)).value = r[0]; ws.getCell("A" + (i+3)).font = { bold:true }; ws.mergeCells("B" + (i+3) + ":F" + (i+3)); ws.getCell("B" + (i+3)).value = r[1]; });
+  var start = info.length + 4;
+  var hr = ws.getRow(start); hr.values = ["Serviço", "Valor mensal", "Desconto", "Acréscimo", "Valor final", "Justificativa"]; styleHeader(hr);
+  (L.lines || []).forEach(function(l, i){ var r = ws.getRow(start + 1 + i); r.values = [l.servico + (l.horas ? " (" + hFmt(l.horas) + ")" : ""), l.padrao, l.desconto ? -l.desconto : null, l.acrescimo || null, l.final, (l.just || []).join("\n")]; r.getCell(6).alignment = { wrapText:true, vertical:"top" }; });
+  var tr = ws.getRow(start + 1 + (L.lines || []).length); tr.values = ["TOTAL A FATURAR", med.ValorPadrao, -med.Descontos || null, med.Acrescimos || null, med.ValorFaturar]; tr.font = { bold:true };
+  for (var r = start + 1; r <= tr.number; r++) [2,3,4,5].forEach(function(c){ ws.getRow(r).getCell(c).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; });
+  var obsRow = tr.number + 2; ws.getCell("A" + obsRow).value = "Esta medição deve ser aprovada pelo cliente antes da emissão da nota fiscal."; ws.getCell("A" + obsRow).font = { italic:true, color:{ argb:"FF6B6F76" } };
+  var ocs = ocorrenciasDe(med.ClienteId, med.Competencia);
+  if (ocs.length){
+    var w2 = wb.addWorksheet("Ocorrências"); w2.columns = [{ width:12 }, { width:24 }, { width:30 }, { width:22 }, { width:9 }, { width:9 }, { width:9 }, { width:15 }, { width:60 }];
+    var h2 = w2.getRow(1); h2.values = ["Data", "Tipo", "Serviço / cargo", "Profissional", "Início", "Fim", "Horas", "Valor", "Justificativa"]; styleHeader(h2);
+    ocs.forEach(function(o, i){ var it = o.ItemId ? byId("itens", o.ItemId) : null; var rr = w2.getRow(i + 2); rr.values = [fmtDate(o.Data), o.Tipo, it ? it.Title : (o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || (o.Dias ? o.Dias + " dia(s)" : ""), Number(o.Valor)||0, o.Justificativa || ""]; rr.getCell(8).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; rr.getCell(9).alignment = { wrapText:true, vertical:"top" }; });
+  }
+  saveWorkbook(wb, "Boletim " + cli.Title.replace(/[\\/:*?"<>|]/g, "") + " " + med.Competencia + ".xlsx");
+}
+function exportOcorrencias(){
+  if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou.", true); return; }
+  var rows = ocorrenciasFiltradas(); var wb = new ExcelJS.Workbook(); var ws = wb.addWorksheet("Ocorrências");
+  ws.columns = [{ width:12 }, { width:10 }, { width:28 }, { width:24 }, { width:30 }, { width:22 }, { width:9 }, { width:9 }, { width:9 }, { width:15 }, { width:15 }, { width:55 }, { width:30 }];
+  var h = ws.getRow(1); h.values = ["Data", "Competência", "Cliente", "Tipo", "Serviço / cargo", "Profissional", "Início", "Fim", "Horas/dias", "Valor", "Custo MO", "Justificativa", "Evidência"]; styleHeader(h);
+  rows.forEach(function(o, i){ var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null; var r = ws.getRow(i + 2); r.values = [fmtDate(o.Data), o.Competencia, c ? c.Title : "", o.Tipo, it ? it.Title : (o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || o.Dias || "", Number(o.Valor)||0, Number(o.Custo)||0, o.Justificativa || "", o.Evidencia || ""]; [10,11].forEach(function(cc){ r.getCell(cc).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; }); });
+  saveWorkbook(wb, "Ocorrencias " + ($("ocoComp").value || "todas") + ".xlsx");
+}
+
+// ============================================================
+// OCORRENCIAS
+// ============================================================
+function ocorrenciasFiltradas(){
+  var comp = $("ocoComp").value, cid = $("ocoCliente").value, tipo = $("ocoTipo").value;
+  return S.ocorrencias.filter(function(o){ return (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); })
+    .sort(function(a, b){ return String(b.Data).localeCompare(String(a.Data)); });
+}
+function renderOcorrencias(){
+  var rows = ocorrenciasFiltradas();
+  if (!rows.length){ $("ocoTable").innerHTML = '<tr><td class="empty">Nenhuma ocorrência lançada com esses filtros. Use "+ Lançar ocorrência".</td></tr>'; return; }
+  var tv = 0;
+  var body = rows.map(function(o){
+    var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null, val = Number(o.Valor)||0; tv += val;
+    var grp = (TIPOS[o.Tipo] || {}).grupo; var tb = grp === "desconto" ? "b-red" : grp === "variavel" ? "b-green" : "b-gray";
+    var med = medicaoDe(o.ClienteId, o.Competencia); var lock = med && med.Status !== "Rascunho";
+    return "<tr class='click' onclick=\"openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + (o.Competencia !== compOf(o.Data) ? "<div class='small muted'>fatura em " + compLabel(o.Competencia) + "</div>" : "") + "</td><td>" + esc(c ? c.Title : "?") + "</td><td><span class='badge " + tb + "'>" + esc(o.Tipo) + "</span></td><td>" + esc(it ? it.Title : (o.Cargo || "")) + "</td><td>" + esc(o.Profissional || "") + "</td>" +
+      "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "") + "</td><td class='num " + (val < 0 ? "neg" : "pos") + "'>" + brl(val) + "</td><td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
+  }).join("");
+  $("ocoTable").innerHTML = "<thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Serviço / cargo</th><th>Profissional</th><th>Horário</th><th class='num'>Valor</th><th>Justificativa</th><th></th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='6'>" + rows.length + " ocorrência(s)</td><td class='num'>" + brl(tv) + "</td><td colspan='2'></td></tr></tfoot>";
+}
+function openOcorrencia(id){
+  var o = id ? byId("ocorrencias", id) : { Data: todayISO(), Tipo:"Hora extra", ClienteId: $("ocoCliente").value || "" };
+  var h = "<h3>" + (id ? "Editar ocorrência" : "Lançar ocorrência") + "</h3><p class='msub'>O valor é calculado automaticamente pelo contrato e pela Tabela de variáveis.</p><div class='form'>" +
+    "<div><label>Cliente</label><select id='oCli' onchange='ocoFormRefresh(true)'>" + clienteOptions(o.ClienteId) + "</select></div>" +
+    "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
+    "<div><label>Data</label><input type='date' id='oData' value='" + esc(o.Data || "") + "' onchange='ocoCompSync();ocoFormRefresh(true)'></div>" +
+    "<div><label>Faturar na competência</label><input type='month' id='oComp' value='" + esc(o.Competencia || compOf(o.Data)) + "' onchange='ocoFormRefresh(true)'><div class='hint'>Mude só para ajustes de meses anteriores.</div></div>" +
+    "<div id='wItem'><label>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select></div>" +
+    "<div id='wCargo'><label>Cargo</label><input id='oCargo' list='dlCargos' value='" + esc(o.Cargo || "") + "' oninput='ocoFormRefresh()'>" + cargoDatalist() + "</div>" +
+    "<div><label>Profissional</label><input id='oProf' value='" + esc(o.Profissional || "") + "'></div>" +
+    "<div id='wDias'><label>Dias</label><input id='oDias' inputmode='decimal' value='" + esc(o.Dias || "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 1'></div>" +
+    "<div id='wIni'><label>Início</label><input type='time' id='oIni' value='" + esc(o.HoraInicio || "") + "' oninput='ocoFormRefresh()'></div>" +
+    "<div id='wFim'><label>Fim</label><input type='time' id='oFim' value='" + esc(o.HoraFim || "") + "' oninput='ocoFormRefresh()'></div>" +
+    "<div id='wManualChk' class='full'><label class='check'><input type='checkbox' id='oManual' " + (o.Manual ? "checked" : "") + " onchange='ocoFormRefresh()'> Informar o valor manualmente</label></div>" +
+    "<div id='wValor'><label>Valor (R$)</label><input id='oValor' inputmode='decimal' value='" + (o.Manual || (TIPOS[o.Tipo]||{}).grupo === "manual" ? esc(num(Math.abs(Number(o.Valor)||0))) : "") + "' oninput='ocoFormRefresh()'></div>" +
+    "<div class='full'><label>Justificativa (aparece no boletim do cliente)</label><textarea id='oJust' placeholder='Ex.: cobertura solicitada pelo cliente para a reunião de planejamento'>" + esc(o.Justificativa || "") + "</textarea></div>" +
+    "<div id='wSolic' class='full'><label class='check'><input type='checkbox' id='oSolic' " + (o.SolicitadoCliente ? "checked" : "") + "> Solicitado pelo cliente</label></div>" +
+    "<div class='full' id='wEvid'><label>Evidência</label><input id='oEvid' value='" + esc(o.Evidencia || "") + "' placeholder='Ex.: e-mail do cliente em 25/02/2026, ou link do arquivo'></div>" +
+    "<div class='calc-box' id='oCalc'></div></div>" +
+    "<div class='modal-actions'>" + (id ? "<button class='btn-o btn-danger' onclick=\"excluirOcorrencia('" + id + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarOcorrencia('" + (id || "") + "')\">Salvar</button></div>";
+  openModal(h, true);
+  window.__ocoItemSel = o.ItemId || "";
+  ocoFormRefresh(true);
+}
+function ocoCompSync(){ var d = v("oData"); if (d) $("oComp").value = compOf(d); }
+function ocoForm(){
+  return { ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId:v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias:parseNum(v("oDias")),
+    HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid") };
+}
+function ocoFormRefresh(rebuildItems){
+  var t = TIPOS[v("oTipo")] || {}, cid = v("oCli"), comp = v("oComp") || compOf(v("oData"));
+  if (rebuildItems !== undefined){
+    var ct = cid ? contratoVigente(cid, comp) : null, cur = $("oItem").value || window.__ocoItemSel || "";
+    var its = ct ? itensDoContrato(ct.id) : [];
+    $("oItem").innerHTML = opt("", its.length ? "Selecione..." : "Sem contrato vigente nesta competência", cur) + its.map(function(i){ return opt(i.id, i.Title + " (" + brl(i.ValorMensal) + ")", cur); }).join("");
+  }
+  var show = function(id, on){ $(id).classList.toggle("hidden", !on); };
+  show("wItem", t.grupo === "desconto" || t.grupo === "manual");
+  show("wCargo", t.grupo === "variavel");
+  show("wDias", t.modo === "dias");
+  show("wIni", t.modo === "horario"); show("wFim", t.modo === "horario");
+  show("wManualChk", t.grupo !== "manual");
+  show("wValor", t.grupo === "manual" || v("oManual"));
+  show("wSolic", t.grupo === "variavel"); show("wEvid", true);
+  if (t.grupo === "variavel" && !v("oCargo") && v("oItem")){ var it = byId("itens", v("oItem")); if (it) $("oCargo").value = it.Cargo || ""; }
+  var o = ocoForm(), r = calcOcorrencia(o), box = $("oCalc"), warn = "";
+  var med = cid ? medicaoDe(cid, o.Competencia) : null;
+  if (med && med.Status !== "Rascunho") warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
+  if (r.erro) box.innerHTML = "<div class='muted'>" + esc(r.erro) + "</div>" + (r.detalhe ? "<div class='d'>" + esc(r.detalhe) + "</div>" : "") + warn;
+  else box.innerHTML = "<div class='small muted'>Valor calculado</div><div class='v'>" + (r.valor < 0 ? "−" : "+") + brl(Math.abs(r.valor)) + "</div><div class='d'>" + esc(r.detalhe) + (r.horas ? "\nDuração: " + hFmt(r.horas) : "") + "</div>" + warn;
+}
+async function salvarOcorrencia(id){
+  var o = ocoForm(), r = calcOcorrencia(o);
+  if (!o.ClienteId || !o.Data){ showToast("Informe cliente e data.", true); return; }
+  if (r.erro){ showToast(r.erro, true); return; }
+  var it = o.ItemId ? byId("itens", o.ItemId) : null;
+  var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email });
+  if ((TIPOS[o.Tipo]||{}).grupo === "variavel") f.ItemId = "";
+  await safe(function(){ return id ? api.update("ocorrencias", id, f) : api.create("ocorrencias", f); }, id ? "Ocorrência atualizada." : "Ocorrência lançada.");
+  closeModal(); renderCurrent();
+}
+function excluirOcorrencia(id){ askConfirm("Excluir esta ocorrência? Se ela já estiver num boletim, gere a medição novamente.", async function(){ await safe(function(){ return api.remove("ocorrencias", id); }, "Ocorrência excluída."); renderCurrent(); }, "Excluir"); }
+
+// ============================================================
+// CLIENTES E CONTRATOS
+// ============================================================
+function renderClientes(){ renderClientesList(); renderClienteDetail(); }
+function vigenciaBadge(ct){
+  if (!ct) return "<span class='badge b-red'>sem contrato</span>";
+  if (!ct.Fim) return "<span class='badge b-gray'>sem vigência</span>";
+  return prazoBadge(daysBetween(todayISO(), ct.Fim));
+}
+function prazoBadge(d){
+  if (d == null) return "<span class='badge b-gray'>sem vigência</span>";
+  if (d < 0) return "<span class='badge b-red'>vencido há " + (-d) + " dia(s)</span>";
+  if (d <= 30) return "<span class='badge b-red'>" + d + " dia(s)</span>";
+  if (d <= 60) return "<span class='badge b-amber'>" + d + " dias</span>";
+  if (d <= 90) return "<span class='badge b-blue'>" + d + " dias</span>";
+  return "<span class='badge b-green'>" + d + " dias</span>";
+}
+function renderClientesList(){
+  var q = norm($("cliSearch").value), area = $("cliArea").value;
+  var list = S.clientes.filter(function(c){ return (!area || c.Area === area) && (!q || norm(c.Title + " " + c.RazaoSocial + " " + c.CNPJ).indexOf(q) >= 0); })
+    .sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
+  if (!SEL.cliente && list.length) SEL.cliente = String(list[0].id);
+  $("cliList").innerHTML = list.length ? list.map(function(c){ var ct = contratoAtual(c.id); return "<div class='list-item" + (String(c.id) === SEL.cliente ? " active" : "") + "' onclick=\"selCliente('" + c.id + "')\"><div class='list-item-title'>" + esc(c.Title) + (c.Ativo === false ? " <span class='badge b-gray'>inativo</span>" : "") + "</div><div class='list-item-sub'>" + esc(c.Area || "") + " · " + (ct ? brl(totalContrato(ct.id)) + "/mês" : "sem contrato") + " · " + vigenciaBadge(ct) + "</div></div>"; }).join("") : "<div class='empty'>Nenhum cliente.</div>";
+}
+function selCliente(id){ SEL.cliente = String(id); SEL.contrato = null; renderClientes(); }
+function renderClienteDetail(){
+  var c = SEL.cliente ? byId("clientes", SEL.cliente) : null;
+  if (!c){ $("cliDetail").innerHTML = "<div class='card empty'>Selecione um cliente na lista ou cadastre um novo.</div>"; return; }
+  var cts = contratosDoCliente(c.id); var ct = SEL.contrato ? byId("contratos", SEL.contrato) : contratoAtual(c.id);
+  if (ct) SEL.contrato = String(ct.id);
+  var dl = function(k, val){ return "<div><dt>" + esc(k) + "</dt><dd>" + (val ? esc(val) : "<span class='muted'>–</span>") + "</dd></div>"; };
+  var h = "<div class='card'><div class='section-head'><h4 style='font-size:19px'>" + esc(c.Title) + "</h4><div><button class='btn-o btn-s' onclick=\"openCliente('" + c.id + "')\">Editar cliente</button></div></div><dl class='dl'>" +
+    dl("Razão social", c.RazaoSocial) + dl("CNPJ", c.CNPJ) + dl("Área", c.Area) + dl("Unidade", c.Unidade) + dl("Local (feriados)", c.Local) + dl("Coordenador", c.Coordenador) + dl("Aprovador", c.AprovadorNome) + dl("E-mail do aprovador", c.AprovadorEmail) + dl("Modelo de boletim", c.ModeloBoletim) + dl("Condição de pagamento", c.CondicaoPagamento) + "</dl>" + (c.Observacoes ? "<p class='small muted' style='margin:12px 0 0'>" + esc(c.Observacoes) + "</p>" : "") + "</div>";
+  h += "<div class='card'><div class='section-head'><h4>Contrato</h4><div style='display:flex;gap:8px;flex-wrap:wrap'>" + (ct ? "<button class='btn-o btn-s' onclick=\"openContrato('" + c.id + "','" + ct.id + "')\">Editar contrato</button><button class='btn btn-s' onclick=\"openRenovar('" + ct.id + "')\">Renovar / nova versão</button>" : "<button class='btn btn-s' onclick=\"openContrato('" + c.id + "')\">Cadastrar contrato</button>") + "</div></div>";
+  if (cts.length > 1) h += "<div class='version-tabs'>" + cts.map(function(x){ return "<button class='chip" + (ct && String(x.id) === String(ct.id) ? " active" : "") + "' onclick=\"SEL.contrato='" + x.id + "';renderClienteDetail()\">Versão " + esc(x.Versao || 1) + (x.Inicio ? " · desde " + fmtDate(x.Inicio) : "") + "</button>"; }).join("") + "</div>";
+  if (ct){
+    h += "<dl class='dl'>" + dl("Nº proposta / contrato", ct.Title) + dl("Versão", String(ct.Versao || 1)) + dl("Status", ct.Status) + dl("Início", fmtDate(ct.Inicio)) + dl("Término", fmtDate(ct.Fim)) + "<div><dt>Prazo</dt><dd>" + vigenciaBadge(ct) + "</dd></div>" + dl("Índice de reajuste", ct.IndiceReajuste) + dl("Mês do reajuste", ct.MesReajuste) + dl("Aviso prévio (dias)", ct.AvisoPrevioDias ? String(ct.AvisoPrevioDias) : "") + "</dl>" + (ct.LinkContrato ? "<p class='small' style='margin:12px 0 0'><a href='" + esc(ct.LinkContrato) + "' target='_blank' rel='noopener'>Abrir contrato (PDF)</a></p>" : "");
+    var its = itensDoContrato(ct.id);
+    h += "<div class='section-head' style='margin-top:18px'><h4>Serviços do contrato · " + brl(totalContrato(ct.id)) + "/mês</h4><button class='btn-o btn-s' onclick=\"openItem('" + ct.id + "')\">+ Adicionar serviço</button></div>";
+    h += its.length ? "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th>Cargo</th><th class='num'>Valor mensal</th><th>Regra de desconto</th><th class='num'>1 dia vale</th><th>NF</th></tr></thead><tbody>" + its.map(function(i){
+      var d = descontoItem(i, curComp(), 1, 0);
+      return "<tr class='click' onclick=\"openItem('" + ct.id + "','" + i.id + "')\"><td><b>" + esc(i.Title) + "</b>" + (i.Rateio ? "<div class='small muted'>Rateio: " + esc(i.Rateio) + "</div>" : "") + "</td><td>" + esc(i.Cargo || "") + "</td><td class='num'>" + brl(i.ValorMensal) + "</td><td class='small'>" + esc((REGRAS[i.RegraDesconto] || {}).label || "–") + (i.Divisor && i.RegraDesconto !== "DiasCorridos" ? " (" + num(i.Divisor, i.Divisor % 1 ? 2 : 0) + ")" : "") + "</td><td class='num small'>" + (d.erro ? "<span class='badge b-amber'>" + esc(d.erro) + "</span>" : brl(d.valor)) + "</td><td class='small'>" + esc([i.CodigoServicoNF, i.NumPedido ? "Pedido " + i.NumPedido : ""].filter(Boolean).join(" · ")) + "</td></tr>";
+    }).join("") + "</tbody></table></div>" : "<div class='alert alert-amber'>Nenhum serviço cadastrado neste contrato.</div>";
+  }
+  h += "</div>";
+  var vars = S.variaveis.filter(function(x){ return String(x.ClienteId) === String(c.id); });
+  h += "<div class='card'><div class='section-head'><h4>Preços de horas extras e coberturas</h4><button class='btn-o btn-s' onclick=\"openVariavel(null,'" + c.id + "')\">+ Novo preço</button></div>" + (vars.length ? "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Cargo</th><th>Tipo</th><th>Período</th><th class='num'>Valor/hora</th></tr></thead><tbody>" + vars.map(function(x){ return "<tr class='click' onclick=\"openVariavel('" + x.id + "')\"><td>" + esc(x.Cargo) + "</td><td>" + esc(x.Tipo === "HE" ? "Hora extra" : x.Tipo) + "</td><td>" + esc(PERIODOS[x.Periodo] || x.Periodo) + "</td><td class='num'>" + brl(x.Valor) + "</td></tr>"; }).join("") + "</tbody></table></div>" : "<p class='small muted'>Nenhum preço cadastrado. Sem preço, horas extras deste cliente precisam de valor manual.</p>") + "</div>";
+  $("cliDetail").innerHTML = h;
+}
+function openCliente(id){
+  var c = id ? byId("clientes", id) : { Area: AREAS[0], ModeloBoletim:"Eleva", Ativo:true };
+  var f = function(k, lbl, extra){ return "<div" + (extra && extra.full ? " class='full'" : "") + "><label>" + lbl + "</label><input id='c_" + k + "' value='" + esc(c[k] || "") + "'" + (extra && extra.type ? " type='" + extra.type + "'" : "") + "></div>"; };
+  var h = "<h3>" + (id ? "Editar cliente" : "Novo cliente") + "</h3><p class='msub'>Cada unidade que recebe NF própria deve ser um cliente.</p><div class='form'>" +
+    f("Title", "Nome (como aparece no sistema)") + f("RazaoSocial", "Razão social (tomador da NF)") + f("CNPJ", "CNPJ") +
+    "<div><label>Área</label><select id='c_Area'>" + AREAS.map(function(a){ return opt(a, a, c.Area); }).join("") + "</select></div>" +
+    f("Unidade", "Unidade") + f("Local", "Cidade (para feriados)") + f("Coordenador", "Coordenador (e-mail)") + f("AprovadorNome", "Aprovador no cliente") + f("AprovadorEmail", "E-mail do aprovador", { type:"email" }) +
+    "<div><label>Modelo de boletim</label><select id='c_ModeloBoletim'>" + opt("Eleva", "Modelo ElevaLife", c.ModeloBoletim) + opt("Cliente", "Modelo do cliente", c.ModeloBoletim) + "</select></div>" +
+    f("CondicaoPagamento", "Condição de pagamento") +
+    "<div class='full'><label>Observações</label><textarea id='c_Observacoes'>" + esc(c.Observacoes || "") + "</textarea></div>" +
+    "<div class='full'><label class='check'><input type='checkbox' id='c_Ativo' " + (c.Ativo !== false ? "checked" : "") + "> Cliente ativo</label></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarCliente('" + (id || "") + "')\">Salvar</button></div>";
+  openModal(h, true);
+}
+async function salvarCliente(id){
+  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Ativo"].forEach(function(k){ f[k] = v("c_" + k); });
+  if (!f.Title){ showToast("Informe o nome do cliente.", true); return; }
+  var r = await safe(function(){ return id ? api.update("clientes", id, f) : api.create("clientes", f); }, "Cliente salvo.");
+  if (!id && r) SEL.cliente = String(r.id);
+  closeModal(); fillSelects(); renderCurrent();
+}
+function openContrato(cid, ctId){
+  var ct = ctId ? byId("contratos", ctId) : { Status:"Vigente", Versao: (contratosDoCliente(cid)[0] || {}).Versao ? contratosDoCliente(cid)[0].Versao + 1 : 1 };
+  var h = "<h3>" + (ctId ? "Editar contrato" : "Cadastrar contrato") + "</h3><p class='msub'>Preenchido pelo comercial a cada negociação.</p><div class='form'>" +
+    "<div><label>Nº proposta / contrato</label><input id='k_Title' value='" + esc(ct.Title || "") + "'></div>" +
+    "<div><label>Status</label><select id='k_Status'>" + ["Vigente","Em renovação","Encerrado"].map(function(s){ return opt(s, s, ct.Status); }).join("") + "</select></div>" +
+    "<div><label>Início da vigência</label><input type='date' id='k_Inicio' value='" + esc(ct.Inicio || "") + "'></div>" +
+    "<div><label>Término da vigência</label><input type='date' id='k_Fim' value='" + esc(ct.Fim || "") + "'></div>" +
+    "<div><label>Índice de reajuste</label><input id='k_IndiceReajuste' value='" + esc(ct.IndiceReajuste || "") + "' placeholder='Ex.: IPCA, IGP-M, acordo coletivo'></div>" +
+    "<div><label>Mês do reajuste</label><input id='k_MesReajuste' value='" + esc(ct.MesReajuste || "") + "' placeholder='Ex.: fevereiro'></div>" +
+    "<div><label>Aviso prévio (dias)</label><input id='k_AvisoPrevioDias' inputmode='numeric' value='" + esc(ct.AvisoPrevioDias || "") + "'></div>" +
+    "<div><label>Versão</label><input id='k_Versao' inputmode='numeric' value='" + esc(ct.Versao || 1) + "'></div>" +
+    "<div class='full'><label>Link do contrato (PDF no SharePoint)</label><input id='k_LinkContrato' value='" + esc(ct.LinkContrato || "") + "'></div>" +
+    "<div class='full'><label>Observações</label><textarea id='k_Observacoes'>" + esc(ct.Observacoes || "") + "</textarea></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarContrato('" + cid + "','" + (ctId || "") + "')\">Salvar</button></div>";
+  openModal(h, true);
+}
+async function salvarContrato(cid, ctId){
+  var f = { ClienteId:String(cid) }; ["Title","Status","Inicio","Fim","IndiceReajuste","MesReajuste","LinkContrato","Observacoes"].forEach(function(k){ f[k] = v("k_" + k); });
+  f.AvisoPrevioDias = parseNum(v("k_AvisoPrevioDias")) || null; f.Versao = parseNum(v("k_Versao")) || 1;
+  if (f.Inicio && f.Fim && f.Fim < f.Inicio){ showToast("O término não pode ser antes do início.", true); return; }
+  var r = await safe(function(){ return ctId ? api.update("contratos", ctId, f) : api.create("contratos", f); }, "Contrato salvo.");
+  if (!ctId && r) SEL.contrato = String(r.id);
+  closeModal(); renderCurrent();
+}
+function openRenovar(ctId){
+  var ct = byId("contratos", ctId), its = itensDoContrato(ctId);
+  var h = "<h3>Renovar contrato</h3><p class='msub'>Cria a versão " + ((ct.Versao || 1) + 1) + " com os mesmos serviços. A versão atual continua valendo para os meses anteriores ao novo início.</p><div class='form'>" +
+    "<div><label>Nº da nova proposta</label><input id='r_Title' value='" + esc(ct.Title || "") + "'></div>" +
+    "<div><label>Reajuste (%) aplicado a todos os serviços</label><input id='r_Pct' inputmode='decimal' placeholder='Ex.: 5,5 (deixe vazio se não houver)' oninput='renovPreview(\"" + ctId + "\")'></div>" +
+    "<div><label>Início da nova vigência</label><input type='date' id='r_Inicio' value='" + (ct.Fim ? addDays(ct.Fim, 1) : "") + "'></div>" +
+    "<div><label>Término da nova vigência</label><input type='date' id='r_Fim'></div>" +
+    "<div class='full' id='r_prev'></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarRenovacao('" + ctId + "')\">Criar nova versão</button></div>";
+  openModal(h, true); renovPreview(ctId);
+}
+function renovPreview(ctId){
+  var pct = parseNum(v("r_Pct")) / 100, its = itensDoContrato(ctId);
+  $("r_prev").innerHTML = "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th class='num'>Atual</th><th class='num'>Novo</th></tr></thead><tbody>" + its.map(function(i){ return "<tr><td>" + esc(i.Title) + "</td><td class='num'>" + brl(i.ValorMensal) + "</td><td class='num'><b>" + brl(r2(i.ValorMensal * (1 + pct))) + "</b></td></tr>"; }).join("") + "</tbody></table></div><p class='small muted'>Depois de criar, você pode editar, incluir ou remover serviços da nova versão.</p>";
+}
+async function salvarRenovacao(ctId){
+  var ct = byId("contratos", ctId), pct = parseNum(v("r_Pct")) / 100, ini = v("r_Inicio"), fim = v("r_Fim");
+  if (!ini){ showToast("Informe o início da nova vigência.", true); return; }
+  if (fim && fim < ini){ showToast("O término não pode ser antes do início.", true); return; }
+  var novo = await safe(async function(){
+    var n = await api.create("contratos", { Title: v("r_Title"), ClienteId: ct.ClienteId, Versao: (ct.Versao || 1) + 1, Inicio: ini, Fim: fim, IndiceReajuste: ct.IndiceReajuste, MesReajuste: ct.MesReajuste, AvisoPrevioDias: ct.AvisoPrevioDias, Status:"Vigente", Observacoes: pct ? "Reajuste de " + num(pct * 100) + "% sobre a versão " + (ct.Versao || 1) : "" });
+    var its = itensDoContrato(ctId);
+    for (var i = 0; i < its.length; i++){ var it = its[i]; await api.create("itens", { Title: it.Title, ContratoId: String(n.id), ClienteId: it.ClienteId, Cargo: it.Cargo, ValorMensal: r2(it.ValorMensal * (1 + pct)), RegraDesconto: it.RegraDesconto, Divisor: it.Divisor, JornadaDiaria: it.JornadaDiaria, CodigoServicoNF: it.CodigoServicoNF, Retencoes: it.Retencoes, Rateio: it.Rateio, NumPedido: it.NumPedido, Ordem: it.Ordem }); }
+    var prevFim = addDays(ini, -1);
+    if (!ct.Fim || ct.Fim > prevFim) await api.update("contratos", ctId, { Fim: prevFim });
+    return n;
+  }, "Nova versão criada.");
+  SEL.contrato = String(novo.id); closeModal(); renderCurrent();
+}
+function openItem(ctId, itemId){
+  var ct = byId("contratos", ctId), it = itemId ? byId("itens", itemId) : { RegraDesconto:"DiasFixos", Divisor:21, JornadaDiaria:8, Ordem: itensDoContrato(ctId).length + 1 };
+  var h = "<h3>" + (itemId ? "Editar serviço" : "Adicionar serviço") + "</h3><p class='msub'>A regra de desconto define quanto vale 1 dia ou 1 hora de ausência deste serviço.</p><div class='form'>" +
+    "<div class='full'><label>Serviço</label><input id='i_Title' value='" + esc(it.Title || "") + "'></div>" +
+    "<div><label>Cargo do profissional</label><input id='i_Cargo' list='dlCargos' value='" + esc(it.Cargo || "") + "'>" + cargoDatalist() + "</div>" +
+    "<div><label>Valor mensal (R$)</label><input id='i_ValorMensal' inputmode='decimal' value='" + (it.ValorMensal != null ? esc(num(it.ValorMensal)) : "") + "' oninput='itemPreview()'></div>" +
+    "<div><label>Regra de desconto</label><select id='i_RegraDesconto' onchange='itemPreview()'>" + Object.keys(REGRAS).map(function(k){ return opt(k, REGRAS[k].label, it.RegraDesconto); }).join("") + "</select></div>" +
+    "<div id='wDiv'><label id='lDiv'>Divisor</label><input id='i_Divisor' inputmode='decimal' value='" + esc(it.Divisor != null ? String(it.Divisor).replace(".", ",") : "") + "' oninput='itemPreview()'></div>" +
+    "<div><label>Jornada diária (horas)</label><input id='i_JornadaDiaria' inputmode='decimal' value='" + esc(it.JornadaDiaria != null ? String(it.JornadaDiaria).replace(".", ",") : "") + "' oninput='itemPreview()'><div class='hint'>Usada para converter atrasos em horas.</div></div>" +
+    "<div><label>Código do serviço (NF)</label><input id='i_CodigoServicoNF' value='" + esc(it.CodigoServicoNF || "") + "' placeholder='Ex.: 04.06.01'></div>" +
+    "<div><label>Retenções (conforme contrato)</label><input id='i_Retencoes' value='" + esc(it.Retencoes || "") + "' placeholder='Ex.: ISS 2%, INSS 11%'></div>" +
+    "<div><label>Nº do pedido</label><input id='i_NumPedido' value='" + esc(it.NumPedido || "") + "'></div>" +
+    "<div><label>Rateio</label><input id='i_Rateio' value='" + esc(it.Rateio || "") + "' placeholder='Ex.: 70% Planta 1 / 30% Planta 2'></div>" +
+    "<div><label>Ordem no boletim</label><input id='i_Ordem' inputmode='numeric' value='" + esc(it.Ordem || "") + "'></div>" +
+    "<div class='calc-box' id='iPrev'></div></div>" +
+    "<div class='modal-actions'>" + (itemId ? "<button class='btn-o btn-danger' onclick=\"excluirItem('" + itemId + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarItem('" + ctId + "','" + (itemId || "") + "')\">Salvar</button></div>";
+  openModal(h, true); itemPreview();
+}
+function itemPreview(){
+  var rg = v("i_RegraDesconto"), R = REGRAS[rg] || {};
+  $("wDiv").classList.toggle("hidden", !R.divisor); if (R.divisor) $("lDiv").textContent = R.divisor;
+  var it = { ValorMensal: parseNum(v("i_ValorMensal")), RegraDesconto: rg, Divisor: parseNum(v("i_Divisor")), JornadaDiaria: parseNum(v("i_JornadaDiaria")) || 8 };
+  var d1 = descontoItem(it, curComp(), 1, 0), h1 = descontoItem(it, curComp(), 0, 1);
+  $("iPrev").innerHTML = d1.erro ? "<div class='muted'>" + esc(d1.erro) + "</div>" : "<div class='small muted'>Exemplo em " + compLabel(curComp()) + "</div><div><b>1 dia de falta = " + brl(d1.valor) + "</b> · 1 hora de atraso = " + brl(h1.valor) + "</div><div class='d'>" + esc(d1.detalhe) + "</div>";
+}
+async function salvarItem(ctId, itemId){
+  var ct = byId("contratos", ctId);
+  var f = { ContratoId:String(ctId), ClienteId:String(ct.ClienteId), Title:v("i_Title"), Cargo:v("i_Cargo"), ValorMensal:parseNum(v("i_ValorMensal")), RegraDesconto:v("i_RegraDesconto"), Divisor:parseNum(v("i_Divisor")) || null, JornadaDiaria:parseNum(v("i_JornadaDiaria")) || null, CodigoServicoNF:v("i_CodigoServicoNF"), Retencoes:v("i_Retencoes"), NumPedido:v("i_NumPedido"), Rateio:v("i_Rateio"), Ordem:parseNum(v("i_Ordem")) || null };
+  if (!f.Title || !f.ValorMensal){ showToast("Informe o serviço e o valor mensal.", true); return; }
+  await safe(function(){ return itemId ? api.update("itens", itemId, f) : api.create("itens", f); }, "Serviço salvo.");
+  closeModal(); renderCurrent();
+}
+function excluirItem(id){ askConfirm("Excluir este serviço do contrato?", async function(){ await safe(function(){ return api.remove("itens", id); }, "Serviço excluído."); renderCurrent(); }, "Excluir"); }
+
+// ============================================================
+// RENOVACOES
+// ============================================================
+function renovacoesRows(area){
+  return clientesAtivos(area).map(function(c){ var ct = contratoAtual(c.id); return { c:c, ct:ct, dias: ct && ct.Fim ? daysBetween(todayISO(), ct.Fim) : null, total: ct ? totalContrato(ct.id) : 0 }; }).filter(function(r){ return r.ct; });
+}
+function renderRenovBadge(){
+  var n = renovacoesRows().filter(function(r){ return r.dias != null && r.dias <= 60; }).length;
+  $("renovBadge").textContent = n; $("renovBadge").classList.toggle("hidden", !n);
+}
+function renderRenovacoes(){
+  var chips = [["todos","Todos"],["30","Até 30 dias"],["60","Até 60 dias"],["90","Até 90 dias"],["venc","Vencidos"],["sem","Sem vigência"]];
+  $("renChips").innerHTML = chips.map(function(c){ return "<button class='chip" + (REN_FILTER === c[0] ? " active" : "") + "' onclick=\"REN_FILTER='" + c[0] + "';renderRenovacoes()\">" + c[1] + "</button>"; }).join("");
+  var rows = renovacoesRows($("renArea").value).filter(function(r){
+    if (REN_FILTER === "todos") return true; if (REN_FILTER === "sem") return r.dias == null; if (REN_FILTER === "venc") return r.dias != null && r.dias < 0;
+    return r.dias != null && r.dias >= 0 && r.dias <= +REN_FILTER;
+  }).sort(function(a, b){ return (a.dias == null ? 99999 : a.dias) - (b.dias == null ? 99999 : b.dias); });
+  if (!rows.length){ $("renTable").innerHTML = "<tr><td class='empty'>Nenhum contrato neste filtro.</td></tr>"; return; }
+  var tot = rows.reduce(function(s, r){ return s + r.total; }, 0);
+  $("renTable").innerHTML = "<thead><tr><th>Cliente</th><th>Área</th><th>Nº proposta</th><th>Versão</th><th>Início</th><th>Término</th><th>Prazo</th><th>Reajuste</th><th class='num'>Valor mensal</th></tr></thead><tbody>" + rows.map(function(r){
+    return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td><b>" + esc(r.c.Title) + "</b></td><td>" + esc(r.c.Area || "") + "</td><td>" + esc(r.ct.Title || "") + "</td><td>" + esc(r.ct.Versao || 1) + "</td><td>" + fmtDate(r.ct.Inicio) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + "</td><td class='small'>" + esc([r.ct.IndiceReajuste, r.ct.MesReajuste].filter(Boolean).join(" · ")) + "</td><td class='num'>" + brl(r.total) + "</td></tr>";
+  }).join("") + "</tbody><tfoot><tr><td colspan='8'>" + rows.length + " contrato(s)</td><td class='num'>" + brl(tot) + "</td></tr></tfoot>";
+}
+
+// ============================================================
+// TABELA DE VARIAVEIS
+// ============================================================
+function renderVariaveis(){
+  var cid = $("varCliente").value;
+  var rows = S.variaveis.filter(function(x){ return !cid || String(x.ClienteId) === String(cid); }).sort(function(a, b){ var ca = byId("clientes", a.ClienteId), cb = byId("clientes", b.ClienteId); return String(ca ? ca.Title : "").localeCompare(String(cb ? cb.Title : "")) || String(a.Cargo).localeCompare(String(b.Cargo)); });
+  $("varTable").innerHTML = rows.length ? "<thead><tr><th>Cliente</th><th>Cargo</th><th>Tipo</th><th>Período</th><th class='num'>Valor/hora</th><th>Vigente desde</th></tr></thead><tbody>" + rows.map(function(x){ var c = byId("clientes", x.ClienteId); return "<tr class='click' onclick=\"openVariavel('" + x.id + "')\"><td>" + esc(c ? c.Title : "?") + "</td><td>" + esc(x.Cargo) + "</td><td>" + esc(x.Tipo === "HE" ? "Hora extra" : x.Tipo) + "</td><td>" + esc(PERIODOS[x.Periodo] || x.Periodo) + "</td><td class='num'>" + brl(x.Valor) + "</td><td>" + (x.VigenciaInicio ? fmtDate(x.VigenciaInicio) : "<span class='muted'>sempre</span>") + "</td></tr>"; }).join("") + "</tbody>" : "<tr><td class='empty'>Nenhum preço cadastrado.</td></tr>";
+}
+function openVariavel(id, cid){
+  var x = id ? byId("variaveis", id) : { ClienteId: cid || $("varCliente").value || "", Tipo:"HE", Periodo:"Unico" };
+  var h = "<h3>" + (id ? "Editar preço" : "Novo preço de variável") + "</h3><p class='msub'>Cadastre um preço por cargo, tipo e período. Se o cliente tem preço único, use \"Único\".</p><div class='form'>" +
+    "<div><label>Cliente</label><select id='x_Cli'>" + clienteOptions(x.ClienteId) + "</select></div>" +
+    "<div><label>Cargo</label><input id='x_Cargo' list='dlCargos' value='" + esc(x.Cargo || "") + "'>" + cargoDatalist() + "</div>" +
+    "<div><label>Tipo</label><select id='x_Tipo'>" + opt("HE", "Hora extra", x.Tipo) + opt("Cobertura", "Cobertura", x.Tipo) + "</select></div>" +
+    "<div><label>Período</label><select id='x_Periodo'>" + Object.keys(PERIODOS).map(function(k){ return opt(k, PERIODOS[k], x.Periodo); }).join("") + "</select></div>" +
+    "<div><label>Valor por hora (R$)</label><input id='x_Valor' inputmode='decimal' value='" + (x.Valor != null ? esc(num(x.Valor)) : "") + "'></div>" +
+    "<div><label>Vigente a partir de</label><input type='date' id='x_Vig' value='" + esc(x.VigenciaInicio || "") + "'><div class='hint'>Vazio = vale para qualquer data.</div></div></div>" +
+    "<div class='modal-actions'>" + (id ? "<button class='btn-o btn-danger' onclick=\"excluirVariavel('" + id + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarVariavel('" + (id || "") + "')\">Salvar</button></div>";
+  openModal(h);
+}
+async function salvarVariavel(id){
+  var f = { ClienteId:v("x_Cli"), Cargo:v("x_Cargo"), Tipo:v("x_Tipo"), Periodo:v("x_Periodo"), Valor:parseNum(v("x_Valor")), VigenciaInicio:v("x_Vig") };
+  if (!f.ClienteId || !f.Cargo || !f.Valor){ showToast("Informe cliente, cargo e valor.", true); return; }
+  f.Title = f.Tipo + " – " + f.Cargo + " – " + f.Periodo;
+  await safe(function(){ return id ? api.update("variaveis", id, f) : api.create("variaveis", f); }, "Preço salvo.");
+  closeModal(); renderCurrent();
+}
+function excluirVariavel(id){ askConfirm("Excluir este preço?", async function(){ await safe(function(){ return api.remove("variaveis", id); }, "Preço excluído."); renderCurrent(); }, "Excluir"); }
+
+// ============================================================
+// MARGEM (gestao)
+// ============================================================
+function renderMargem(){
+  if (!isGestor()){ $("marTable").innerHTML = "<tr><td class='empty'>Área restrita à gestão.</td></tr>"; $("marKpis").innerHTML = ""; return; }
+  var comp = $("marComp").value || curComp(), by = {};
+  S.ocorrencias.filter(function(o){ return o.Competencia === comp && (TIPOS[o.Tipo]||{}).grupo === "variavel"; }).forEach(function(o){
+    var k = o.ClienteId + "|" + o.Cargo; if (!by[k]) by[k] = { c: byId("clientes", o.ClienteId), cargo:o.Cargo, h:0, v:0, custo:0, imp:0 };
+    var b = by[k], val = Number(o.Valor)||0; b.h += Number(o.Horas)||0; b.v += val; b.custo += Number(o.Custo)||0; b.imp += val * aliquota(o.Cargo);
+  });
+  var rows = Object.keys(by).map(function(k){ var b = by[k]; b.m = b.v - b.custo - b.imp; b.p = b.v ? b.m / b.v : 0; return b; }).sort(function(a, b){ return b.v - a.v; });
+  var T = rows.reduce(function(t, b){ t.h += b.h; t.v += b.v; t.custo += b.custo; t.imp += b.imp; t.m += b.m; return t; }, { h:0, v:0, custo:0, imp:0, m:0 });
+  $("marKpis").innerHTML = kpi("Faturado em variáveis", brl(T.v), hFmt(T.h) + " de horas extras e coberturas") + kpi("Custo de mão de obra", brl(T.custo), "horas × custo/hora do cargo") + kpi("Imposto da NF", brl(T.imp), "alíquota dos Parâmetros") + kpi("Margem", brl(T.m), T.v ? num(T.m / T.v * 100, 1) + "% sobre o faturado" : "");
+  var semCusto = rows.filter(function(b){ return !custoHora(b.cargo); });
+  $("marTable").innerHTML = rows.length ? "<thead><tr><th>Cliente</th><th>Cargo</th><th class='num'>Horas</th><th class='num'>Faturado</th><th class='num'>Custo MO</th><th class='num'>Imposto</th><th class='num'>Margem</th><th class='num'>%</th></tr></thead><tbody>" + rows.map(function(b){
+    var cls = b.p < 0.15 ? "b-red" : b.p < 0.35 ? "b-amber" : "b-green";
+    return "<tr><td>" + esc(b.c ? b.c.Title : "?") + "</td><td>" + esc(b.cargo) + (custoHora(b.cargo) ? "" : " <span class='badge b-amber'>sem custo/hora</span>") + "</td><td class='num'>" + hFmt(b.h) + "</td><td class='num'>" + brl(b.v) + "</td><td class='num'>" + brl(b.custo) + "</td><td class='num'>" + brl(b.imp) + "</td><td class='num'><b>" + brl(b.m) + "</b></td><td class='num'><span class='badge " + cls + "'>" + num(b.p * 100, 1) + "%</span></td></tr>";
+  }).join("") + "</tbody>" + (semCusto.length ? "<tfoot><tr><td colspan='8' class='small' style='font-weight:600;color:var(--amber-tx)'>Cadastre o custo/hora dos cargos sinalizados em Parâmetros para a margem ficar correta.</td></tr></tfoot>" : "") : "<tr><td class='empty'>Nenhuma hora extra ou cobertura lançada em " + compLabel(comp) + ".</td></tr>";
+}
+
+// ============================================================
+// PARAMETROS
+// ============================================================
+var PAR_TIPOS = { CustoHora:"Custo/hora por cargo", Aliquota:"Alíquota da NF", Feriado:"Feriado", Gestor:"Gestor (acesso à margem e configuração)" };
+function renderParametros(){
+  $("parChips").innerHTML = [["todos","Todos"]].concat(Object.keys(PAR_TIPOS).map(function(k){ return [k, PAR_TIPOS[k].split(" (")[0]]; })).map(function(c){ return "<button class='chip" + (PAR_FILTER === c[0] ? " active" : "") + "' onclick=\"PAR_FILTER='" + c[0] + "';renderParametros()\">" + c[1] + "</button>"; }).join("");
+  var rows = S.parametros.filter(function(p){ return PAR_FILTER === "todos" || p.Tipo === PAR_FILTER; }).sort(function(a, b){ return String(a.Tipo).localeCompare(String(b.Tipo)) || String(a.Data || a.Cargo || "").localeCompare(String(b.Data || b.Cargo || "")); });
+  $("parTable").innerHTML = rows.length ? "<thead><tr><th>Tipo</th><th>Descrição</th><th>Cargo</th><th class='num'>Valor</th><th>Data</th><th>Cidade</th><th>E-mail</th></tr></thead><tbody>" + rows.map(function(p){
+    var val = p.Tipo === "Aliquota" ? num(p.Valor, 1) + "%" : p.Tipo === "CustoHora" ? brl(p.Valor) : "";
+    return "<tr class='click' onclick=\"openParametro('" + p.id + "')\"><td><span class='badge b-grena'>" + esc((PAR_TIPOS[p.Tipo] || p.Tipo).split(" (")[0]) + "</span></td><td>" + esc(p.Title || "") + "</td><td>" + esc(p.Cargo || "") + "</td><td class='num'>" + val + "</td><td>" + fmtDate(p.Data) + "</td><td>" + esc(p.Local || (p.Tipo === "Feriado" ? "todas" : "")) + "</td><td>" + esc(p.Texto || "") + "</td></tr>";
+  }).join("") + "</tbody>" : "<tr><td class='empty'>Nenhum parâmetro.</td></tr>";
+}
+function openParametro(id){
+  var p = id ? byId("parametros", id) : { Tipo: PAR_FILTER !== "todos" ? PAR_FILTER : "Feriado" };
+  var h = "<h3>" + (id ? "Editar parâmetro" : "Novo parâmetro") + "</h3><p class='msub'>Feriados sem cidade valem para todos os clientes.</p><div class='form'>" +
+    "<div><label>Tipo</label><select id='p_Tipo' onchange='parFormRefresh()'>" + Object.keys(PAR_TIPOS).map(function(k){ return opt(k, PAR_TIPOS[k], p.Tipo); }).join("") + "</select></div>" +
+    "<div><label>Descrição</label><input id='p_Title' value='" + esc(p.Title || "") + "'></div>" +
+    "<div id='pwCargo'><label>Cargo</label><input id='p_Cargo' list='dlCargos' value='" + esc(p.Cargo || "") + "'>" + cargoDatalist() + "<div class='hint' id='pHintCargo'></div></div>" +
+    "<div id='pwValor'><label id='pLValor'>Valor</label><input id='p_Valor' inputmode='decimal' value='" + (p.Valor != null ? esc(String(p.Valor).replace(".", ",")) : "") + "'></div>" +
+    "<div id='pwData'><label>Data</label><input type='date' id='p_Data' value='" + esc(p.Data || "") + "'></div>" +
+    "<div id='pwLocal'><label>Cidade (vazio = todas)</label><input id='p_Local' value='" + esc(p.Local || "") + "'></div>" +
+    "<div id='pwTexto'><label>E-mail</label><input id='p_Texto' value='" + esc(p.Texto || "") + "'></div></div>" +
+    "<div class='modal-actions'>" + (id ? "<button class='btn-o btn-danger' onclick=\"excluirParametro('" + id + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarParametro('" + (id || "") + "')\">Salvar</button></div>";
+  openModal(h); parFormRefresh();
+}
+function parFormRefresh(){
+  var t = v("p_Tipo"), sh = function(id, on){ $(id).classList.toggle("hidden", !on); };
+  sh("pwCargo", t === "CustoHora" || t === "Aliquota"); sh("pwValor", t === "CustoHora" || t === "Aliquota"); sh("pwData", t === "Feriado"); sh("pwLocal", t === "Feriado"); sh("pwTexto", t === "Gestor");
+  $("pLValor").textContent = t === "Aliquota" ? "Alíquota (%)" : "Custo por hora (R$)";
+  $("pHintCargo").textContent = t === "Aliquota" ? "Vazio = alíquota padrão." : "";
+}
+async function salvarParametro(id){
+  var f = { Tipo:v("p_Tipo"), Title:v("p_Title"), Cargo:v("p_Cargo"), Valor:parseNum(v("p_Valor")) || null, Data:v("p_Data"), Local:v("p_Local"), Texto:v("p_Texto") };
+  if (f.Tipo === "Feriado" && !f.Data){ showToast("Informe a data do feriado.", true); return; }
+  if (f.Tipo === "Gestor" && !f.Texto){ showToast("Informe o e-mail do gestor.", true); return; }
+  if (!f.Title) f.Title = PAR_TIPOS[f.Tipo].split(" (")[0] + (f.Cargo ? " – " + f.Cargo : "");
+  await safe(function(){ return id ? api.update("parametros", id, f) : api.create("parametros", f); }, "Parâmetro salvo.");
+  closeModal(); renderCurrent();
+}
+function excluirParametro(id){ askConfirm("Excluir este parâmetro?", async function(){ await safe(function(){ return api.remove("parametros", id); }, "Parâmetro excluído."); renderCurrent(); }, "Excluir"); }
+
+// ============================================================
+// CONFIGURACAO (criar listas e carregar dados iniciais)
+// ============================================================
+function renderConfig(){
+  if (DEMO){ $("cfgBody").innerHTML = "<div class='card'><p class='card-title'>Modo demonstração</p><p class='card-sub'>Na versão real, esta tela cria as listas no SharePoint e carrega os dados iniciais dos contratos.</p></div>"; return; }
+  var h = "<div class='card'><p class='card-title'>1. Listas no SharePoint</p><p class='card-sub'>O sistema usa " + Object.keys(SCHEMA).length + " listas no site BPM. Elas são criadas automaticamente com todas as colunas.</p><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Lista</th><th>Nome no SharePoint</th><th>Situação</th><th class='num'>Registros</th></tr></thead><tbody>" +
+    Object.keys(SCHEMA).map(function(k){ var ok = !!LIST_IDS[k]; return "<tr><td>" + esc(SCHEMA[k].label) + "</td><td class='small'>" + esc(SCHEMA[k].list) + "</td><td>" + (ok ? "<span class='badge b-green'>criada</span>" : "<span class='badge b-red'>falta criar</span>") + "</td><td class='num'>" + (ok ? S[k].length : "–") + "</td></tr>"; }).join("") + "</tbody></table></div>";
+  if (MISSING_LISTS.length) h += "<div class='modal-actions' style='justify-content:flex-start'><button class='btn' onclick='criarListas()'>Criar as " + MISSING_LISTS.length + " lista(s) que faltam</button></div><p class='small muted'>Na primeira vez, a Microsoft vai pedir para você autorizar a permissão \"Sites.Manage.All\" (criar listas). Como administrador, aceite em nome da organização.</p>";
+  h += "<p class='small' style='margin:12px 0 0'><a href='https://" + SITE_HOST + SITE_PATH + "/_layouts/15/viewlsts.aspx' target='_blank' rel='noopener'>Abrir o conteúdo do site BPM no SharePoint</a></p></div>";
+  var pronto = !MISSING_LISTS.length;
+  h += "<div class='card'><p class='card-title'>2. Dados iniciais</p><p class='card-sub'>Carrega clientes, serviços, valores, preços de horas extras, custos por cargo, alíquotas e feriados a partir do arquivo <b>dados-iniciais-faturamento.json</b> (entregue pelo Claude, com os dados da aba REF de set/2026). Por segurança, esses dados não ficam no site publicado.</p>";
+  if (!pronto) h += "<div class='alert alert-blue'>Crie as listas primeiro.</div>";
+  else {
+    h += "<div class='form' style='grid-template-columns:1fr'><div><label>1) Selecione o arquivo</label><input type='file' id='seedFile' accept='.json,application/json' onchange='lerSeed()'></div></div><div id='seedAreas' style='margin-top:12px'></div>";
+  }
+  h += "</div>";
+  h += "<div class='card'><p class='card-title'>3. Quem vê a Margem e a Configuração</p><p class='card-sub'>Cadastre os gestores em Parâmetros › Gestor. Enquanto não houver nenhum, todos veem.</p></div>";
+  $("cfgBody").innerHTML = h;
+}
+async function criarListas(){
+  var faltam = MISSING_LISTS.slice();
+  try {
+    for (var i = 0; i < faltam.length; i++){ setLoading(true, "Criando lista " + (i+1) + " de " + faltam.length + " (" + SCHEMA[faltam[i]].list + ")..."); await api.createList(faltam[i]); }
+    setLoading(false); showToast("Listas criadas.");
+  } catch (e){
+    setLoading(false); console.error(e);
+    showToast(e.status === 403 ? "Sem permissão para criar listas. Confirme que você autorizou \"Sites.Manage.All\" e que é proprietário do site BPM." : "Erro ao criar listas: " + e.message, true);
+  }
+  await reloadAll();
+}
+var SEED_FILE = null;
+function lerSeed(){
+  var f = $("seedFile").files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try { var d = JSON.parse(rd.result); if (!d || !Array.isArray(d.clientes)) throw new Error("formato inesperado"); SEED_FILE = d; }
+    catch (e){ SEED_FILE = null; $("seedAreas").innerHTML = "<div class='alert alert-red'>Este arquivo não é o de dados iniciais do faturamento.</div>"; return; }
+    var ja = S.clientes.map(function(c){ return norm(c.Title); });
+    $("seedAreas").innerHTML = "<label style='display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:8px'>2) Escolha as áreas</label><div class='chip-row' style='margin-bottom:12px'>" + AREAS.map(function(a){ var novos = SEED_FILE.clientes.filter(function(s){ return s.Area === a && ja.indexOf(norm(s.Title)) < 0; }).length; return "<label class='chip' style='display:flex;gap:6px;align-items:center'><input type='checkbox' class='seedArea' value='" + esc(a) + "'" + (a === "Terapias" && novos ? " checked" : "") + (novos ? "" : " disabled") + "> " + esc(a) + " (" + (novos ? novos + " cliente(s)" : "já carregada") + ")</label>"; }).join("") + "</div><button class='btn' onclick='carregarSeed()'>3) Carregar dados iniciais</button><p class='small muted'>Clientes que já existem (mesmo nome) não são duplicados. As regras de desconto foram tiradas das fórmulas da planilha: peça aos coordenadores para conferir.</p>";
+  };
+  rd.readAsText(f, "utf-8");
+}
+async function carregarSeed(){
+  if (!SEED_FILE){ showToast("Selecione o arquivo de dados iniciais.", true); return; }
+  var areas = Array.prototype.slice.call(document.querySelectorAll(".seedArea:checked")).map(function(x){ return x.value; });
+  if (!areas.length){ showToast("Marque ao menos uma área.", true); return; }
+  var ja = S.clientes.map(function(c){ return norm(c.Title); });
+  var alvo = SEED_FILE.clientes.filter(function(s){ return areas.indexOf(s.Area) >= 0 && ja.indexOf(norm(s.Title)) < 0; });
+  try {
+    for (var i = 0; i < alvo.length; i++){
+      var s = alvo[i]; setLoading(true, "Carregando " + (i+1) + " de " + alvo.length + ": " + s.Title + "...");
+      var c = await api.create("clientes", { Title:s.Title, RazaoSocial:s.RazaoSocial, CNPJ:s.CNPJ, Unidade:s.Unidade, Local:s.Local, Area:s.Area, ModeloBoletim:s.ModeloBoletim, CondicaoPagamento:s.CondicaoPagamento, Ativo:true, Observacoes:"Carregado da aba REF em " + fmtDate(todayISO()) + ". Conferir regras de desconto e cadastrar a vigência do contrato." });
+      var ct = await api.create("contratos", { Title:"A cadastrar", ClienteId:String(c.id), Versao:1, Status:"Vigente" });
+      for (var j = 0; j < (s.itens || []).length; j++){ var it = s.itens[j]; await api.create("itens", { Title:it[0], Cargo:it[1], ValorMensal:it[2], RegraDesconto:it[3], Divisor:it[4] || null, JornadaDiaria:it[5] || null, NumPedido:it[6] || "", Rateio:it[7] || "", ContratoId:String(ct.id), ClienteId:String(c.id), Ordem:j+1 }); }
+      for (var k = 0; k < (s.variaveis || []).length; k++){ var x = s.variaveis[k]; await api.create("variaveis", { Title:x[1] + " – " + x[0] + " – " + x[2], ClienteId:String(c.id), Cargo:x[0], Tipo:x[1], Periodo:x[2], Valor:x[3] }); }
+    }
+    var pars = SEED_FILE.parametros || [];
+    if (!S.parametros.length){ for (var p = 0; p < pars.length; p++){ setLoading(true, "Carregando parâmetros " + (p+1) + " de " + pars.length + "..."); await api.create("parametros", pars[p]); } }
+    setLoading(false); showToast(alvo.length + " cliente(s) carregado(s).");
+  } catch (e){ setLoading(false); console.error(e); showToast("Erro ao carregar dados: " + e.message, true); }
+  SEED_FILE = null;
+  await reloadAll();
+}
+
+// ============================================================
+// DEMONSTRACAO: dados de exemplo em memoria
+// ============================================================
+function buildDemoData(){
+  var seq = 0; var nid = function(){ return String(++seq); };
+  var comp = prevComp(curComp()), cur = curComp();
+  var fins = { a: addDays(todayISO(), 25), b: addDays(todayISO(), 55), c: addDays(todayISO(), 130), d: addDays(todayISO(), 280), e: addDays(todayISO(), -5) };
+  var aprov = { a:["Carla (Saúde Alfa)","carla@exemplo.com.br"], b:["Marcos (SESMT Beta)","marcos@exemplo.com.br"], c:["Paula (Gama)","paula@exemplo.com.br"] };
+  var map = {};
+  DEMO_SEED.clientes.forEach(function(s){
+    var c = { id:nid(), Title:s.Title, RazaoSocial:s.RazaoSocial, CNPJ:s.CNPJ, Unidade:s.Unidade, Local:s.Local, Area:s.Area, ModeloBoletim:s.ModeloBoletim, CondicaoPagamento:s.CondicaoPagamento, Ativo:true, AprovadorNome:(aprov[s.key]||[])[0] || "", AprovadorEmail:(aprov[s.key]||[])[1] || "" };
+    S.clientes.push(c); map[s.key] = c;
+    var ct = { id:nid(), Title:"PROP-" + (2025 + (seq % 2)) + "-" + (100 + seq), ClienteId:c.id, Versao:1, Status:"Vigente", Inicio: fins[s.key] ? addDays(fins[s.key], -365) : "", Fim: fins[s.key] || "", IndiceReajuste: fins[s.key] ? "IPCA" : "", MesReajuste:"" };
+    S.contratos.push(ct);
+    s.itens.forEach(function(it, j){ S.itens.push({ id:nid(), Title:it[0], Cargo:it[1], ValorMensal:it[2], RegraDesconto:it[3], Divisor:it[4] || null, JornadaDiaria:it[5] || null, NumPedido:it[6] || "", Rateio:it[7] || "", ContratoId:ct.id, ClienteId:c.id, Ordem:j+1, CodigoServicoNF: /Medicina|Médico/.test(it[1]) ? "04.01.01" : /Enferm/.test(it[1]) ? "04.06.01" : /Fisio|Ergon/.test(it[1]) ? "04.08.02" : /Educação/.test(it[1]) ? "06.04.01" : "" }); });
+    s.variaveis.forEach(function(x){ S.variaveis.push({ id:nid(), Title:x[1] + " – " + x[0], ClienteId:c.id, Cargo:x[0], Tipo:x[1], Periodo:x[2], Valor:x[3] }); });
+  });
+  DEMO_SEED.parametros.forEach(function(p){ S.parametros.push(Object.assign({ id:nid() }, p)); });
+  var itemOf = function(key, nome){ return S.itens.filter(function(i){ return i.ClienteId === map[key].id && i.Title === nome; })[0]; };
+  var dia = function(c, d){ return c + "-" + pad(d); };
+  var oc = [
+    ["a","Hora extra", dia(comp, 9), "08:00", "10:04", "", "Técnico de Enfermagem", "Ana", "Plantão de sábado solicitado pela Carla", "E-mail da Carla em " + fmtDate(dia(comp, 7))],
+    ["a","Hora extra", dia(comp, 22), "13:00", "15:05", "", "Técnico de Enfermagem", "Ana", "Campanha de vacinação no sábado", "E-mail da Carla"],
+    ["a","Hora extra", dia(comp, 11), "17:00", "17:55", "", "Enfermeiro", "Bruno", "Atendimento de ocorrência no fim do expediente", ""],
+    ["b","Cobertura", dia(comp, 17), "08:00", "12:00", "", "Médico do Trabalho", "Dra. Helena", "Cobertura de férias do médico titular", "E-mail do Marcos em " + fmtDate(dia(comp, 10))],
+    ["c","Falta", dia(comp, 18), "", "", "Fisioterapia", "", "Diego", "Ausência com atestado, sem cobertura", ""],
+    ["c","Cobertura", dia(cur, 1), "07:30", "14:00", "", "Enfermeiro", "Fernanda", "Cobertura solicitada pela Paula", "E-mail da Paula"],
+    ["c","Cobertura", dia(cur, 7), "07:30", "14:00", "", "Enfermeiro", "Fernanda", "Cobertura no feriado da Independência", "E-mail da Paula"],
+    ["c","Hora extra", dia(cur, 12), "21:00", "23:30", "", "Enfermeiro", "Gustavo", "", ""],
+    ["b","Cobertura", dia(cur, 14), "08:00", "11:00", "", "Médico do Trabalho", "Dra. Irene", "Cobertura de consultas periódicas", "E-mail do Marcos"],
+    ["a","Atraso / saída antecipada", dia(cur, 5), "08:00", "09:30", "Técnico de Enfermagem Manhã", "", "Juliana", "Atraso por consulta médica, sem cobertura", ""]
+  ];
+  oc.forEach(function(r){
+    var it = r[5] ? itemOf(r[0], r[5]) : null;
+    var o = { id:nid(), ClienteId:map[r[0]].id, Tipo:r[1], Data:r[2], Competencia:compOf(r[2]), HoraInicio:r[3], HoraFim:r[4], ItemId: it ? it.id : "", Cargo: r[6] || (it ? it.Cargo : ""), Profissional:r[7], Justificativa:r[8], Evidencia:r[9], Dias: r[1] === "Falta" ? 1 : 0, SolicitadoCliente: !!r[9], LancadoPor:"demo@elevalife.com.br", Modified:"2000-01-01T00:00:00.000Z" };
+    var cr = calcOcorrencia(o); o.Valor = cr.valor || 0; o.Custo = cr.custo || 0; o.Horas = cr.horas || 0; o.Detalhe = cr.detalhe || ""; o.Title = o.Tipo + " – " + fmtDate(o.Data);
+    S.ocorrencias.push(o);
+  });
+  api._seq = seq + 1000;
+  // medicoes de exemplo na competencia anterior
+  var mk = function(key, status, extra){
+    var c = map[key], m = montarMedicao(c.id, comp); if (m.erro) return;
+    var hist = [{ s:"Rascunho", d:new Date(Date.now() - 6*864e5).toISOString(), p:"Coordenação", o:"Gerada" }];
+    if (status !== "Rascunho") hist.push({ s:"Enviada", d:new Date(Date.now() - 5*864e5).toISOString(), p:"Coordenação", o:c.AprovadorEmail });
+    if (status === "Aprovada" || status === "NF emitida") hist.push({ s:"Aprovada", d:new Date(Date.now() - 3*864e5).toISOString(), p:"Coordenação", o:c.AprovadorNome });
+    if (status === "NF emitida") hist.push({ s:"NF emitida", d:new Date(Date.now() - 2*864e5).toISOString(), p:"Coordenação", o:"NF 0001" });
+    S.medicoes.push(Object.assign({ id:nid(), Title:c.Title + " – " + compLabel(comp), ClienteId:c.id, Competencia:comp, ContratoId:m.contrato.id, ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:status,
+      Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:1 }), Historico: JSON.stringify(hist), GeradoEm: new Date(Date.now() - 6*864e5).toISOString(), DataEnvio: status !== "Rascunho" ? addDays(todayISO(), -5) : "", DataAprovacao: (status === "Aprovada" || status === "NF emitida") ? addDays(todayISO(), -3) : "", AprovadoPor: (status === "Aprovada" || status === "NF emitida") ? c.AprovadorNome : "" }, extra || {}));
+  };
+  mk("a", "Enviada"); mk("b", "Aprovada"); mk("c", "NF emitida", { NumNF:"0001", DataNF: addDays(todayISO(), -2) }); mk("d", "Rascunho");
+  api._seq = seq + 1000;
+}
+
+</script>
+</body>
+</html>
