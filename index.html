@@ -1088,50 +1088,62 @@ function copiarAvisoFinanceiro(id){
 }
 function emailBoletimHTML(med){
   var cli = byId("clientes", med.ClienteId), L = linhasDe(med), lines = L.lines || [], n = nfInfo(med);
-  var G = "#6e1423", GD = "#4d0e19", GB = "#fbeef0", BR = "#e5e6e9", T = "#1f2124", T2 = "#6b6f76", RED = "#b02a2a", GRN = "#1e7d38";
+  var G = "#6e1423", GB = "#fbeef0", BR = "#e5e6e9", T = "#1f2124", T2 = "#6b6f76", RED = "#b02a2a", GRN = "#1e7d38", WH = "#ffffff";
   var F = "font-family:Segoe UI,Calibri,Arial,Helvetica,sans-serif;";
-  var W = function(t, extra){ return "<font color='#ffffff'><span style='color:#ffffff;" + (extra || "") + "'>" + t + "</span></font>"; };
-  var th = function(t, al, w){ return "<td bgcolor='" + G + "' width='" + w + "' align='" + al + "' style='background:" + G + ";padding:11px 14px;" + F + "font-size:12px;font-weight:bold;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;border-bottom:3px solid " + GD + ";'>" + W(t) + "</td>"; };
-  var kpi = function(lbl, val, cor){ return "<td width='25%' valign='top' style='padding:0 5px;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:separate;'><tr><td bgcolor='#ffffff' style='background:#ffffff;border:1px solid " + BR + ";border-top:4px solid " + cor + ";border-radius:10px;padding:12px 14px;" + F + "'><div style='font-size:11px;font-weight:bold;color:" + T2 + ";text-transform:uppercase;letter-spacing:.3px;'>" + lbl + "</div><div style='font-size:18px;font-weight:bold;color:" + T + ";padding-top:4px;white-space:nowrap;'>" + val + "</div></td></tr></table></td>"; };
+  // texto branco sobre grena: cor no td, na tag font e no span (Outlook respeita pelo menos uma delas)
+  var W = function(t, sz, bold){ return "<font color='#ffffff' style='color:#ffffff;'><span style='color:#ffffff;" + F + "font-size:" + sz + ";" + (bold ? "font-weight:bold;" : "") + "'>" + t + "</span></font>"; };
+  var gtd = function(inner, al, pad, w){ return "<td bgcolor='" + G + "'" + (w ? " width='" + w + "'" : "") + " align='" + al + "' valign='middle' style='background-color:" + G + ";color:" + WH + ";padding:" + pad + ";" + F + "white-space:nowrap;'>" + inner + "</td>"; };
+  var ajuste = function(l){
+    var p = [];
+    if (l.desconto) p.push("<span style='color:" + RED + ";'>&minus;" + brl(l.desconto) + "</span>");
+    if (l.acrescimo) p.push("<span style='color:" + GRN + ";'>+" + brl(l.acrescimo) + "</span>");
+    return p.length ? p.join("<br>") : "<span style='color:" + T2 + ";'>&ndash;</span>";
+  };
   var body = lines.map(function(l, i){
-    var bg = i % 2 ? "#fafbfc" : "#ffffff";
-    var just = (l.just || []).length ? "<div style='font-size:12px;color:" + T2 + ";padding-top:5px;line-height:1.45;'>" + l.just.map(function(j){ return "&#8226; " + esc(j); }).join("<br>") + "</div>" : "";
-    var cell = function(v, al, extra){ return "<td bgcolor='" + bg + "' align='" + al + "' valign='top' style='background:" + bg + ";padding:12px 14px;border-bottom:1px solid " + BR + ";" + F + "font-size:14px;color:" + T + ";white-space:nowrap;" + (extra || "") + "'>" + v + "</td>"; };
-    return "<tr><td bgcolor='" + bg + "' valign='top' style='background:" + bg + ";padding:12px 14px;border-bottom:1px solid " + BR + ";" + F + "font-size:14px;color:" + T + ";'><b>" + esc(l.servico) + "</b>" + (l.horas ? " <span style='color:" + T2 + ";font-size:12px;'>(" + hFmt(l.horas) + ")</span>" : "") + just + "</td>" +
-      cell(l.padrao ? brl(l.padrao) : "&ndash;", "right", l.padrao ? "" : "color:" + T2 + ";") +
-      cell(l.desconto ? "&minus;" + brl(l.desconto) : "&ndash;", "right", "color:" + (l.desconto ? RED : T2) + ";") +
-      cell(l.acrescimo ? "+" + brl(l.acrescimo) : "&ndash;", "right", "color:" + (l.acrescimo ? GRN : T2) + ";") +
-      cell("<b>" + brl(l.final) + "</b>", "right") + "</tr>";
+    var bg = i % 2 ? "#fafbfc" : WH;
+    var just = (l.just || []).length ? "<div style='font-size:11.5px;color:" + T2 + ";padding-top:4px;line-height:1.45;white-space:normal;'>" + l.just.map(function(j){ return "&#8226; " + esc(j); }).join("<br>") + "</div>" : "";
+    var td = function(v, al){ return "<td bgcolor='" + bg + "' align='" + al + "' valign='top' style='background-color:" + bg + ";padding:10px 12px;border-bottom:1px solid " + BR + ";" + F + "font-size:13px;color:" + T + ";white-space:nowrap;'>" + v + "</td>"; };
+    return "<tr><td bgcolor='" + bg + "' valign='top' style='background-color:" + bg + ";padding:10px 12px;border-bottom:1px solid " + BR + ";" + F + "font-size:13px;color:" + T + ";'><b>" + esc(l.servico) + "</b>" + (l.horas ? " <span style='color:" + T2 + ";font-size:11.5px;'>(" + hFmt(l.horas) + ")</span>" : "") + just + "</td>" +
+      td(l.padrao ? brl(l.padrao) : "<span style='color:" + T2 + ";'>&ndash;</span>", "right") + td(ajuste(l), "right") + td("<b>" + brl(l.final) + "</b>", "right") + "</tr>";
   }).join("");
-  var tot = function(v, al){ return "<td bgcolor='" + G + "' align='" + al + "' style='background:" + G + ";padding:14px;" + F + "font-size:14px;font-weight:bold;white-space:nowrap;'>" + W(v) + "</td>"; };
+  var kpi = function(lbl, val, cor, last){ return "<td width='25%' valign='top' style='padding:0 " + (last ? "0" : "6px") + " 0 0;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr><td bgcolor='" + WH + "' style='background-color:" + WH + ";border:1px solid " + BR + ";border-top:3px solid " + cor + ";padding:8px 10px;" + F + "'><div style='font-size:10px;font-weight:bold;color:" + T2 + ";text-transform:uppercase;'>" + lbl + "</div><div style='font-size:14px;font-weight:bold;color:" + T + ";padding-top:2px;white-space:nowrap;'>" + val + "</div></td></tr></table></td>"; };
   var info = [["Cliente", esc(n.tomador) + (cli.Unidade ? " &ndash; " + esc(cli.Unidade) : "")], ["CNPJ", esc(n.cnpj || "&ndash;")]];
-  if (n.pedidos) info.push(["Nº do pedido", esc(n.pedidos)]);
-  return "<table role='presentation' width='720' cellpadding='0' cellspacing='0' border='0' style='width:720px;max-width:720px;border-collapse:collapse;" + F + "'>" +
-    // cabecalho
-    "<tr><td bgcolor='" + G + "' style='background:" + G + ";background-image:linear-gradient(135deg," + G + " 0%," + GD + " 100%);padding:22px 26px;border-radius:12px 12px 0 0;'>" +
-      "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr><td style='" + F + "'>" + W("ELEVALIFE &middot; BOLETIM DE MEDIÇÃO", "font-size:12px;font-weight:bold;letter-spacing:1.2px;opacity:.85;") + "<br>" + W(esc(cli.Title), "font-size:24px;font-weight:bold;line-height:1.35;") + "</td>" +
-      "<td align='right' valign='middle' style='" + F + "white-space:nowrap;'>" + W("Competência", "font-size:12px;opacity:.85;") + "<br>" + W(compLabel(med.Competencia), "font-size:22px;font-weight:bold;") + "</td></tr></table></td></tr>" +
-    // dados do cliente
-    "<tr><td bgcolor='" + GB + "' style='background:" + GB + ";padding:14px 26px;border-left:1px solid " + BR + ";border-right:1px solid " + BR + ";'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
-      info.map(function(x){ return "<td valign='top' style='padding-right:16px;" + F + "'><div style='font-size:11px;font-weight:bold;color:" + G + ";text-transform:uppercase;letter-spacing:.3px;'>" + x[0] + "</div><div style='font-size:13.5px;color:" + T + ";padding-top:2px;'>" + x[1] + "</div></td>"; }).join("") + "</tr></table></td></tr>" +
-    // resumo
-    "<tr><td bgcolor='#f4f5f7' style='background:#f4f5f7;padding:16px 21px;border-left:1px solid " + BR + ";border-right:1px solid " + BR + ";'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
-      kpi("Valor do contrato", brl(med.ValorPadrao), T2) + kpi("Descontos", (med.Descontos ? "&minus;" : "") + brl(med.Descontos), RED) + kpi("Acréscimos", (med.Acrescimos ? "+" : "") + brl(med.Acrescimos), GRN) + kpi("Total a faturar", brl(med.ValorFaturar), G) +
+  if (n.pedidos) info.push(["Pedido", esc(n.pedidos)]);
+  var ajTot = [];
+  if (med.Descontos) ajTot.push("&minus;" + brl(med.Descontos));
+  if (med.Acrescimos) ajTot.push("+" + brl(med.Acrescimos));
+  return "<table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0' style='width:600px;border-collapse:collapse;" + F + "'>" +
+    "<tr>" + gtd(W("ELEVALIFE &middot; BOLETIM DE MEDIÇÃO", "11px", true) + "<br>" + W(esc(cli.Title), "20px", true), "left", "16px 18px") + gtd(W("Competência", "11px") + "<br>" + W(compLabel(med.Competencia), "18px", true), "right", "16px 18px") + "</tr>" +
+    "<tr><td colspan='2' bgcolor='" + GB + "' style='background-color:" + GB + ";padding:10px 18px;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
+      info.map(function(x){ return "<td valign='top' style='padding-right:12px;" + F + "'><div style='font-size:10px;font-weight:bold;color:" + G + ";text-transform:uppercase;'>" + x[0] + "</div><div style='font-size:12.5px;color:" + T + ";padding-top:1px;'>" + x[1] + "</div></td>"; }).join("") + "</tr></table></td></tr>" +
+    "<tr><td colspan='2' bgcolor='#f4f5f7' style='background-color:#f4f5f7;padding:12px 18px;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
+      kpi("Contrato", brl(med.ValorPadrao), T2) + kpi("Descontos", (med.Descontos ? "&minus;" : "") + brl(med.Descontos), RED) + kpi("Acréscimos", (med.Acrescimos ? "+" : "") + brl(med.Acrescimos), GRN) + kpi("A faturar", brl(med.ValorFaturar), G, true) +
     "</tr></table></td></tr>" +
-    // tabela
-    "<tr><td style='padding:0;border-left:1px solid " + BR + ";border-right:1px solid " + BR + ";'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;'>" +
-      "<tr>" + th("Serviço", "left", "40%") + th("Valor mensal", "right", "15%") + th("Desconto", "right", "15%") + th("Acréscimo", "right", "15%") + th("Valor final", "right", "15%") + "</tr>" + body +
-      "<tr>" + tot("TOTAL A FATURAR", "left") + tot(brl(med.ValorPadrao), "right") + tot(med.Descontos ? "&minus;" + brl(med.Descontos) : "&ndash;", "right") + tot(med.Acrescimos ? "+" + brl(med.Acrescimos) : "&ndash;", "right") + tot(brl(med.ValorFaturar), "right") + "</tr>" +
+    "<tr><td colspan='2' style='padding:0;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;'>" +
+      "<tr>" + gtd(W("SERVIÇO", "11px", true), "left", "9px 12px", "52%") + gtd(W("VALOR MENSAL", "11px", true), "right", "9px 12px", "16%") + gtd(W("AJUSTE", "11px", true), "right", "9px 12px", "16%") + gtd(W("VALOR FINAL", "11px", true), "right", "9px 12px", "16%") + "</tr>" + body +
+      "<tr>" + gtd(W("TOTAL A FATURAR", "13px", true), "left", "11px 12px") + gtd(W(brl(med.ValorPadrao), "13px", true), "right", "11px 12px") + gtd(W(ajTot.length ? ajTot.join("<br>") : "&ndash;", "13px", true), "right", "11px 12px") + gtd(W(brl(med.ValorFaturar), "13px", true), "right", "11px 12px") + "</tr>" +
     "</table></td></tr>" +
-    // rodape
-    "<tr><td bgcolor='#ffffff' style='background:#ffffff;padding:16px 26px;border:1px solid " + BR + ";border-top:0;border-radius:0 0 12px 12px;" + F + "font-size:12.5px;color:" + T2 + ";line-height:1.5;'>Por favor, confirme a aprovação dos valores respondendo a este e-mail. A nota fiscal será emitida após a aprovação.<br><span style='color:" + G + ";font-weight:bold;'>ElevaLife Saúde e Educação</span> &middot; 15 anos elevando pessoas e resultados</td></tr>" +
+    "<tr><td colspan='2' bgcolor='" + WH + "' style='background-color:" + WH + ";padding:12px 18px;border:1px solid " + BR + ";border-top:0;" + F + "font-size:11.5px;color:" + T2 + ";line-height:1.5;'>Por favor, confirme a aprovação dos valores respondendo a este e-mail. A nota fiscal será emitida após a aprovação.<br><b style='color:" + G + ";'>ElevaLife Saúde e Educação</b> &middot; 15 anos elevando pessoas e resultados</td></tr>" +
   "</table>";
 }
 function copiarTabelaEmail(id){
-  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), L = linhasDe(med);
-  var html = emailBoletimHTML(med);
-  var txt = "Boletim de medição – " + cli.Title + " – " + compLabel(med.Competencia) + "\n" + (L.lines || []).map(function(l){ return l.servico + "\t" + brl(l.padrao) + "\t" + (l.desconto ? "-" + brl(l.desconto) : "") + "\t" + (l.acrescimo ? brl(l.acrescimo) : "") + "\t" + brl(l.final) + "\t" + (l.just || []).join(" | "); }).join("\n") + "\nTotal\t" + brl(med.ValorPadrao) + "\t-" + brl(med.Descontos) + "\t" + brl(med.Acrescimos) + "\t" + brl(med.ValorFaturar);
-  copyHTML(html, txt, "Boletim copiado. Cole no corpo do e-mail ao cliente (Ctrl+V).");
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId);
+  var h = "<h3>Boletim para o e-mail</h3><p class='msub'>É exatamente assim que ele vai aparecer no Outlook. Clique em Copiar e cole no corpo do e-mail com Ctrl+V.</p>" +
+    "<div style='overflow-x:auto;border:1px dashed var(--border);border-radius:10px;padding:14px;background:#fff'><div id='emailPreview' contenteditable='false'>" + emailBoletimHTML(med) + "</div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn' onclick='copiarPreviewEmail()'>Copiar boletim</button></div>";
+  openModal(h, true);
+}
+function copiarPreviewEmail(){
+  var el = $("emailPreview"); if (!el) return;
+  var ok = false;
+  try {
+    var sel = window.getSelection(), rg = document.createRange();
+    rg.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(rg);
+    ok = document.execCommand("copy");
+    sel.removeAllRanges();
+  } catch(e){ ok = false; }
+  if (ok) showToast("Boletim copiado. Cole no corpo do e-mail com Ctrl+V.");
+  else copyHTML(el.innerHTML, el.innerText, "Boletim copiado. Cole no corpo do e-mail com Ctrl+V.");
 }
 
 // ------------------------------------------------------------
