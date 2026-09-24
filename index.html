@@ -338,8 +338,14 @@ var DEMO_SEED = {
     { key:"b", Title:"Química Beta", RazaoSocial:"Química Beta S.A.", CNPJ:"00.000.000/0002-02", Unidade:"São Paulo", Local:"São Paulo", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
       itens:[["Enfermagem","Enfermeiro",5000,"DiasFixos",21,8,""],["Técnico de Enfermagem ADM","Técnico de Enfermagem",12000,"DiasFixos",21,8,""],["Fisioterapia","Fisioterapeuta",15000,"DiasFixos",21,8,""],["Ergonomia","Ergonomista",6000,"DiasFixos",21,6,""]],
       variaveis:[["Enfermeiro","Cobertura","Unico",130],["Médico do Trabalho","Cobertura","Unico",300]] },
-    { key:"c", Title:"Siderúrgica Gama", RazaoSocial:"Siderúrgica Gama Ltda.", CNPJ:"00.000.000/0003-03", Unidade:"Planta 1 + Planta 2", Local:"Pindamonhangaba", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
-      itens:[["Enfermagem","Enfermeiro",45000,"DiasFixos",30,24,"",""],["Aux. ADM Saúde Ocupacional","Auxiliar Administrativo",7000,"DiasFixos",30,8,"","70% Planta 1 / 30% Planta 2"],["Fisioterapia","Fisioterapeuta",18000,"DiasFixos",30,8,"","70% Planta 1 / 30% Planta 2"],["Medicina do Trabalho","Médico do Trabalho",28000,"HorasContratadas",84,4,"",""]],
+    { key:"c", Title:"Siderúrgica Gama", RazaoSocial:"Siderúrgica Gama S.A.", CNPJ:"00.000.000/0003-03", Unidade:"Planta 1 + Planta 2", Local:"Pindamonhangaba", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
+      FaturarPorServico:true, Tomadores:'[{"k":"SA","nome":"S.A","razao":"Siderúrgica Gama S.A.","cnpj":"00.000.000/0003-03"},{"k":"P2","nome":"Planta 2","razao":"Siderúrgica Gama S.A. – Planta 2","cnpj":"00.000.000/0033-33"}]',
+      itens:[["Enfermagem","Enfermeiro",45000,"DiasFixos",30,24,"","",'[{"t":"SA","pct":100,"pedido":"OC-5001","para":"paula@exemplo.com.br"}]'],
+             ["Auxiliar Administrativo","Auxiliar Administrativo",7000,"DiasFixos",30,8,"","",'[{"t":"SA","pct":70,"pedido":"OC-5002","para":"paula@exemplo.com.br"},{"t":"P2","pct":30,"pedido":"OC-6002","para":"rui@exemplo.com.br"}]'],
+             ["Fisioterapia","Fisioterapeuta",18000,"DiasFixos",30,8,"","",'[{"t":"SA","pct":70,"pedido":"OC-5003","para":"paula@exemplo.com.br"},{"t":"P2","pct":30,"pedido":"OC-6003","para":"rui@exemplo.com.br"}]'],
+             ["Medicina do Trabalho","Médico do Trabalho",28000,"HorasContratadas",84,4,"","",'[{"t":"SA","pct":100,"pedido":"OC-5004","para":"paula@exemplo.com.br"}]'],
+             ["Ergonomia","Ergonomista",12000,"DiasFixos",22,7,"","",'[{"t":"SA","pct":100,"pedido":"OC-5005","para":"paula@exemplo.com.br"}]'],
+             ["Ergonomia","Ergonomista",7000,"DiasFixos",22,4,"","",'[{"t":"P2","pct":100,"pedido":"OC-6005","para":"rui@exemplo.com.br"}]']],
       variaveis:[["Enfermeiro","HE","Diurno",100],["Enfermeiro","HE","Noturno",130],["Enfermeiro","HE","DomFerDiurno",120],["Enfermeiro","HE","DomFerNoturno",150],["Enfermeiro","Cobertura","Diurno",70],["Enfermeiro","Cobertura","Noturno",90]] },
     { key:"d", Title:"Metalúrgica Delta", RazaoSocial:"Metalúrgica Delta Ltda.", CNPJ:"00.000.000/0004-04", Unidade:"Mogi das Cruzes", Local:"Mogi das Cruzes", Area:"Terapias", ModeloBoletim:"Eleva", CondicaoPagamento:"",
       itens:[["Técnico de Enfermagem","Técnico de Enfermagem",9500,"DiasFixos",30,8,""],["Medicina do Trabalho","Médico do Trabalho",15000,"DiasFixos",20,6,""]],
@@ -382,13 +388,13 @@ var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + S
 // ---- Estrutura das listas no SharePoint ----
 // tipos: t = texto, ml = texto longo, n = numero, b = sim/nao
 var SCHEMA = {
-  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"]] },
+  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"]] },
   contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"]] },
-  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"]] },
+  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
   parametros: { list:"FAT_Parametros", label:"Parâmetros", cols:[["Tipo","t"],["Cargo","t"],["Valor","n"],["Data","t"],["Local","t"],["Texto","t"]] },
   ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"]] },
-  medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"]] }
+  medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"],["Unidade","t"],["UnidadeNome","t"],["Tomador","t"]] }
 };
 var NUMERIC = {}; var BOOLS = {};
 Object.keys(SCHEMA).forEach(function(k){ SCHEMA[k].cols.forEach(function(c){ if (c[1]==="n") NUMERIC[c[0]] = 1; if (c[1]==="b") BOOLS[c[0]] = 1; }); });
@@ -421,6 +427,7 @@ var STATUS_BADGE = { "Não gerada":"b-gray", "Rascunho":"b-blue", "Enviada":"b-a
 var S = { clientes:[], contratos:[], itens:[], variaveis:[], parametros:[], ocorrencias:[], medicoes:[] };
 var LIST_IDS = {};          // chave -> id da lista no SharePoint
 var MISSING_LISTS = [];     // chaves das listas que ainda nao existem
+var MISSING_COLS = {};      // chave -> colunas que faltam em listas existentes
 var DEMO = false;
 var CURRENT_USER = { name:"", email:"" };
 var msalInstance = null;
@@ -519,7 +526,8 @@ function fromSP(it){
   return o;
 }
 function toSP(key, fields){
-  var allowed = { Title:1 }; SCHEMA[key].cols.forEach(function(c){ allowed[c[0]] = 1; });
+  var allowed = { Title:1 }, miss = {}; (MISSING_COLS[key] || []).forEach(function(c){ miss[c[0]] = 1; });
+  SCHEMA[key].cols.forEach(function(c){ if (!miss[c[0]]) allowed[c[0]] = 1; });
   var out = {};
   Object.keys(fields).forEach(function(k){
     if (!allowed[k]) return;
@@ -538,6 +546,23 @@ var api = {
     var data = await graph(GRAPH_SITE + "/lists?$select=id,displayName&$top=500");
     var map = {}; (data.value || []).forEach(function(l){ map[l.displayName] = l.id; });
     Object.keys(SCHEMA).forEach(function(k){ if (map[SCHEMA[k].list]) LIST_IDS[k] = map[SCHEMA[k].list]; else MISSING_LISTS.push(k); });
+    MISSING_COLS = {};
+    var ks = Object.keys(LIST_IDS);
+    var cols = await Promise.all(ks.map(function(k){ return graph(GRAPH_SITE + "/lists/" + LIST_IDS[k] + "/columns?$select=name&$top=500").catch(function(){ return null; }); }));
+    ks.forEach(function(k, i){
+      if (!cols[i]) return;
+      var have = {}; (cols[i].value || []).forEach(function(c){ have[c.name] = 1; });
+      var miss = SCHEMA[k].cols.filter(function(c){ return !have[c[0]]; });
+      if (miss.length) MISSING_COLS[k] = miss;
+    });
+  },
+  addColumns: async function(key){
+    var miss = MISSING_COLS[key] || [];
+    for (var i = 0; i < miss.length; i++){
+      var c = miss[i], def = c[1] === "n" ? { name:c[0], number:{} } : c[1] === "b" ? { name:c[0], boolean:{} } : c[1] === "ml" ? { name:c[0], text:{ allowMultipleLines:true, linesForEditing:6 } } : { name:c[0], text:{} };
+      await graph(GRAPH_SITE + "/lists/" + LIST_IDS[key] + "/columns", { method:"POST", body: JSON.stringify(def) }, MANAGE_SCOPES);
+    }
+    delete MISSING_COLS[key];
   },
   load: async function(key){
     if (DEMO) return S[key];
@@ -715,50 +740,112 @@ function ocorrenciasDe(cid, comp){
   return S.ocorrencias.filter(function(o){ return String(o.ClienteId) === String(cid) && o.Competencia === comp; })
     .sort(function(a, b){ return String(a.Data).localeCompare(String(b.Data)); });
 }
-function medicaoDe(cid, comp){ return S.medicoes.filter(function(m){ return String(m.ClienteId) === String(cid) && m.Competencia === comp; })[0] || null; }
+function medicaoDe(cid, comp, uk){ uk = uk || ""; return S.medicoes.filter(function(m){ return String(m.ClienteId) === String(cid) && m.Competencia === comp && (m.Unidade || "") === uk; })[0] || null; }
+function medicoesDoMes(cid, comp){ return S.medicoes.filter(function(m){ return String(m.ClienteId) === String(cid) && m.Competencia === comp; }); }
 function linhasDe(med){ return jparse(med && med.Linhas, { lines:[], ocorrIds:[] }); }
 function historicoDe(med){ return jparse(med && med.Historico, []); }
 
-// monta as linhas do boletim de um cliente numa competencia
-function montarMedicao(cid, comp){
-  var ct = contratoVigente(cid, comp);
+// ---- tomadores (CNPJs que recebem NF) e divisao dos servicos ----
+function tomadoresDe(cli){
+  var t = jparse(cli && cli.Tomadores, []).filter(function(x){ return x && x.k; });
+  return t.length ? t : [{ k:"", nome:"", razao:(cli && cli.RazaoSocial) || "", cnpj:(cli && cli.CNPJ) || "" }];
+}
+function tomadorDe(cli, k){ var t = tomadoresDe(cli); for (var i = 0; i < t.length; i++) if (t[i].k === (k || "")) return t[i]; return t[0]; }
+function divisaoDe(item, cli){
+  var tks = tomadoresDe(cli).map(function(t){ return t.k; });
+  var d = jparse(item && item.Divisao, []).filter(function(x){ return x && Number(x.pct) > 0 && tks.indexOf(x.t || "") >= 0; });
+  return d.length ? d : [{ t: tks[0], pct:100, pedido:(item && item.NumPedido) || "" }];
+}
+// reparte um valor pelas porcentagens; a ultima parte absorve o arredondamento
+function repartir(total, pcts){
+  var soma = pcts.reduce(function(a, b){ return a + b; }, 0) || 100, out = [], acc = 0;
+  pcts.forEach(function(p, i){ var v = i === pcts.length - 1 ? r2(total - acc) : r2(total * p / soma); acc = r2(acc + v); out.push(v); });
+  return out;
+}
+// unidades de faturamento de um cliente numa competencia (cada uma gera um boletim, uma OC e uma NF)
+function unidadesDe(cid, comp){
+  var cli = byId("clientes", cid), ct = contratoVigente(cid, comp), out = [];
+  if (!cli) return [{ key:"", nome:"" }];
+  var toms = tomadoresDe(cli), multi = toms.length > 1 || toms[0].k;
+  if (ct){
+    var itens = itensDoContrato(ct.id);
+    if (cli.FaturarPorServico){
+      itens.forEach(function(it){ divisaoDe(it, cli).forEach(function(d){ var tm = tomadorDe(cli, d.t); out.push({ key: it.id + "|" + (d.t || ""), nome: it.Title + (tm.nome ? " " + tm.nome : ""), itemId:String(it.id), t:d.t || "", pct:Number(d.pct), pedido:d.pedido || it.NumPedido || "", para:d.para || "", cc:d.cc || "" }); }); });
+    } else if (multi){
+      var usados = {}; itens.forEach(function(it){ divisaoDe(it, cli).forEach(function(d){ usados[d.t || ""] = 1; }); });
+      toms.forEach(function(tm){ if (usados[tm.k]) out.push({ key:"T:" + tm.k, nome: tm.nome, t: tm.k }); });
+    }
+  }
+  if (!out.length) out.push({ key:"", nome:"" });
+  // medicoes ja salvas de unidades que nao existem mais continuam visiveis
+  medicoesDoMes(cid, comp).forEach(function(m){ var k = m.Unidade || ""; if (!out.some(function(u){ return u.key === k; })) out.push({ key:k, nome:m.UnidadeNome || "", t:m.Tomador || "", antiga:true }); });
+  return out;
+}
+function unidadeDe(cid, comp, uk){ var us = unidadesDe(cid, comp); for (var i = 0; i < us.length; i++) if (us[i].key === (uk || "")) return us[i]; return { key: uk || "", nome:"" }; }
+function nomeUnidade(cli, u){ return cli.Title + (u && u.nome ? " · " + u.nome : ""); }
+function itemPorCargo(itens, cargo){ var c = norm(cargo); for (var i = 0; i < itens.length; i++) if (norm(itens[i].Cargo) === c) return itens[i]; return null; }
+
+// monta as linhas do boletim de uma unidade de faturamento
+function montarMedicao(cid, comp, uk){
+  uk = uk || "";
+  var cli = byId("clientes", cid), ct = contratoVigente(cid, comp);
   if (!ct) return { erro:"Não há contrato vigente para " + compLabel(comp) + "." };
   var itens = itensDoContrato(ct.id);
   if (!itens.length) return { erro:"O contrato vigente não tem itens cadastrados." };
-  var lines = itens.map(function(it){ return { tipo:"item", itemId:String(it.id), servico:it.Title, cargo:it.Cargo||"", padrao:r2(it.ValorMensal), desconto:0, acrescimo:0, horas:0, just:[] }; });
-  var byItem = {}; lines.forEach(function(l){ byItem[l.itemId] = l; });
-  var extra = {}; var ocs = ocorrenciasDe(cid, comp); var ids = [];
-  ocs.forEach(function(o){
-    ids.push(String(o.id));
+  var byItem = {}; itens.forEach(function(it){ byItem[String(it.id)] = it; });
+  var base = itens.map(function(it){ return { tipo:"item", itemId:String(it.id), rel:String(it.id), servico:it.Title, cargo:it.Cargo||"", padrao:r2(it.ValorMensal), desconto:0, acrescimo:0, horas:0, just:[], oc:[] }; });
+  var baseBy = {}; base.forEach(function(l){ baseBy[l.itemId] = l; });
+  var extra = {};
+  ocorrenciasDe(cid, comp).forEach(function(o){
     var v = Number(o.Valor)||0; var txt = fmtDate(o.Data) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
-    var target = o.ItemId && byItem[String(o.ItemId)];
-    if (target && (TIPOS[o.Tipo] || {}).grupo !== "variavel"){
-      if (v < 0) target.desconto = r2(target.desconto - v); else target.acrescimo = r2(target.acrescimo + v);
-      target.just.push(txt); return;
-    }
-    var k = o.Tipo + "|" + (o.Cargo || "");
-    if (!extra[k]) extra[k] = { tipo:"variavel", itemId:"", servico: o.Tipo + (o.Cargo ? " – " + o.Cargo : ""), cargo:o.Cargo||"", padrao:0, desconto:0, acrescimo:0, horas:0, just:[] };
-    if (v < 0) extra[k].desconto = r2(extra[k].desconto - v); else extra[k].acrescimo = r2(extra[k].acrescimo + v);
-    extra[k].horas = r2(extra[k].horas + (Number(o.Horas)||0));
-    extra[k].just.push(txt);
+    var isVar = (TIPOS[o.Tipo] || {}).grupo === "variavel";
+    var target = !isVar && o.ItemId && baseBy[String(o.ItemId)];
+    if (target){ if (v < 0) target.desconto = r2(target.desconto - v); else target.acrescimo = r2(target.acrescimo + v); target.just.push(txt); target.oc.push(String(o.id)); return; }
+    var rel = (o.ItemId && byItem[String(o.ItemId)]) ? String(o.ItemId) : ((itemPorCargo(itens, o.Cargo) || {}).id || "");
+    var k = o.Tipo + "|" + (o.Cargo || "") + "|" + rel;
+    if (!extra[k]) extra[k] = { tipo:"variavel", itemId:"", rel:String(rel), servico: o.Tipo + (o.Cargo ? " – " + o.Cargo : ""), cargo:o.Cargo||"", padrao:0, desconto:0, acrescimo:0, horas:0, just:[], oc:[] };
+    var e = extra[k]; if (v < 0) e.desconto = r2(e.desconto - v); else e.acrescimo = r2(e.acrescimo + v);
+    e.horas = r2(e.horas + (Number(o.Horas)||0)); e.just.push(txt); e.oc.push(String(o.id));
   });
-  Object.keys(extra).forEach(function(k){ lines.push(extra[k]); });
-  lines.forEach(function(l){ l.final = r2(l.padrao - l.desconto + l.acrescimo); });
+  var all = base.concat(Object.keys(extra).map(function(k){ return extra[k]; }));
+  var u = unidadeDe(cid, comp, uk), lines = [], ids = [];
+  all.forEach(function(l){
+    var it = l.rel && byItem[l.rel], div = it ? divisaoDe(it, cli) : [{ t: tomadoresDe(cli)[0].k, pct:100 }];
+    var idx = -1;
+    if (u.itemId){ if (l.rel !== u.itemId) return; div.forEach(function(d, i){ if ((d.t || "") === u.t) idx = i; }); }
+    else if (u.key.indexOf("T:") === 0){ div.forEach(function(d, i){ if ((d.t || "") === u.t) idx = i; }); }
+    else { if (div.length === 1) idx = 0; }
+    var part;
+    if (idx < 0 && !u.itemId && u.key.indexOf("T:") !== 0){ part = { padrao:l.padrao, desconto:l.desconto, acrescimo:l.acrescimo, horas:l.horas, pct:100 }; }
+    else if (idx < 0) return;
+    else {
+      var pcts = div.map(function(d){ return Number(d.pct); });
+      var f = function(v){ return repartir(v, pcts)[idx]; };
+      part = { padrao:f(l.padrao), desconto:f(l.desconto), acrescimo:f(l.acrescimo), horas:r2(l.horas * pcts[idx] / 100), pct:pcts[idx] };
+    }
+    var nome = l.servico;
+    if (u.itemId && l.tipo === "item") nome = u.nome;
+    else if (part.pct < 100) nome += " (" + num(part.pct, part.pct % 1 ? 1 : 0) + "%)";
+    lines.push({ tipo:l.tipo, itemId:l.itemId, rel:l.rel, servico:nome, cargo:l.cargo, padrao:part.padrao, desconto:part.desconto, acrescimo:part.acrescimo, horas:part.horas, pct:part.pct, just:l.just, final: r2(part.padrao - part.desconto + part.acrescimo) });
+    l.oc.forEach(function(id){ if (ids.indexOf(id) < 0) ids.push(id); });
+  });
   var tot = lines.reduce(function(a, l){ a.p += l.padrao; a.d += l.desconto; a.a += l.acrescimo; return a; }, { p:0, d:0, a:0 });
-  return { contrato: ct, lines: lines, ocorrIds: ids, ValorPadrao: r2(tot.p), Descontos: r2(tot.d), Acrescimos: r2(tot.a), ValorFaturar: r2(tot.p - tot.d + tot.a) };
+  return { contrato: ct, unidade:u, lines: lines, ocorrIds: ids, ValorPadrao: r2(tot.p), Descontos: r2(tot.d), Acrescimos: r2(tot.a), ValorFaturar: r2(tot.p - tot.d + tot.a) };
 }
 // conferencia automatica antes do envio
-function conferir(cid, comp, med){
+function conferir(cid, comp, med, uk){
+  uk = med ? (med.Unidade || "") : (uk || "");
   var out = []; var cli = byId("clientes", cid); var ct = contratoVigente(cid, comp);
   if (!ct){ out.push({ n:"red", t:"Não há contrato vigente para " + compLabel(comp) + "." }); return out; }
   if (!ct.Fim) out.push({ n:"blue", t:"Contrato sem data de término cadastrada. O comercial precisa informar a vigência." });
   else if (ct.Fim < todayISO()) out.push({ n:"red", t:"O contrato venceu em " + fmtDate(ct.Fim) + ". Verifique a renovação com o comercial." });
   itensDoContrato(ct.id).forEach(function(i){ if (i.RegraDesconto !== "DiasCorridos" && !Number(i.Divisor)) out.push({ n:"amber", t:"O item \"" + i.Title + "\" está sem divisor da regra de desconto." }); });
-  var ocs = ocorrenciasDe(cid, comp);
+  var mm = montarMedicao(cid, comp, uk), rel = mm.ocorrIds || [];
+  var ocs = ocorrenciasDe(cid, comp).filter(function(o){ return rel.indexOf(String(o.id)) >= 0; });
   if (med){
     var inc = linhasDe(med).ocorrIds || [];
     var novas = ocs.filter(function(o){ return inc.indexOf(String(o.id)) < 0 || (o.Modified && med.GeradoEm && String(o.Modified) > String(med.GeradoEm)); });
-    var sumidas = inc.filter(function(id){ return !ocs.some(function(o){ return String(o.id) === id; }); });
+    var sumidas = inc.filter(function(id){ return !S.ocorrencias.some(function(o){ return String(o.id) === id && o.Competencia === comp; }); });
     if (novas.length) out.push({ n:"red", t: novas.length + " ocorrência(s) lançada(s) ou alterada(s) depois da geração, fora do boletim. Gere a medição novamente." });
     if (sumidas.length) out.push({ n:"red", t: sumidas.length + " ocorrência(s) do boletim foram excluídas. Gere a medição novamente." });
   }
@@ -766,7 +853,8 @@ function conferir(cid, comp, med){
   if (semJust.length) out.push({ n:"amber", t: semJust.length + " ocorrência(s) sem justificativa. O cliente vai ver o motivo no boletim." });
   var semEvid = ocs.filter(function(o){ return (TIPOS[o.Tipo]||{}).grupo === "variavel" && !String(o.Evidencia||"").trim(); });
   if (semEvid.length) out.push({ n:"amber", t: semEvid.length + " hora(s) extra(s)/cobertura(s) sem evidência (ex.: e-mail do cliente solicitando)." });
-  if (cli && !cli.AprovadorEmail) out.push({ n:"amber", t:"Cliente sem e-mail do aprovador cadastrado." });
+  var un = unidadeDe(cid, comp, uk);
+  if (cli && !cli.AprovadorEmail && !un.para) out.push({ n:"amber", t:"Sem e-mail do aprovador cadastrado para este faturamento." });
   return out;
 }
 
@@ -821,6 +909,7 @@ async function afterLogin(acc){
   catch (e){ setLoading(false); console.error(e); showToast("Não consegui ler o SharePoint: " + e.message, true); return; }
   setLoading(false);
   enterApp();
+  if (!MISSING_LISTS.length && Object.keys(MISSING_COLS).length && isGestor()){ showTab("config"); showToast("Há uma atualização de estrutura pendente nesta tela."); }
   if (MISSING_LISTS.length){
     if (isGestor()){ showTab("config"); showToast("Primeiro acesso: crie a base de dados do sistema nesta tela."); }
     else { $("mainArea").classList.add("hidden"); $("gate").classList.remove("hidden"); $("gate").innerHTML = "<h2>O sistema ainda não foi configurado</h2><p>A base de dados no SharePoint ainda não foi criada. Peça ao BPM para concluir a configuração.</p>"; }
@@ -906,17 +995,18 @@ function copyHTML(html, text, msg){
 // ============================================================
 // DASHBOARD
 // ============================================================
-function statusDe(cid, comp){ var m = medicaoDe(cid, comp); return m ? m.Status : "Não gerada"; }
+function statusDe(cid, comp, uk){ var m = medicaoDe(cid, comp, uk); return m ? m.Status : "Não gerada"; }
 function renderDashboard(){
   var comp = $("dashComp").value || prevComp(curComp()), area = $("dashArea").value;
-  var clis = clientesAtivos(area).filter(function(c){ return contratoVigente(c.id, comp) || medicaoDe(c.id, comp); });
-  var meds = clis.map(function(c){ return medicaoDe(c.id, comp); }).filter(Boolean);
+  var fats = faturamentosDoMes(area, comp);
+  var clis = []; fats.forEach(function(r){ if (clis.indexOf(r.c) < 0) clis.push(r.c); });
+  var meds = fats.map(function(r){ return r.m; }).filter(Boolean);
   // previsao: medicao salva quando existe; senao, previa calculada pelo contrato vigente + ocorrencias
   var RECONHECIDO = { "Enviada":1, "Aprovada":1, "NF emitida":1 };
-  var prev = clis.map(function(c){
-    var m = medicaoDe(c.id, comp), src = m || montarMedicao(c.id, comp);
+  var prev = fats.map(function(r){
+    var m = r.m, src = m || montarMedicao(r.c.id, comp, r.u.key);
     if (src.erro) src = { ValorFaturar:0, Descontos:0, Acrescimos:0 };
-    return { c:c, m:m, v:Number(src.ValorFaturar)||0, d:Number(src.Descontos)||0, a:Number(src.Acrescimos)||0, ok: !!(m && RECONHECIDO[m.Status]) };
+    return { c:r.c, u:r.u, m:m, v:Number(src.ValorFaturar)||0, d:Number(src.Descontos)||0, a:Number(src.Acrescimos)||0, ok: !!(m && RECONHECIDO[m.Status]) };
   });
   var total = prev.reduce(function(s, r){ return s + r.v; }, 0);
   var rec = prev.filter(function(r){ return r.ok; }), recV = rec.reduce(function(s, r){ return s + r.v; }, 0);
@@ -925,24 +1015,24 @@ function renderDashboard(){
   var acr = prev.reduce(function(s, r){ return s + r.a; }, 0);
   var pct = total ? Math.round(recV / total * 100) : 0;
   $("dashKpis").innerHTML =
-    kpi("Valor a faturar", brl(total), "previsão de " + clis.length + " contrato(s) vigente(s) em " + compLabel(comp)) +
-    '<div class="kpi"><p class="kpi-label">Reconhecido pelo coordenador</p><p class="kpi-value">' + brl(recV) + '</p><p class="kpi-sub">' + rec.length + " de " + clis.length + " cliente(s) · " + pct + '%</p><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><p class="kpi-sub small" style="margin-top:8px">Falta reconhecer: <b>' + brl(faltaV) + "</b> (" + falta.length + " cliente(s))</p></div>" +
+    kpi("Valor a faturar", brl(total), "previsão de " + fats.length + " faturamento(s) de " + clis.length + " cliente(s) em " + compLabel(comp)) +
+    '<div class="kpi"><p class="kpi-label">Reconhecido pelo coordenador</p><p class="kpi-value">' + brl(recV) + '</p><p class="kpi-sub">' + rec.length + " de " + fats.length + " faturamento(s) · " + pct + '%</p><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><p class="kpi-sub small" style="margin-top:8px">Falta reconhecer: <b>' + brl(faltaV) + "</b> (" + falta.length + " faturamento(s))</p></div>" +
     kpi("Descontos", brl(desc), "faltas, atrasos e serviços suspensos") +
     kpi("Acréscimos", brl(acr), "horas extras, coberturas e reembolsos");
   renderOcorrenciasDash(comp, clis);
   // graficos
   var counts = {}; ["Não gerada"].concat(STATUS_MED).forEach(function(s){ counts[s] = 0; });
-  clis.forEach(function(c){ counts[statusDe(c.id, comp)]++; });
+  fats.forEach(function(r){ counts[r.m ? r.m.Status : "Não gerada"]++; });
   var colors = { "Não gerada":"#9aa0a6", "Rascunho":"#1a56c4", "Enviada":"#a8620a", "Contestada":"#b02a2a", "Aprovada":"#5b3cc4", "NF emitida":"#1e7d38" };
   drawChart("chStatus", { type:"bar", data:{ labels:Object.keys(counts), datasets:[{ data:Object.values(counts), backgroundColor:Object.keys(counts).map(function(k){ return colors[k]; }), borderRadius:6 }] },
     options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ precision:0 }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
-  var rows = prev.map(function(r){ return { n: r.c.Title, v: r.v, ok: r.ok }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 12);
+  var rows = prev.map(function(r){ return { n: r.c.Title + (r.u.nome ? " · " + r.u.nome : ""), v: r.v, ok: r.ok }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 14);
   drawChart("chClientes", { type:"bar", data:{ labels: rows.map(function(r){ return r.n; }), datasets:[{ data: rows.map(function(r){ return r.v; }), backgroundColor: rows.map(function(r){ return r.ok ? "#6e1423" : "#d9a3ad"; }), borderRadius:4, maxBarThickness:22 }] },
     options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ return brl(ctx.raw); } } } }, scales:{ x:{ ticks:{ callback:function(v){ return "R$ " + (v/1000).toLocaleString("pt-BR") + " mil"; } }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
   // pendencias
   var pend = [];
-  var semMed = clis.filter(function(c){ return !medicaoDe(c.id, comp); });
-  if (semMed.length) pend.push(["red", semMed.length + " cliente(s) sem medição gerada em " + compLabel(comp) + ": " + semMed.map(function(c){ return c.Title; }).join(", ") + "."]);
+  var semMed = fats.filter(function(r){ return !r.m; });
+  if (semMed.length) pend.push(["red", semMed.length + " faturamento(s) sem medição gerada em " + compLabel(comp) + ": " + semMed.map(function(r){ return nomeUnidade(r.c, r.u); }).join(", ") + "."]);
   var rasc = meds.filter(function(m){ return m.Status === "Rascunho"; });
   if (rasc.length) pend.push(["blue", rasc.length + " medição(ões) em rascunho, aguardando revisão e envio ao cliente."]);
   var aguard = meds.filter(function(m){ return m.Status === "Enviada" && m.DataEnvio && daysBetween(m.DataEnvio, todayISO()) > 2; });
@@ -1003,10 +1093,19 @@ function goCliente(cid){ closeModal(); SEL.cliente = String(cid); SEL.contrato =
 // ============================================================
 // MEDICOES
 // ============================================================
+// linhas de faturamento do mes: uma por unidade de faturamento de cada cliente
+function faturamentosDoMes(area, comp){
+  var out = [];
+  clientesAtivos(area).forEach(function(c){
+    if (!contratoVigente(c.id, comp) && !medicoesDoMes(c.id, comp).length) return;
+    unidadesDe(c.id, comp).forEach(function(u){ out.push({ c:c, u:u, m: medicaoDe(c.id, comp, u.key) }); });
+  });
+  return out;
+}
+function ukArg(uk){ return String(uk || "").replace(/'/g, ""); }
 function renderMedicoes(){
   var comp = $("medComp").value || prevComp(curComp()), area = $("medArea").value, st = $("medStatus").value;
-  var rows = clientesAtivos(area).filter(function(c){ return contratoVigente(c.id, comp) || medicaoDe(c.id, comp); })
-    .map(function(c){ var m = medicaoDe(c.id, comp); var prev = m ? null : montarMedicao(c.id, comp); return { c:c, m:m, prev:prev, status: m ? m.Status : "Não gerada", conf: conferir(c.id, comp, m) }; })
+  var rows = faturamentosDoMes(area, comp).map(function(r){ r.prev = r.m ? null : montarMedicao(r.c.id, comp, r.u.key); r.status = r.m ? r.m.Status : "Não gerada"; r.conf = conferir(r.c.id, comp, r.m, r.u.key); return r; })
     .filter(function(r){ return !st || r.status === st; });
   if (!rows.length){ $("medTable").innerHTML = '<tr><td class="empty">Nenhum cliente com contrato vigente em ' + compLabel(comp) + ".</td></tr>"; return; }
   var tot = { p:0, d:0, a:0, f:0 };
@@ -1015,32 +1114,36 @@ function renderMedicoes(){
     tot.p += p; tot.d += d; tot.a += a; tot.f += f;
     var nRed = r.conf.filter(function(x){ return x.n === "red"; }).length, nAmb = r.conf.filter(function(x){ return x.n === "amber"; }).length;
     var confB = nRed ? '<span class="badge b-red">' + nRed + " crítica(s)</span>" : nAmb ? '<span class="badge b-amber">' + nAmb + " alerta(s)</span>" : '<span class="badge b-green">OK</span>';
-    return "<tr class='click' onclick=\"openMedicao('" + r.c.id + "','" + comp + "')\"><td><b>" + esc(r.c.Title) + "</b><div class='small muted'>" + esc(r.c.Area || "") + "</div></td>" +
+    var call = "openMedicao('" + r.c.id + "','" + comp + "','" + ukArg(r.u.key) + "')";
+    return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "<div class='small muted'>" + esc(r.c.Area || "") + (r.u.pedido ? " · OC " + esc(r.u.pedido) : "") + "</div></td>" +
       "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? "" : "<div class='small muted'>prévia</div>") + "</td>" +
       "<td class='num'>" + brl(p) + "</td><td class='num " + (d ? "neg" : "muted") + "'>" + (d ? "−" + brl(d) : "–") + "</td><td class='num " + (a ? "pos" : "muted") + "'>" + (a ? "+" + brl(a) : "–") + "</td><td class='num'><b>" + brl(f) + "</b></td><td>" + confB + "</td>" +
-      "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();openMedicao('" + r.c.id + "','" + comp + "')\">Abrir</button></td></tr>";
+      "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();" + call + "\">Abrir</button></td></tr>";
   }).join("");
-  $("medTable").innerHTML = "<thead><tr><th>Cliente</th><th>Status</th><th class='num'>Valor contrato</th><th class='num'>Descontos</th><th class='num'>Acréscimos</th><th class='num'>Valor a faturar</th><th>Conferência</th><th></th></tr></thead><tbody>" + body +
-    "</tbody><tfoot><tr><td>Total (" + rows.length + " clientes)</td><td></td><td class='num'>" + brl(tot.p) + "</td><td class='num neg'>−" + brl(tot.d) + "</td><td class='num pos'>+" + brl(tot.a) + "</td><td class='num'>" + brl(tot.f) + "</td><td></td><td></td></tr></tfoot>";
+  $("medTable").innerHTML = "<thead><tr><th>Cliente / faturamento</th><th>Status</th><th class='num'>Valor contrato</th><th class='num'>Descontos</th><th class='num'>Acréscimos</th><th class='num'>Valor a faturar</th><th>Conferência</th><th></th></tr></thead><tbody>" + body +
+    "</tbody><tfoot><tr><td>Total (" + rows.length + " faturamento(s))</td><td></td><td class='num'>" + brl(tot.p) + "</td><td class='num neg'>−" + brl(tot.d) + "</td><td class='num pos'>+" + brl(tot.a) + "</td><td class='num'>" + brl(tot.f) + "</td><td></td><td></td></tr></tfoot>";
 }
-async function gerarMedicao(cid, comp, silent){
-  var cli = byId("clientes", cid); var m = montarMedicao(cid, comp);
+async function gerarMedicao(cid, comp, uk, silent){
+  uk = uk || "";
+  var cli = byId("clientes", cid); var m = montarMedicao(cid, comp, uk);
   if (m.erro){ if (!silent) showToast(cli.Title + ": " + m.erro, true); return false; }
-  var ex = medicaoDe(cid, comp);
+  var ex = medicaoDe(cid, comp, uk);
   if (ex && ex.Status !== "Rascunho"){ if (!silent) showToast("Esta medição já está como \"" + ex.Status + "\". Volte para rascunho antes de gerar de novo.", true); return false; }
   var hist = historicoDe(ex); hist.push({ s:"Rascunho", d:new Date().toISOString(), p:CURRENT_USER.name, o: ex ? "Gerada novamente" : "Gerada" });
-  var fields = { Title: cli.Title + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:String(m.contrato.id), ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:"Rascunho",
-    Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:m.contrato.Versao }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString() };
+  var u = m.unidade || {};
+  var fields = { Title: nomeUnidade(cli, u) + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:String(m.contrato.id), ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:"Rascunho",
+    Unidade: uk, UnidadeNome: u.nome || "", Tomador: u.t || "",
+    Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:m.contrato.Versao, pedido:u.pedido || "" }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString() };
   if (ex) await api.update("medicoes", ex.id, fields); else await api.create("medicoes", fields);
   return true;
 }
 async function gerarTodas(){
   var comp = $("medComp").value, area = $("medArea").value;
-  var alvo = clientesAtivos(area).filter(function(c){ var m = medicaoDe(c.id, comp); return contratoVigente(c.id, comp) && (!m || m.Status === "Rascunho"); });
+  var alvo = faturamentosDoMes(area, comp).filter(function(r){ return !r.u.antiga && contratoVigente(r.c.id, comp) && (!r.m || r.m.Status === "Rascunho"); });
   if (!alvo.length){ showToast("Não há medições para gerar nesta competência."); return; }
-  askConfirm("Gerar (ou atualizar) o rascunho de " + alvo.length + " cliente(s) em " + compLabel(comp) + "? Medições já enviadas não são alteradas.", async function(){
+  askConfirm("Gerar (ou atualizar) " + alvo.length + " rascunho(s) em " + compLabel(comp) + "? Medições já enviadas não são alteradas.", async function(){
     var ok = 0;
-    await safe(async function(){ for (var i = 0; i < alvo.length; i++){ setLoading(true, "Gerando " + (i+1) + " de " + alvo.length + "..."); if (await gerarMedicao(alvo[i].id, comp, true)) ok++; } });
+    await safe(async function(){ for (var i = 0; i < alvo.length; i++){ setLoading(true, "Gerando " + (i+1) + " de " + alvo.length + "..."); if (await gerarMedicao(alvo[i].c.id, comp, alvo[i].u.key, true)) ok++; } });
     showToast(ok + " rascunho(s) gerado(s)."); renderMedicoes();
   }, "Gerar rascunhos");
 }
@@ -1055,16 +1158,17 @@ function linhasTable(lines, compact){
   return "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th class='num'>Valor mensal</th><th class='num'>Desconto</th><th class='num'>Acréscimo</th><th class='num'>Valor final</th></tr></thead><tbody>" + body +
     "</tbody><tfoot><tr><td>Total a faturar</td><td class='num'>" + brl(t.p) + "</td><td class='num neg'>−" + brl(t.d) + "</td><td class='num pos'>+" + brl(t.a) + "</td><td class='num'>" + brl(t.f) + "</td></tr></tfoot></table></div>";
 }
-function openMedicao(cid, comp){
-  var cli = byId("clientes", cid), med = medicaoDe(cid, comp), conf = conferir(cid, comp, med);
-  var h = "<h3>" + esc(cli.Title) + " · " + compLabel(comp) + "</h3><p class='msub'>" + esc(cli.RazaoSocial || "") + (cli.CNPJ ? " · CNPJ " + esc(cli.CNPJ) : "") + "</p>";
+function openMedicao(cid, comp, uk){
+  uk = uk || "";
+  var cli = byId("clientes", cid), med = medicaoDe(cid, comp, uk), conf = conferir(cid, comp, med, uk), u = unidadeDe(cid, comp, uk), tm = tomadorDe(cli, u.t);
+  var h = "<h3>" + esc(nomeUnidade(cli, u)) + " · " + compLabel(comp) + "</h3><p class='msub'>" + esc(tm.razao || cli.RazaoSocial || "") + ((tm.cnpj || cli.CNPJ) ? " · CNPJ " + esc(tm.cnpj || cli.CNPJ) : "") + (u.pedido ? " · OC " + esc(u.pedido) : "") + "</p>";
   h += stepsHtml(med ? med.Status : "Rascunho");
   h += conf.map(function(x){ return '<div class="alert alert-' + x.n + '">' + esc(x.t) + "</div>"; }).join("");
   if (!med){
-    var pv = montarMedicao(cid, comp);
+    var pv = montarMedicao(cid, comp, uk);
     if (pv.erro){ h += '<div class="alert alert-red">' + esc(pv.erro) + '</div><div class="modal-actions"><button class="btn-o" onclick="goCliente(\'' + cid + '\')">Abrir cadastro do cliente</button></div>'; openModal(h, true); return; }
     h += "<p class='small muted'>Prévia calculada agora (ainda não salva). Contrato versão " + esc(pv.contrato.Versao || 1) + ".</p>" + linhasTable(pv.lines);
-    h += '<div class="modal-actions"><button class="btn-o" onclick="closeModal()">Fechar</button><button class="btn" onclick="acaoGerar(\'' + cid + "','" + comp + '\')">Gerar rascunho</button></div>';
+    h += '<div class="modal-actions"><button class="btn-o" onclick="closeModal()">Fechar</button><button class="btn" onclick="acaoGerar(\'' + cid + "','" + comp + "','" + ukArg(uk) + '\')">Gerar rascunho</button></div>';
     openModal(h, true); return;
   }
   var L = linhasDe(med);
@@ -1073,7 +1177,7 @@ function openMedicao(cid, comp){
   var st = med.Status, id = med.id, a = [];
   a.push('<button class="btn-o" onclick="baixarBoletim(\'' + id + '\')">Baixar boletim (Excel)</button>');
   a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Boletim para o e-mail</button>');
-  if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
+  if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + "','" + ukArg(uk) + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
   if (st === "Enviada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
   if (st === "Contestada") a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho e corrigir</button>');
   if (st === "Aprovada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Enviada\')">Desfazer aprovação</button>'); a.push('<button class="btn" onclick="dadosNF(\'' + id + '\')">Conferir e emitir a NF</button>'); }
@@ -1083,15 +1187,16 @@ function openMedicao(cid, comp){
   if (hist.length) h += "<div style='margin-top:16px'><p class='card-title' style='font-size:14px'>Histórico</p>" + hist.slice().reverse().map(function(x){ return "<div class='small' style='padding:4px 0;border-bottom:1px solid var(--border)'><span class='badge " + (STATUS_BADGE[x.s] || "b-gray") + "'>" + esc(x.s) + "</span> " + new Date(x.d).toLocaleString("pt-BR") + " · " + esc(x.p || "") + (x.o ? " · " + esc(x.o) : "") + "</div>"; }).join("") + "</div>";
   openModal(h, true);
 }
-async function acaoGerar(cid, comp){
-  var ok = await safe(function(){ return gerarMedicao(cid, comp); });
-  if (ok){ showToast("Rascunho gerado."); openMedicao(cid, comp); renderMedicoes(); }
+async function acaoGerar(cid, comp, uk){
+  var ok = await safe(function(){ return gerarMedicao(cid, comp, uk); });
+  if (ok){ showToast("Rascunho gerado."); openMedicao(cid, comp, uk); renderMedicoes(); }
 }
+function reabrir(med){ openMedicao(med.ClienteId, med.Competencia, med.Unidade || ""); }
 function formStatus(id, novo){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), h = "";
-  var back = "<button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button>";
+  var back = "<button class='btn-o' onclick=\"reabrir(byId('medicoes','" + med.id + "'))\">Voltar</button>";
   if (novo === "Enviada" && med.Status === "Rascunho"){
-    h = "<h3>Marcar como enviada</h3><p class='msub'>Registre o envio do boletim ao cliente.</p><div class='form'><div><label>Data do envio</label><input type='date' id='fDt' value='" + todayISO() + "'></div><div><label>Enviado para</label><input id='fObs' value='" + esc(cli.AprovadorEmail || cli.AprovadorNome || "") + "'></div></div>";
+    h = "<h3>Marcar como enviada</h3><p class='msub'>Registre o envio do boletim ao cliente.</p><div class='form'><div><label>Data do envio</label><input type='date' id='fDt' value='" + todayISO() + "'></div><div><label>Enviado para</label><input id='fObs' value='" + esc(unidadeDe(med.ClienteId, med.Competencia, med.Unidade || "").para || cli.AprovadorEmail || cli.AprovadorNome || "") + "'></div></div>";
   } else if (novo === "Aprovada"){
     h = "<h3>Aprovação do cliente</h3><p class='msub'>Registre quem aprovou e quando.</p><div class='form'><div><label>Aprovado por</label><input id='fObs' value='" + esc(cli.AprovadorNome || "") + "'></div><div><label>Data da aprovação</label><input type='date' id='fDt' value='" + todayISO() + "'></div></div>";
   } else if (novo === "Contestada"){
@@ -1110,13 +1215,15 @@ async function salvarStatus(id, novo){
   if (novo === "Enviada" && med.Status === "Rascunho") f.DataEnvio = dt;
   if (novo === "Aprovada"){ f.DataAprovacao = dt; f.AprovadoPor = obs; }
   await safe(function(){ return api.update("medicoes", id, f); }, "Status atualizado para " + novo + ".");
-  openMedicao(med.ClienteId, med.Competencia); renderCurrent();
+  reabrir(med); renderCurrent();
 }
 function nfInfo(med){
-  var cli = byId("clientes", med.ClienteId), L = linhasDe(med), itens = (L.lines || []).map(function(l){ return l.itemId ? byId("itens", l.itemId) : null; }).filter(Boolean);
+  var cli = byId("clientes", med.ClienteId), L = linhasDe(med), tm = tomadorDe(cli, med.Tomador || "");
+  var itens = (L.lines || []).map(function(l){ return byId("itens", l.itemId || l.rel || ""); }).filter(Boolean);
   var uniq = function(arr){ return arr.filter(function(x, i){ return x && arr.indexOf(x) === i; }).join(" / "); };
+  var pedidos = L.pedido || uniq(itens.map(function(i){ var d = divisaoDe(i, cli).filter(function(x){ return (x.t || "") === (med.Tomador || ""); })[0]; return (d && d.pedido) || i.NumPedido; }));
   var disc = "Prestação de serviços referente a " + compLabel(med.Competencia) + ":\n" + (L.lines || []).map(function(l){ return "- " + l.servico + ": " + brl(l.final); }).join("\n") + "\nTotal: " + brl(med.ValorFaturar);
-  return { cli:cli, tomador: cli.RazaoSocial || cli.Title, cnpj: cli.CNPJ || "", valor: med.ValorFaturar, codigos: uniq(itens.map(function(i){ return i.CodigoServicoNF; })), retencoes: uniq(itens.map(function(i){ return i.Retencoes; })), pedidos: uniq(itens.map(function(i){ return i.NumPedido; })), rateio: uniq(itens.map(function(i){ return i.Rateio ? i.Title + ": " + i.Rateio : ""; })), disc: disc };
+  return { cli:cli, unidade: med.UnidadeNome || "", tomador: tm.razao || cli.RazaoSocial || cli.Title, cnpj: tm.cnpj || cli.CNPJ || "", valor: med.ValorFaturar, codigos: uniq(itens.map(function(i){ return i.CodigoServicoNF; })), retencoes: uniq(itens.map(function(i){ return i.Retencoes; })), pedidos: pedidos, rateio: uniq((L.lines || []).filter(function(l){ return l.pct && l.pct < 100; }).map(function(l){ return l.servico; })), disc: disc };
 }
 function dadosNF(id){
   var med = byId("medicoes", id), n = nfInfo(med), emitida = med.Status === "NF emitida";
@@ -1126,7 +1233,7 @@ function dadosNF(id){
   h += "<div class='form' style='margin-top:14px'><div class='full'><label>Observação para a NF</label><textarea id='fObsNF' placeholder='Ex.: horas extras em nota separada; informar folha de registro...'>" + esc(med.ObsNF || "") + "</textarea></div>";
   if (emitida) h += "<div><label>Nº da NF</label><input value='" + esc(med.NumNF || "") + "' disabled></div><div><label>Data de emissão</label><input value='" + fmtDate(med.DataNF) + "' disabled></div></div>";
   else h += "<div><label>Nº da NF emitida</label><input id='fNum'></div><div><label>Data de emissão</label><input type='date' id='fDtNF' value='" + todayISO() + "'></div></div>";
-  h += "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn-o' onclick=\"salvarObsNF('" + id + "')\">Salvar observação</button>" + (emitida ? "" : "<button class='btn' onclick=\"registrarNF('" + id + "')\">Registrar NF emitida</button>") + "</div>";
+  h += "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + med.id + "'))\">Voltar</button><button class='btn-o' onclick=\"salvarObsNF('" + id + "')\">Salvar observação</button>" + (emitida ? "" : "<button class='btn' onclick=\"registrarNF('" + id + "')\">Registrar NF emitida</button>") + "</div>";
   h += "<p class='small muted' style='margin-top:10px'>Fase 4: o robô do Power Automate Desktop vai preencher estes campos no site da prefeitura depois do login do coordenador.</p>";
   openModal(h, true);
 }
@@ -1136,7 +1243,7 @@ async function registrarNF(id){
   if (!nf){ showToast("Informe o número da NF emitida.", true); return; }
   var hist = historicoDe(med); hist.push({ s:"NF emitida", d:new Date().toISOString(), p:CURRENT_USER.name, o:"NF " + nf });
   await safe(function(){ return api.update("medicoes", id, { Status:"NF emitida", NumNF:nf, DataNF:dt, ObsNF:v("fObsNF"), Historico: JSON.stringify(hist) }); }, "NF registrada.");
-  openMedicao(med.ClienteId, med.Competencia); renderCurrent();
+  reabrir(med); renderCurrent();
 }
 function copiarAvisoFinanceiro(id){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId);
@@ -1164,13 +1271,13 @@ function emailBoletimHTML(med){
       td(l.padrao ? brl(l.padrao) : "<span style='color:" + T2 + ";'>&ndash;</span>", "right") + td(ajuste(l), "right") + td("<b>" + brl(l.final) + "</b>", "right") + "</tr>";
   }).join("");
   var kpi = function(lbl, val, cor, last){ return "<td width='25%' valign='top' style='padding:0 " + (last ? "0" : "6px") + " 0 0;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr><td bgcolor='" + WH + "' style='background-color:" + WH + ";border:1px solid " + BR + ";border-top:3px solid " + cor + ";padding:8px 10px;" + F + "'><div style='font-size:10px;font-weight:bold;color:" + T2 + ";text-transform:uppercase;'>" + lbl + "</div><div style='font-size:14px;font-weight:bold;color:" + T + ";padding-top:2px;white-space:nowrap;'>" + val + "</div></td></tr></table></td>"; };
-  var info = [["Cliente", esc(n.tomador) + (cli.Unidade ? " &ndash; " + esc(cli.Unidade) : "")], ["CNPJ", esc(n.cnpj || "&ndash;")]];
-  if (n.pedidos) info.push(["Pedido", esc(n.pedidos)]);
+  var info = [["Tomador", esc(n.tomador) + (!med.UnidadeNome && cli.Unidade ? " &ndash; " + esc(cli.Unidade) : "")], ["CNPJ", esc(n.cnpj || "&ndash;")]];
+  if (n.pedidos) info.push(["Pedido / OC", esc(n.pedidos)]);
   var ajTot = [];
   if (med.Descontos) ajTot.push("&minus;" + brl(med.Descontos));
   if (med.Acrescimos) ajTot.push("+" + brl(med.Acrescimos));
   return "<table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0' style='width:600px;border-collapse:collapse;" + F + "'>" +
-    "<tr>" + gtd(W("ELEVALIFE &middot; BOLETIM DE MEDIÇÃO", "11px", true) + "<br>" + W(esc(cli.Title), "20px", true), "left", "16px 18px") + gtd(W("Competência", "11px") + "<br>" + W(compLabel(med.Competencia), "18px", true), "right", "16px 18px") + "</tr>" +
+    "<tr>" + gtd(W("ELEVALIFE &middot; BOLETIM DE MEDIÇÃO", "11px", true) + "<br>" + W(esc(cli.Title), "20px", true) + (med.UnidadeNome ? "<br>" + W(esc(med.UnidadeNome), "14px", true) : ""), "left", "16px 18px") + gtd(W("Competência", "11px") + "<br>" + W(compLabel(med.Competencia), "18px", true), "right", "16px 18px") + "</tr>" +
     "<tr><td colspan='2' bgcolor='" + GB + "' style='background-color:" + GB + ";padding:10px 18px;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
       info.map(function(x){ return "<td valign='top' style='padding-right:12px;" + F + "'><div style='font-size:10px;font-weight:bold;color:" + G + ";text-transform:uppercase;'>" + x[0] + "</div><div style='font-size:12.5px;color:" + T + ";padding-top:1px;'>" + x[1] + "</div></td>"; }).join("") + "</tr></table></td></tr>" +
     "<tr><td colspan='2' bgcolor='#f4f5f7' style='background-color:#f4f5f7;padding:12px 18px;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
@@ -1183,19 +1290,27 @@ function emailBoletimHTML(med){
     "<tr><td colspan='2' bgcolor='" + WH + "' style='background-color:" + WH + ";padding:12px 18px;border:1px solid " + BR + ";border-top:0;" + F + "font-size:11.5px;color:" + T2 + ";line-height:1.5;'>Por favor, confirme a aprovação dos valores respondendo a este e-mail. A nota fiscal será emitida após a aprovação.<br><b style='color:" + G + ";'>ElevaLife Saúde e Educação</b> &middot; 15 anos elevando pessoas e resultados</td></tr>" +
   "</table>";
 }
-function copiarTabelaEmail(id){
+function copiarTabelaEmail(id, modo){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId);
-  window.__emailHTML = emailBoletimHTML(med); window.__emailNome = cli.Title + " " + med.Competencia;
-  var h = "<h3>Boletim para o e-mail</h3><p class='msub'>Clique em <b>Copiar como imagem</b> e cole no corpo do e-mail com Ctrl+V. A imagem chega ao cliente exatamente como aparece aqui, com as cores e o texto branco no grená.</p>" +
-    "<div style='overflow-x:auto;border:1px dashed var(--border);border-radius:10px;padding:14px;background:#fff'><div id='emailPreview'>" + window.__emailHTML + "</div></div>" +
-    "<div class='modal-actions'><button class='btn-o' onclick=\"openMedicao('" + med.ClienteId + "','" + med.Competencia + "')\">Voltar</button><button class='btn-o' onclick='baixarImagemEmail()'>Baixar imagem</button><button class='btn-o' onclick='copiarPreviewEmail()'>Copiar como tabela</button><button class='btn' onclick='copiarImagemEmail()'>Copiar como imagem</button></div>" +
+  var ordemU = unidadesDe(med.ClienteId, med.Competencia).map(function(u){ return u.key; });
+  var irmas = medicoesDoMes(med.ClienteId, med.Competencia).sort(function(a, b){ return ordemU.indexOf(a.Unidade || "") - ordemU.indexOf(b.Unidade || ""); });
+  modo = irmas.length > 1 ? (modo || "um") : "um";
+  var lista = modo === "todos" ? irmas : [med];
+  window.__emailHTML = lista.map(function(m){ return emailBoletimHTML(m); }).join("<div style='height:22px;line-height:22px;'>&nbsp;</div>");
+  window.__emailNome = cli.Title + (modo === "todos" ? "" : (med.UnidadeNome ? " " + med.UnidadeNome : "")) + " " + med.Competencia;
+  var escolha = irmas.length > 1 ? "<div class='chip-row' style='margin-bottom:12px'><button class='chip" + (modo === "um" ? " active" : "") + "' onclick=\"copiarTabelaEmail('" + id + "','um')\">Só este faturamento" + (med.UnidadeNome ? " (" + esc(med.UnidadeNome) + ")" : "") + "</button><button class='chip" + (modo === "todos" ? " active" : "") + "' onclick=\"copiarTabelaEmail('" + id + "','todos')\">Todos de " + esc(cli.Title) + " juntos (" + irmas.length + " boletins)</button></div>" : "";
+  var falta = modo === "todos" ? unidadesDe(med.ClienteId, med.Competencia).length - irmas.length : 0;
+  var h = "<h3>Boletim para o e-mail</h3><p class='msub'>Clique em <b>Copiar como imagem</b> e cole no corpo do e-mail com Ctrl+V. A imagem chega ao cliente exatamente como aparece aqui.</p>" + escolha +
+    (falta > 0 ? "<div class='alert alert-amber'>" + falta + " faturamento(s) deste cliente ainda não têm medição gerada e não entram no e-mail.</div>" : "") +
+    "<div style='overflow-x:auto;border:1px dashed var(--border);border-radius:10px;padding:14px;background:#fff'><div id='emailPreview' style='display:inline-block'>" + window.__emailHTML + "</div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar</button><button class='btn-o' onclick='baixarImagemEmail()'>Baixar imagem</button><button class='btn-o' onclick='copiarPreviewEmail()'>Copiar como tabela</button><button class='btn' onclick='copiarImagemEmail()'>Copiar como imagem</button></div>" +
     "<p class='small muted' style='margin-top:8px'>\"Copiar como tabela\" permite editar o texto no e-mail, mas alguns Outlooks descartam as cores do texto na colagem.</p>";
   openModal(h, true);
 }
 function imagemEmail(){
   var el = $("emailPreview");
   if (typeof html2canvas === "undefined") return Promise.reject(new Error("biblioteca de imagem não carregou; recarregue a página"));
-  return html2canvas(el.firstElementChild || el, { scale: 2, backgroundColor: "#ffffff", logging: false }).then(function(cv){
+  return html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false }).then(function(cv){
     return new Promise(function(res, rej){ cv.toBlob(function(b){ b ? res(b) : rej(new Error("falha ao gerar imagem")); }, "image/png"); });
   });
 }
@@ -1287,7 +1402,7 @@ function renderOcorrencias(){
   var body = rows.map(function(o){
     var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null, val = Number(o.Valor)||0; tv += val;
     var grp = (TIPOS[o.Tipo] || {}).grupo; var tb = grp === "desconto" ? "b-red" : grp === "variavel" ? "b-green" : "b-gray";
-    var med = medicaoDe(o.ClienteId, o.Competencia); var lock = med && med.Status !== "Rascunho";
+    var med = medicoesDoMes(o.ClienteId, o.Competencia).filter(function(m){ return m.Status !== "Rascunho" && (linhasDe(m).ocorrIds || []).indexOf(String(o.id)) >= 0; })[0]; var lock = !!med;
     return "<tr class='click' onclick=\"openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + (o.Competencia !== compOf(o.Data) ? "<div class='small muted'>fatura em " + compLabel(o.Competencia) + "</div>" : "") + "</td><td>" + esc(c ? c.Title : "?") + "</td><td><span class='badge " + tb + "'>" + esc(o.Tipo) + "</span></td><td>" + esc(it ? it.Title : (o.Cargo || "")) + "</td><td>" + esc(o.Profissional || "") + "</td>" +
       "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "") + "</td><td class='num " + (val < 0 ? "neg" : "pos") + "'>" + brl(val) + "</td><td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
   }).join("");
@@ -1300,7 +1415,7 @@ function openOcorrencia(id){
     "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
     "<div><label>Data</label><input type='date' id='oData' value='" + esc(o.Data || "") + "' onchange='ocoCompSync();ocoFormRefresh(true)'></div>" +
     "<div><label>Faturar na competência</label><input type='month' id='oComp' value='" + esc(o.Competencia || compOf(o.Data)) + "' onchange='ocoFormRefresh(true)'><div class='hint'>Mude só para ajustes de meses anteriores.</div></div>" +
-    "<div id='wItem'><label>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select></div>" +
+    "<div id='wItem'><label id='lItem'>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select></div>" +
     "<div id='wCargo'><label>Cargo</label><input id='oCargo' list='dlCargos' value='" + esc(o.Cargo || "") + "' oninput='ocoFormRefresh()'>" + cargoDatalist() + "</div>" +
     "<div><label>Profissional</label><input id='oProf' value='" + esc(o.Profissional || "") + "'></div>" +
     "<div id='wDias'><label>Dias</label><input id='oDias' inputmode='decimal' value='" + esc(o.Dias || "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 1'></div>" +
@@ -1330,7 +1445,9 @@ function ocoFormRefresh(rebuildItems){
     $("oItem").innerHTML = opt("", its.length ? "Selecione..." : "Sem contrato vigente nesta competência", cur) + its.map(function(i){ return opt(i.id, i.Title + " (" + brl(i.ValorMensal) + ")", cur); }).join("");
   }
   var show = function(id, on){ $(id).classList.toggle("hidden", !on); };
-  show("wItem", t.grupo === "desconto" || t.grupo === "manual");
+  show("wItem", true);
+  $("lItem").textContent = t.grupo === "variavel" ? "Serviço relacionado" : "Serviço afetado";
+  var o0 = $("oItem").options[0]; if (o0 && o0.value === "" && $("oItem").options.length > 1) o0.textContent = t.grupo === "variavel" ? "Automático (pelo cargo)" : "Selecione...";
   show("wCargo", t.grupo === "variavel");
   show("wDias", t.modo === "dias");
   show("wIni", t.modo === "horario"); show("wFim", t.modo === "horario");
@@ -1339,8 +1456,8 @@ function ocoFormRefresh(rebuildItems){
   show("wSolic", t.grupo === "variavel"); show("wEvid", true);
   if (t.grupo === "variavel" && !v("oCargo") && v("oItem")){ var it = byId("itens", v("oItem")); if (it) $("oCargo").value = it.Cargo || ""; }
   var o = ocoForm(), r = calcOcorrencia(o), box = $("oCalc"), warn = "";
-  var med = cid ? medicaoDe(cid, o.Competencia) : null;
-  if (med && med.Status !== "Rascunho") warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
+  var med = cid ? medicoesDoMes(cid, o.Competencia).filter(function(m){ return m.Status !== "Rascunho"; })[0] : null;
+  if (med) warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
   if (r.erro) box.innerHTML = "<div class='muted'>" + esc(r.erro) + "</div>" + (r.detalhe ? "<div class='d'>" + esc(r.detalhe) + "</div>" : "") + warn;
   else box.innerHTML = "<div class='small muted'>Valor calculado</div><div class='v'>" + (r.valor < 0 ? "−" : "+") + brl(Math.abs(r.valor)) + "</div><div class='d'>" + esc(r.detalhe) + (r.horas ? "\nDuração: " + hFmt(r.horas) : "") + "</div>" + warn;
 }
@@ -1350,7 +1467,6 @@ async function salvarOcorrencia(id){
   if (r.erro){ showToast(r.erro, true); return; }
   var it = o.ItemId ? byId("itens", o.ItemId) : null;
   var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email });
-  if ((TIPOS[o.Tipo]||{}).grupo === "variavel") f.ItemId = "";
   await safe(function(){ return id ? api.update("ocorrencias", id, f) : api.create("ocorrencias", f); }, id ? "Ocorrência atualizada." : "Ocorrência lançada.");
   closeModal(); renderCurrent();
 }
@@ -1388,7 +1504,8 @@ function renderClienteDetail(){
   if (ct) SEL.contrato = String(ct.id);
   var dl = function(k, val){ return "<div><dt>" + esc(k) + "</dt><dd>" + (val ? esc(val) : "<span class='muted'>–</span>") + "</dd></div>"; };
   var h = "<div class='card'><div class='section-head'><h4 style='font-size:19px'>" + esc(c.Title) + "</h4><div><button class='btn-o btn-s' onclick=\"openCliente('" + c.id + "')\">Editar cliente</button></div></div><dl class='dl'>" +
-    dl("Razão social", c.RazaoSocial) + dl("CNPJ", c.CNPJ) + dl("Área", c.Area) + dl("Unidade", c.Unidade) + dl("Local (feriados)", c.Local) + dl("Coordenador", c.Coordenador) + dl("Aprovador", c.AprovadorNome) + dl("E-mail do aprovador", c.AprovadorEmail) + dl("Modelo de boletim", c.ModeloBoletim) + dl("Condição de pagamento", c.CondicaoPagamento) + "</dl>" + (c.Observacoes ? "<p class='small muted' style='margin:12px 0 0'>" + esc(c.Observacoes) + "</p>" : "") + "</div>";
+    dl("Razão social", c.RazaoSocial) + dl("CNPJ", c.CNPJ) + dl("Área", c.Area) + dl("Unidade", c.Unidade) + dl("Local (feriados)", c.Local) + dl("Coordenador", c.Coordenador) + dl("Aprovador", c.AprovadorNome) + dl("E-mail do aprovador", c.AprovadorEmail) + dl("Modelo de boletim", c.ModeloBoletim) + dl("Condição de pagamento", c.CondicaoPagamento) + dl("E-mails em cópia", c.EmailsCopia) + dl("Faturamento", c.FaturarPorServico ? "Cada serviço separado" : "Único por tomador") +
+    (tomadoresDe(c)[0].k ? "<div style='grid-column:1/-1'><dt>Tomadores</dt><dd>" + tomadoresDe(c).map(function(t){ return "<span class='badge b-grena' style='margin:2px 6px 2px 0'>" + esc(t.nome) + "</span>" + esc(t.razao || "") + (t.cnpj ? " · " + esc(t.cnpj) : ""); }).join("<br>") + "</dd></div>" : "") + "</dl>" + (c.Observacoes ? "<p class='small muted' style='margin:12px 0 0'>" + esc(c.Observacoes) + "</p>" : "") + "</div>";
   h += "<div class='card'><div class='section-head'><h4>Contrato</h4><div style='display:flex;gap:8px;flex-wrap:wrap'>" + (ct ? "<button class='btn-o btn-s' onclick=\"openContrato('" + c.id + "','" + ct.id + "')\">Editar contrato</button><button class='btn btn-s' onclick=\"openRenovar('" + ct.id + "')\">Renovar / nova versão</button>" : "<button class='btn btn-s' onclick=\"openContrato('" + c.id + "')\">Cadastrar contrato</button>") + "</div></div>";
   if (cts.length > 1) h += "<div class='version-tabs'>" + cts.map(function(x){ return "<button class='chip" + (ct && String(x.id) === String(ct.id) ? " active" : "") + "' onclick=\"SEL.contrato='" + x.id + "';renderClienteDetail()\">Versão " + esc(x.Versao || 1) + (x.Inicio ? " · desde " + fmtDate(x.Inicio) : "") + "</button>"; }).join("") + "</div>";
   if (ct){
@@ -1397,7 +1514,7 @@ function renderClienteDetail(){
     h += "<div class='section-head' style='margin-top:18px'><h4>Serviços do contrato · " + brl(totalContrato(ct.id)) + "/mês</h4><button class='btn-o btn-s' onclick=\"openItem('" + ct.id + "')\">+ Adicionar serviço</button></div>";
     h += its.length ? "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th>Cargo</th><th class='num'>Valor mensal</th><th>Regra de desconto</th><th class='num'>1 dia vale</th><th>NF</th></tr></thead><tbody>" + its.map(function(i){
       var d = descontoItem(i, curComp(), 1, 0);
-      return "<tr class='click' onclick=\"openItem('" + ct.id + "','" + i.id + "')\"><td><b>" + esc(i.Title) + "</b>" + (i.Rateio ? "<div class='small muted'>Rateio: " + esc(i.Rateio) + "</div>" : "") + "</td><td>" + esc(i.Cargo || "") + "</td><td class='num'>" + brl(i.ValorMensal) + "</td><td class='small'>" + esc((REGRAS[i.RegraDesconto] || {}).label || "–") + (i.Divisor && i.RegraDesconto !== "DiasCorridos" ? " (" + num(i.Divisor, i.Divisor % 1 ? 2 : 0) + ")" : "") + "</td><td class='num small'>" + (d.erro ? "<span class='badge b-amber'>" + esc(d.erro) + "</span>" : brl(d.valor)) + "</td><td class='small'>" + esc([i.CodigoServicoNF, i.NumPedido ? "Pedido " + i.NumPedido : ""].filter(Boolean).join(" · ")) + "</td></tr>";
+      return "<tr class='click' onclick=\"openItem('" + ct.id + "','" + i.id + "')\"><td><b>" + esc(i.Title) + "</b>" + (tomadoresDe(c)[0].k ? "<div class='small' style='color:var(--grena);font-weight:600'>" + divisaoDe(i, c).map(function(d){ return esc(tomadorDe(c, d.t).nome) + " " + num(d.pct, d.pct % 1 ? 1 : 0) + "%" + (d.pedido ? " (OC " + esc(d.pedido) + ")" : ""); }).join(" · ") + "</div>" : (i.Rateio ? "<div class='small muted'>Rateio: " + esc(i.Rateio) + "</div>" : "")) + "</td><td>" + esc(i.Cargo || "") + "</td><td class='num'>" + brl(i.ValorMensal) + "</td><td class='small'>" + esc((REGRAS[i.RegraDesconto] || {}).label || "–") + (i.Divisor && i.RegraDesconto !== "DiasCorridos" ? " (" + num(i.Divisor, i.Divisor % 1 ? 2 : 0) + ")" : "") + "</td><td class='num small'>" + (d.erro ? "<span class='badge b-amber'>" + esc(d.erro) + "</span>" : brl(d.valor)) + "</td><td class='small'>" + esc([i.CodigoServicoNF, i.NumPedido ? "Pedido " + i.NumPedido : ""].filter(Boolean).join(" · ")) + "</td></tr>";
     }).join("") + "</tbody></table></div>" : "<div class='alert alert-amber'>Nenhum serviço cadastrado neste contrato.</div>";
   }
   h += "</div>";
@@ -1408,19 +1525,42 @@ function renderClienteDetail(){
 function openCliente(id){
   var c = id ? byId("clientes", id) : { Area: AREAS[0], ModeloBoletim:"Eleva", Ativo:true };
   var f = function(k, lbl, extra){ return "<div" + (extra && extra.full ? " class='full'" : "") + "><label>" + lbl + "</label><input id='c_" + k + "' value='" + esc(c[k] || "") + "'" + (extra && extra.type ? " type='" + extra.type + "'" : "") + "></div>"; };
-  var h = "<h3>" + (id ? "Editar cliente" : "Novo cliente") + "</h3><p class='msub'>Cada unidade que recebe NF própria deve ser um cliente.</p><div class='form'>" +
+  var h = "<h3>" + (id ? "Editar cliente" : "Novo cliente") + "</h3><p class='msub'>Se o cliente tem mais de um CNPJ recebendo NF (ex.: S.A e Cilindros), cadastre-os em Tomadores.</p><div class='form'>" +
     f("Title", "Nome (como aparece no sistema)") + f("RazaoSocial", "Razão social (tomador da NF)") + f("CNPJ", "CNPJ") +
     "<div><label>Área</label><select id='c_Area'>" + AREAS.map(function(a){ return opt(a, a, c.Area); }).join("") + "</select></div>" +
     f("Unidade", "Unidade") + f("Local", "Cidade (para feriados)") + f("Coordenador", "Coordenador (e-mail)") + f("AprovadorNome", "Aprovador no cliente") + f("AprovadorEmail", "E-mail do aprovador", { type:"email" }) +
     "<div><label>Modelo de boletim</label><select id='c_ModeloBoletim'>" + opt("Eleva", "Modelo ElevaLife", c.ModeloBoletim) + opt("Cliente", "Modelo do cliente", c.ModeloBoletim) + "</select></div>" +
-    f("CondicaoPagamento", "Condição de pagamento") +
+    f("CondicaoPagamento", "Condição de pagamento") + f("EmailsCopia", "E-mails em cópia (separe com ;)") +
+    tomadoresForm(c) +
     "<div class='full'><label>Observações</label><textarea id='c_Observacoes'>" + esc(c.Observacoes || "") + "</textarea></div>" +
     "<div class='full'><label class='check'><input type='checkbox' id='c_Ativo' " + (c.Ativo !== false ? "checked" : "") + "> Cliente ativo</label></div></div>" +
     "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarCliente('" + (id || "") + "')\">Salvar</button></div>";
   openModal(h, true);
 }
+function tomadoresForm(c){
+  var ts = jparse(c.Tomadores, []).filter(function(t){ return t && t.k; });
+  while (ts.length < 3) ts.push({ k:"", nome:"", razao:"", cnpj:"" });
+  return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px;margin-top:4px'><label>Faturamento</label>" +
+    "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_FaturarPorServico' " + (c.FaturarPorServico ? "checked" : "") + "> Cada serviço é faturado separadamente (OC, boletim e NF próprios por serviço)</label>" +
+    "<label>Tomadores (CNPJs que recebem NF) — deixe em branco se for um só</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Nome curto</th><th>Razão social</th><th>CNPJ</th></tr></thead><tbody>" +
+    ts.map(function(t, i){ return "<tr><td><input id='tm_n" + i + "' data-k='" + esc(t.k) + "' value='" + esc(t.nome) + "' placeholder='Ex.: S.A' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td><td><input id='tm_r" + i + "' value='" + esc(t.razao) + "' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td><td><input id='tm_c" + i + "' value='" + esc(t.cnpj) + "' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td></tr>"; }).join("") +
+    "</tbody></table></div><div class='hint'>Depois, em cada serviço, informe quanto vai para cada tomador (ex.: 70% S.A / 30% Cilindros).</div></div>";
+}
+function lerTomadoresForm(){
+  var out = [], usados = {};
+  for (var i = 0; i < 3; i++){
+    var el = $("tm_n" + i); if (!el) break;
+    var nome = el.value.trim(), razao = v("tm_r" + i), cnpj = v("tm_c" + i);
+    if (!nome && !razao && !cnpj) continue;
+    var k = el.getAttribute("data-k") || norm(nome || razao).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || ("T" + (i + 1));
+    while (usados[k]) k += "X"; usados[k] = 1;
+    out.push({ k:k, nome: nome || razao, razao: razao, cnpj: cnpj });
+  }
+  return out;
+}
 async function salvarCliente(id){
-  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Ativo"].forEach(function(k){ f[k] = v("c_" + k); });
+  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Ativo","EmailsCopia","FaturarPorServico"].forEach(function(k){ f[k] = v("c_" + k); });
+  f.Tomadores = JSON.stringify(lerTomadoresForm());
   if (!f.Title){ showToast("Informe o nome do cliente.", true); return; }
   var r = await safe(function(){ return id ? api.update("clientes", id, f) : api.create("clientes", f); }, "Cliente salvo.");
   if (!id && r) SEL.cliente = String(r.id);
@@ -1472,15 +1612,28 @@ async function salvarRenovacao(ctId){
   var novo = await safe(async function(){
     var n = await api.create("contratos", { Title: v("r_Title"), ClienteId: ct.ClienteId, Versao: (ct.Versao || 1) + 1, Inicio: ini, Fim: fim, IndiceReajuste: ct.IndiceReajuste, MesReajuste: ct.MesReajuste, AvisoPrevioDias: ct.AvisoPrevioDias, Status:"Vigente", Observacoes: pct ? "Reajuste de " + num(pct * 100) + "% sobre a versão " + (ct.Versao || 1) : "" });
     var its = itensDoContrato(ctId);
-    for (var i = 0; i < its.length; i++){ var it = its[i]; await api.create("itens", { Title: it.Title, ContratoId: String(n.id), ClienteId: it.ClienteId, Cargo: it.Cargo, ValorMensal: r2(it.ValorMensal * (1 + pct)), RegraDesconto: it.RegraDesconto, Divisor: it.Divisor, JornadaDiaria: it.JornadaDiaria, CodigoServicoNF: it.CodigoServicoNF, Retencoes: it.Retencoes, Rateio: it.Rateio, NumPedido: it.NumPedido, Ordem: it.Ordem }); }
+    for (var i = 0; i < its.length; i++){ var it = its[i]; await api.create("itens", { Title: it.Title, ContratoId: String(n.id), ClienteId: it.ClienteId, Cargo: it.Cargo, ValorMensal: r2(it.ValorMensal * (1 + pct)), RegraDesconto: it.RegraDesconto, Divisor: it.Divisor, JornadaDiaria: it.JornadaDiaria, CodigoServicoNF: it.CodigoServicoNF, Retencoes: it.Retencoes, Rateio: it.Rateio, NumPedido: it.NumPedido, Ordem: it.Ordem, Divisao: it.Divisao || "" }); }
     var prevFim = addDays(ini, -1);
     if (!ct.Fim || ct.Fim > prevFim) await api.update("contratos", ctId, { Fim: prevFim });
     return n;
   }, "Nova versão criada.");
   SEL.contrato = String(novo.id); closeModal(); renderCurrent();
 }
+function divisaoForm(it, cli){
+  var toms = tomadoresDe(cli), cur = divisaoDe(it, cli), porServ = !!cli.FaturarPorServico;
+  return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px'><label>Divisão entre tomadores (descontos e acréscimos seguem a mesma proporção)</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Tomador</th><th class='num'>%</th><th>Nº do pedido / OC</th>" + (porServ ? "<th>E-mail(s) do focal (Para)</th><th>E-mail(s) em cópia</th>" : "") + "</tr></thead><tbody>" +
+    toms.map(function(t, i){ var d = cur.filter(function(x){ return (x.t || "") === t.k; })[0] || { pct:0 }; var inp = function(id, val, w){ return "<input id='" + id + "' value='" + esc(val == null ? "" : val) + "' style='width:" + (w || "100%") + ";padding:7px;border:1px solid var(--border);border-radius:7px'>"; };
+      return "<tr><td><b>" + esc(t.nome) + "</b><div class='small muted'>" + esc(t.cnpj || "") + "</div></td><td class='num'>" + inp("dv_p" + i, d.pct ? String(d.pct).replace(".", ",") : "", "70px") + "</td><td>" + inp("dv_o" + i, d.pedido || "") + "</td>" + (porServ ? "<td>" + inp("dv_e" + i, d.para || "") + "</td><td>" + inp("dv_c" + i, d.cc || "") + "</td>" : "") + "</tr>"; }).join("") +
+    "</tbody></table></div><div class='hint'>A soma das porcentagens precisa dar 100%. Deixe 0 no tomador que não recebe este serviço." + (porServ ? " Cada linha com % vira um faturamento separado (boletim, OC, e-mail e NF próprios)." : "") + "</div></div>";
+}
+function lerDivisaoForm(cli){
+  var toms = tomadoresDe(cli), out = [];
+  toms.forEach(function(t, i){ var p = parseNum(v("dv_p" + i)); if (p > 0) out.push({ t:t.k, pct:p, pedido:v("dv_o" + i), para:v("dv_e" + i), cc:v("dv_c" + i) }); });
+  return out;
+}
 function openItem(ctId, itemId){
   var ct = byId("contratos", ctId), it = itemId ? byId("itens", itemId) : { RegraDesconto:"DiasFixos", Divisor:21, JornadaDiaria:8, Ordem: itensDoContrato(ctId).length + 1 };
+  var cli = byId("clientes", ct.ClienteId), multiTom = !!tomadoresDe(cli)[0].k;
   var h = "<h3>" + (itemId ? "Editar serviço" : "Adicionar serviço") + "</h3><p class='msub'>A regra de desconto define quanto vale 1 dia ou 1 hora de ausência deste serviço.</p><div class='form'>" +
     "<div class='full'><label>Serviço</label><input id='i_Title' value='" + esc(it.Title || "") + "'></div>" +
     "<div><label>Cargo do profissional</label><input id='i_Cargo' list='dlCargos' value='" + esc(it.Cargo || "") + "'>" + cargoDatalist() + "</div>" +
@@ -1490,8 +1643,7 @@ function openItem(ctId, itemId){
     "<div><label>Jornada diária (horas)</label><input id='i_JornadaDiaria' inputmode='decimal' value='" + esc(it.JornadaDiaria != null ? String(it.JornadaDiaria).replace(".", ",") : "") + "' oninput='itemPreview()'><div class='hint'>Usada para converter atrasos em horas.</div></div>" +
     "<div><label>Código do serviço (NF)</label><input id='i_CodigoServicoNF' value='" + esc(it.CodigoServicoNF || "") + "' placeholder='Ex.: 04.06.01'></div>" +
     "<div><label>Retenções (conforme contrato)</label><input id='i_Retencoes' value='" + esc(it.Retencoes || "") + "' placeholder='Ex.: ISS 2%, INSS 11%'></div>" +
-    "<div><label>Nº do pedido</label><input id='i_NumPedido' value='" + esc(it.NumPedido || "") + "'></div>" +
-    "<div><label>Rateio</label><input id='i_Rateio' value='" + esc(it.Rateio || "") + "' placeholder='Ex.: 70% Planta 1 / 30% Planta 2'></div>" +
+    (multiTom ? divisaoForm(it, cli) : "<div><label>Nº do pedido / OC</label><input id='i_NumPedido' value='" + esc(it.NumPedido || "") + "'></div>") +
     "<div><label>Ordem no boletim</label><input id='i_Ordem' inputmode='numeric' value='" + esc(it.Ordem || "") + "'></div>" +
     "<div class='calc-box' id='iPrev'></div></div>" +
     "<div class='modal-actions'>" + (itemId ? "<button class='btn-o btn-danger' onclick=\"excluirItem('" + itemId + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarItem('" + ctId + "','" + (itemId || "") + "')\">Salvar</button></div>";
@@ -1506,7 +1658,13 @@ function itemPreview(){
 }
 async function salvarItem(ctId, itemId){
   var ct = byId("contratos", ctId);
-  var f = { ContratoId:String(ctId), ClienteId:String(ct.ClienteId), Title:v("i_Title"), Cargo:v("i_Cargo"), ValorMensal:parseNum(v("i_ValorMensal")), RegraDesconto:v("i_RegraDesconto"), Divisor:parseNum(v("i_Divisor")) || null, JornadaDiaria:parseNum(v("i_JornadaDiaria")) || null, CodigoServicoNF:v("i_CodigoServicoNF"), Retencoes:v("i_Retencoes"), NumPedido:v("i_NumPedido"), Rateio:v("i_Rateio"), Ordem:parseNum(v("i_Ordem")) || null };
+  var cli = byId("clientes", ct.ClienteId);
+  var f = { ContratoId:String(ctId), ClienteId:String(ct.ClienteId), Title:v("i_Title"), Cargo:v("i_Cargo"), ValorMensal:parseNum(v("i_ValorMensal")), RegraDesconto:v("i_RegraDesconto"), Divisor:parseNum(v("i_Divisor")) || null, JornadaDiaria:parseNum(v("i_JornadaDiaria")) || null, CodigoServicoNF:v("i_CodigoServicoNF"), Retencoes:v("i_Retencoes"), Ordem:parseNum(v("i_Ordem")) || null };
+  if ($("dv_p0")){
+    var dv = lerDivisaoForm(cli), soma = dv.reduce(function(a, d){ return a + d.pct; }, 0);
+    if (Math.abs(soma - 100) > 0.001){ showToast("A divisão entre tomadores precisa somar 100% (hoje soma " + num(soma, 1) + "%).", true); return; }
+    f.Divisao = JSON.stringify(dv); f.Rateio = dv.length > 1 ? dv.map(function(d){ return num(d.pct, d.pct % 1 ? 1 : 0) + "% " + tomadorDe(cli, d.t).nome; }).join(" / ") : ""; f.NumPedido = dv.length === 1 ? dv[0].pedido : "";
+  } else { f.NumPedido = v("i_NumPedido"); }
   if (!f.Title || !f.ValorMensal){ showToast("Informe o serviço e o valor mensal.", true); return; }
   await safe(function(){ return itemId ? api.update("itens", itemId, f) : api.create("itens", f); }, "Serviço salvo.");
   closeModal(); renderCurrent();
@@ -1635,6 +1793,8 @@ function renderConfig(){
   var h = "<div class='card'><p class='card-title'>1. Listas no SharePoint</p><p class='card-sub'>O sistema usa " + Object.keys(SCHEMA).length + " listas no site BPM. Elas são criadas automaticamente com todas as colunas.</p><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Lista</th><th>Nome no SharePoint</th><th>Situação</th><th class='num'>Registros</th></tr></thead><tbody>" +
     Object.keys(SCHEMA).map(function(k){ var ok = !!LIST_IDS[k]; return "<tr><td>" + esc(SCHEMA[k].label) + "</td><td class='small'>" + esc(SCHEMA[k].list) + "</td><td>" + (ok ? "<span class='badge b-green'>criada</span>" : "<span class='badge b-red'>falta criar</span>") + "</td><td class='num'>" + (ok ? S[k].length : "–") + "</td></tr>"; }).join("") + "</tbody></table></div>";
   if (MISSING_LISTS.length) h += "<div class='modal-actions' style='justify-content:flex-start'><button class='btn' onclick='criarListas()'>Criar as " + MISSING_LISTS.length + " lista(s) que faltam</button></div><p class='small muted'>Na primeira vez, a Microsoft vai pedir para você autorizar a permissão \"Sites.Manage.All\" (criar listas). Como administrador, aceite em nome da organização.</p>";
+  var nCols = Object.keys(MISSING_COLS).reduce(function(a, k){ return a + MISSING_COLS[k].length; }, 0);
+  if (nCols) h += "<div class='alert alert-amber' style='margin-top:12px'>Esta versão do sistema usa " + nCols + " coluna(s) nova(s) que ainda não existem no SharePoint (" + Object.keys(MISSING_COLS).map(function(k){ return SCHEMA[k].list + ": " + MISSING_COLS[k].map(function(c){ return c[0]; }).join(", "); }).join(" · ") + ").</div><div class='modal-actions' style='justify-content:flex-start'><button class='btn' onclick='atualizarColunas()'>Atualizar estrutura das listas</button></div>";
   h += "<p class='small' style='margin:12px 0 0'><a href='https://" + SITE_HOST + SITE_PATH + "/_layouts/15/viewlsts.aspx' target='_blank' rel='noopener'>Abrir o conteúdo do site BPM no SharePoint</a></p></div>";
   var pronto = !MISSING_LISTS.length;
   h += "<div class='card'><p class='card-title'>2. Dados iniciais</p><p class='card-sub'>Carrega clientes, serviços, valores, preços de horas extras, custos por cargo, alíquotas e feriados a partir do arquivo <b>dados-iniciais-faturamento.json</b> (entregue pelo Claude, com os dados da aba REF de set/2026). Por segurança, esses dados não ficam no site publicado.</p>";
@@ -1643,8 +1803,55 @@ function renderConfig(){
     h += "<div class='form' style='grid-template-columns:1fr'><div><label>1) Selecione o arquivo</label><input type='file' id='seedFile' accept='.json,application/json' onchange='lerSeed()'></div></div><div id='seedAreas' style='margin-top:12px'></div>";
   }
   h += "</div>";
+  var gp = S.clientes.filter(function(c){ return norm(c.Title) === norm("Gerdau Pindamonhangaba"); })[0];
+  if (gp && !gp.FaturarPorServico && !MISSING_LISTS.length){
+    h += "<div class='card' style='border:2px solid var(--grena)'><p class='card-title'>Nova estrutura da Gerdau Pindamonhangaba</p><p class='card-sub'>Separa Pinda em 8 faturamentos independentes, cada um com OC, boletim, e-mail e NF próprios:</p>" +
+      "<ul class='small' style='margin:0 0 10px;line-height:1.7'><li>Tomadores: <b>S.A</b> (33.611.500/0177-80) e <b>Cilindros</b> (33.611.500/0184-09)</li><li>Enfermagem S.A e Medicina do Trabalho S.A: 100% S.A</li><li>Fisioterapia e Auxiliar Administrativo: 70% S.A / 30% Cilindros (descontos e acréscimos na mesma proporção)</li><li>Ergonomia S.A (R$ 12.755,80) e Ergonomia Cilindros (R$ 7.370,47) passam para dentro de Pinda; os clientes \"Gerdau CM – Ergonomia\" e \"Gerdau Cilindros – Ergonomia\" ficam inativos</li><li>Horas extras e coberturas de enfermagem vão para Enfermagem S.A</li></ul>" +
+      (nCols ? "<div class='alert alert-blue'>Atualize a estrutura das listas (acima) antes.</div>" : "<button class='btn' onclick='migrarPinda()'>Aplicar nova estrutura</button>") + "</div>";
+  }
   h += "<div class='card'><p class='card-title'>3. Quem vê a Margem e a Configuração</p><p class='card-sub'>Cadastre os gestores em Parâmetros › Gestor. Enquanto não houver nenhum, todos veem.</p></div>";
   $("cfgBody").innerHTML = h;
+}
+async function atualizarColunas(){
+  var ks = Object.keys(MISSING_COLS);
+  try {
+    for (var i = 0; i < ks.length; i++){ setLoading(true, "Atualizando lista " + SCHEMA[ks[i]].list + "..."); await api.addColumns(ks[i]); }
+    setLoading(false); showToast("Estrutura atualizada.");
+  } catch (e){ setLoading(false); console.error(e); showToast("Erro ao atualizar a estrutura: " + e.message, true); }
+  await reloadAll();
+}
+async function migrarPinda(){
+  var gp = S.clientes.filter(function(c){ return norm(c.Title) === norm("Gerdau Pindamonhangaba"); })[0];
+  var ct = gp && contratoAtual(gp.id); if (!ct){ showToast("Contrato da Gerdau Pindamonhangaba não encontrado.", true); return; }
+  var ergo = function(nome){ return S.clientes.filter(function(c){ return norm(c.Title) === norm(nome); })[0]; };
+  var eSA = ergo("Gerdau CM – Ergonomia"), eCI = ergo("Gerdau Cilindros – Ergonomia");
+  var itemErgo = function(c){ var k = c && contratoAtual(c.id); return k ? itensDoContrato(k.id)[0] : null; };
+  var iSA = itemErgo(eSA), iCI = itemErgo(eCI);
+  askConfirm("Aplicar a nova estrutura na Gerdau Pindamonhangaba? Medições já geradas para Pinda continuam como estão; as próximas saem separadas por serviço.", async function(){
+    try {
+      setLoading(true, "Aplicando nova estrutura...");
+      var toms = [{ k:"SA", nome:"S.A", razao:"Gerdau Aços Longos S.A. (CM)", cnpj:"33.611.500/0177-80" }, { k:"CIL", nome:"Cilindros", razao:"Gerdau Aços Longos S.A. (Cilindros)", cnpj:"33.611.500/0184-09" }];
+      await api.update("clientes", gp.id, { Tomadores: JSON.stringify(toms), FaturarPorServico: true });
+      var its = itensDoContrato(ct.id), ordem = 0;
+      for (var i = 0; i < its.length; i++){
+        var it = its[i], t = norm(it.Title), div, title = it.Title;
+        if (t.indexOf("fisio") >= 0){ div = [{ t:"SA", pct:70, pedido:"" }, { t:"CIL", pct:30, pedido:"" }]; }
+        else if (t.indexOf("aux") >= 0){ div = [{ t:"SA", pct:70, pedido:"" }, { t:"CIL", pct:30, pedido:"" }]; title = "Auxiliar Administrativo"; }
+        else div = [{ t:"SA", pct:100, pedido:"" }];
+        ordem = Math.max(ordem, Number(it.Ordem) || 0);
+        await api.update("itens", it.id, { Title: title, Divisao: JSON.stringify(div), Rateio: div.length > 1 ? "70% S.A / 30% Cilindros" : "", NumPedido: "" });
+      }
+      var addErgo = async function(src, tk, fallbackValor){
+        await api.create("itens", { Title:"Ergonomia", Cargo:"Ergonomista", ValorMensal: src ? src.ValorMensal : fallbackValor, RegraDesconto: src ? src.RegraDesconto : "DiasFixos", Divisor: src ? src.Divisor : 22, JornadaDiaria: src ? src.JornadaDiaria : 8, CodigoServicoNF: src ? src.CodigoServicoNF : "", Retencoes: src ? src.Retencoes : "", ContratoId:String(ct.id), ClienteId:String(gp.id), Ordem: ++ordem, Divisao: JSON.stringify([{ t:tk, pct:100, pedido:"" }]) });
+      };
+      await addErgo(iSA, "SA", 12755.80);
+      await addErgo(iCI, "CIL", 7370.47);
+      if (eSA) await api.update("clientes", eSA.id, { Ativo:false, Observacoes: "Inativado em " + fmtDate(todayISO()) + ": faturamento passou a ser feito em Gerdau Pindamonhangaba (Ergonomia S.A)." });
+      if (eCI) await api.update("clientes", eCI.id, { Ativo:false, Observacoes: "Inativado em " + fmtDate(todayISO()) + ": faturamento passou a ser feito em Gerdau Pindamonhangaba (Ergonomia Cilindros)." });
+      setLoading(false); showToast("Nova estrutura aplicada. Informe as OCs de cada serviço no cadastro da Gerdau Pinda.");
+    } catch (e){ setLoading(false); console.error(e); showToast("Erro ao aplicar: " + e.message, true); }
+    await reloadAll(); SEL.cliente = String(gp.id); SEL.contrato = null; showTab("clientes");
+  }, "Aplicar");
 }
 async function criarListas(){
   var faltam = MISSING_LISTS.slice();
@@ -1701,11 +1908,11 @@ function buildDemoData(){
   var aprov = { a:["Carla (Saúde Alfa)","carla@exemplo.com.br"], b:["Marcos (SESMT Beta)","marcos@exemplo.com.br"], c:["Paula (Gama)","paula@exemplo.com.br"] };
   var map = {};
   DEMO_SEED.clientes.forEach(function(s){
-    var c = { id:nid(), Title:s.Title, RazaoSocial:s.RazaoSocial, CNPJ:s.CNPJ, Unidade:s.Unidade, Local:s.Local, Area:s.Area, ModeloBoletim:s.ModeloBoletim, CondicaoPagamento:s.CondicaoPagamento, Ativo:true, AprovadorNome:(aprov[s.key]||[])[0] || "", AprovadorEmail:(aprov[s.key]||[])[1] || "" };
+    var c = { id:nid(), Title:s.Title, RazaoSocial:s.RazaoSocial, CNPJ:s.CNPJ, Unidade:s.Unidade, Local:s.Local, Area:s.Area, ModeloBoletim:s.ModeloBoletim, CondicaoPagamento:s.CondicaoPagamento, Ativo:true, AprovadorNome:(aprov[s.key]||[])[0] || "", AprovadorEmail:(aprov[s.key]||[])[1] || "", Tomadores: s.Tomadores || "", FaturarPorServico: !!s.FaturarPorServico };
     S.clientes.push(c); map[s.key] = c;
     var ct = { id:nid(), Title:"PROP-" + (2025 + (seq % 2)) + "-" + (100 + seq), ClienteId:c.id, Versao:1, Status:"Vigente", Inicio: fins[s.key] ? addDays(fins[s.key], -365) : "", Fim: fins[s.key] || "", IndiceReajuste: fins[s.key] ? "IPCA" : "", MesReajuste:"" };
     S.contratos.push(ct);
-    s.itens.forEach(function(it, j){ S.itens.push({ id:nid(), Title:it[0], Cargo:it[1], ValorMensal:it[2], RegraDesconto:it[3], Divisor:it[4] || null, JornadaDiaria:it[5] || null, NumPedido:it[6] || "", Rateio:it[7] || "", ContratoId:ct.id, ClienteId:c.id, Ordem:j+1, CodigoServicoNF: /Medicina|Médico/.test(it[1]) ? "04.01.01" : /Enferm/.test(it[1]) ? "04.06.01" : /Fisio|Ergon/.test(it[1]) ? "04.08.02" : /Educação/.test(it[1]) ? "06.04.01" : "" }); });
+    s.itens.forEach(function(it, j){ S.itens.push({ id:nid(), Title:it[0], Cargo:it[1], ValorMensal:it[2], RegraDesconto:it[3], Divisor:it[4] || null, JornadaDiaria:it[5] || null, NumPedido:it[6] || "", Rateio:it[7] || "", Divisao:it[8] || "", ContratoId:ct.id, ClienteId:c.id, Ordem:j+1, CodigoServicoNF: /Medicina|Médico/.test(it[1]) ? "04.01.01" : /Enferm/.test(it[1]) ? "04.06.01" : /Fisio|Ergon/.test(it[1]) ? "04.08.02" : /Educação/.test(it[1]) ? "06.04.01" : "" }); });
     s.variaveis.forEach(function(x){ S.variaveis.push({ id:nid(), Title:x[1] + " – " + x[0], ClienteId:c.id, Cargo:x[0], Tipo:x[1], Periodo:x[2], Valor:x[3] }); });
   });
   DEMO_SEED.parametros.forEach(function(p){ S.parametros.push(Object.assign({ id:nid() }, p)); });
@@ -1732,15 +1939,18 @@ function buildDemoData(){
   api._seq = seq + 1000;
   // medicoes de exemplo na competencia anterior
   var mk = function(key, status, extra){
-    var c = map[key], m = montarMedicao(c.id, comp); if (m.erro) return;
+    var c = map[key]; unidadesDe(c.id, comp).forEach(function(u, ui){ var st = typeof status === "function" ? status(ui) : status; mk1(c, u, st, extra); });
+  };
+  var mk1 = function(c, u, status, extra){
+    var m = montarMedicao(c.id, comp, u.key); if (m.erro) return;
     var hist = [{ s:"Rascunho", d:new Date(Date.now() - 6*864e5).toISOString(), p:"Coordenação", o:"Gerada" }];
     if (status !== "Rascunho") hist.push({ s:"Enviada", d:new Date(Date.now() - 5*864e5).toISOString(), p:"Coordenação", o:c.AprovadorEmail });
     if (status === "Aprovada" || status === "NF emitida") hist.push({ s:"Aprovada", d:new Date(Date.now() - 3*864e5).toISOString(), p:"Coordenação", o:c.AprovadorNome });
     if (status === "NF emitida") hist.push({ s:"NF emitida", d:new Date(Date.now() - 2*864e5).toISOString(), p:"Coordenação", o:"NF 0001" });
-    S.medicoes.push(Object.assign({ id:nid(), Title:c.Title + " – " + compLabel(comp), ClienteId:c.id, Competencia:comp, ContratoId:m.contrato.id, ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:status,
-      Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:1 }), Historico: JSON.stringify(hist), GeradoEm: new Date(Date.now() - 6*864e5).toISOString(), DataEnvio: status !== "Rascunho" ? addDays(todayISO(), -5) : "", DataAprovacao: (status === "Aprovada" || status === "NF emitida") ? addDays(todayISO(), -3) : "", AprovadoPor: (status === "Aprovada" || status === "NF emitida") ? c.AprovadorNome : "" }, extra || {}));
+    S.medicoes.push(Object.assign({ id:nid(), Title:nomeUnidade(c, u) + " – " + compLabel(comp), ClienteId:c.id, Unidade:u.key, UnidadeNome:u.nome || "", Tomador:u.t || "", Competencia:comp, ContratoId:m.contrato.id, ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:status,
+      Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:1, pedido:u.pedido || "" }), Historico: JSON.stringify(hist), GeradoEm: new Date(Date.now() - 6*864e5).toISOString(), DataEnvio: status !== "Rascunho" ? addDays(todayISO(), -5) : "", DataAprovacao: (status === "Aprovada" || status === "NF emitida") ? addDays(todayISO(), -3) : "", AprovadoPor: (status === "Aprovada" || status === "NF emitida") ? c.AprovadorNome : "" }, status === "NF emitida" ? (extra || {}) : {}));
   };
-  mk("a", "Enviada"); mk("b", "Aprovada"); mk("c", "NF emitida", { NumNF:"0001", DataNF: addDays(todayISO(), -2) }); mk("d", "Rascunho");
+  mk("a", "Enviada"); mk("b", "Aprovada"); mk("c", function(i){ return i < 3 ? "NF emitida" : i < 5 ? "Aprovada" : "Rascunho"; }, { NumNF:"0001", DataNF: addDays(todayISO(), -2) }); mk("d", "Rascunho");
   api._seq = seq + 1000;
 }
 
