@@ -177,6 +177,9 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 .hidden{display:none !important;}
 @media (max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.grid2,.split{grid-template-columns:1fr;}.dl{grid-template-columns:1fr 1fr;}}
 @media (max-width:760px){.shell{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;}.app{padding:14px;}.header{flex-direction:column;align-items:flex-start;}.form{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:1fr;}}
+.progress-track{height:7px;background:var(--gray-bg);border-radius:4px;margin-top:10px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;background:var(--grena);}
+.tbl th.num{text-align:right;}
 
 </style>
 </head>
@@ -234,7 +237,11 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
         <div class="kpi-grid" id="dashKpis"></div>
         <div class="grid2">
           <div class="card"><p class="card-title">Medições por status</p><p class="card-sub">Clientes ativos na competência.</p><div class="chart-wrap"><canvas id="chStatus"></canvas></div></div>
-          <div class="card"><p class="card-title">Valor a faturar por cliente</p><p class="card-sub">Medições geradas na competência.</p><div class="chart-wrap"><canvas id="chClientes"></canvas></div></div>
+          <div class="card"><p class="card-title">Valor a faturar por cliente</p><p class="card-sub">Previsão por cliente. Grená: já reconhecido pelo coordenador · rosa: falta reconhecer.</p><div class="chart-wrap"><canvas id="chClientes"></canvas></div></div>
+        </div>
+        <div class="card"><p class="card-title">Ocorrências da competência</p><p class="card-sub" id="dashOcoSub"></p>
+          <div id="dashOcoEmpty" class="empty hidden">Nenhuma ocorrência lançada nesta competência.</div>
+          <div id="dashOcoBody"><div class="grid2"><div><p class="small muted" style="margin:0 0 6px;font-weight:700">Quantas e quais</p><div class="chart-wrap"><canvas id="chOcoTipo"></canvas></div></div><div><p class="small muted" style="margin:0 0 6px;font-weight:700">Onde (por cliente)</p><div class="chart-wrap"><canvas id="chOcoCli"></canvas></div></div></div><div id="dashOcoTbl" style="margin-top:14px"></div></div>
         </div>
         <div class="grid2">
           <div class="card"><p class="card-title">Pendências</p><p class="card-sub">O que precisa de ação agora.</p><div id="dashPend"></div></div>
@@ -904,23 +911,33 @@ function renderDashboard(){
   var comp = $("dashComp").value || prevComp(curComp()), area = $("dashArea").value;
   var clis = clientesAtivos(area).filter(function(c){ return contratoVigente(c.id, comp) || medicaoDe(c.id, comp); });
   var meds = clis.map(function(c){ return medicaoDe(c.id, comp); }).filter(Boolean);
-  var total = meds.reduce(function(s, m){ return s + (Number(m.ValorFaturar)||0); }, 0);
-  var desc = meds.reduce(function(s, m){ return s + (Number(m.Descontos)||0); }, 0);
-  var acr = meds.reduce(function(s, m){ return s + (Number(m.Acrescimos)||0); }, 0);
-  var concl = meds.filter(function(m){ return m.Status === "Aprovada" || m.Status === "NF emitida"; }).length;
+  // previsao: medicao salva quando existe; senao, previa calculada pelo contrato vigente + ocorrencias
+  var RECONHECIDO = { "Enviada":1, "Aprovada":1, "NF emitida":1 };
+  var prev = clis.map(function(c){
+    var m = medicaoDe(c.id, comp), src = m || montarMedicao(c.id, comp);
+    if (src.erro) src = { ValorFaturar:0, Descontos:0, Acrescimos:0 };
+    return { c:c, m:m, v:Number(src.ValorFaturar)||0, d:Number(src.Descontos)||0, a:Number(src.Acrescimos)||0, ok: !!(m && RECONHECIDO[m.Status]) };
+  });
+  var total = prev.reduce(function(s, r){ return s + r.v; }, 0);
+  var rec = prev.filter(function(r){ return r.ok; }), recV = rec.reduce(function(s, r){ return s + r.v; }, 0);
+  var falta = prev.filter(function(r){ return !r.ok; }), faltaV = total - recV;
+  var desc = prev.reduce(function(s, r){ return s + r.d; }, 0);
+  var acr = prev.reduce(function(s, r){ return s + r.a; }, 0);
+  var pct = total ? Math.round(recV / total * 100) : 0;
   $("dashKpis").innerHTML =
-    kpi("Valor a faturar", brl(total), meds.length + " de " + clis.length + " clientes com medição gerada") +
-    kpi("Aprovadas / NF emitida", concl + " de " + clis.length, clis.length ? Math.round(concl / clis.length * 100) + "% da competência concluída" : "") +
+    kpi("Valor a faturar", brl(total), "previsão de " + clis.length + " contrato(s) vigente(s) em " + compLabel(comp)) +
+    '<div class="kpi"><p class="kpi-label">Reconhecido pelo coordenador</p><p class="kpi-value">' + brl(recV) + '</p><p class="kpi-sub">' + rec.length + " de " + clis.length + " cliente(s) · " + pct + '%</p><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><p class="kpi-sub small" style="margin-top:8px">Falta reconhecer: <b>' + brl(faltaV) + "</b> (" + falta.length + " cliente(s))</p></div>" +
     kpi("Descontos", brl(desc), "faltas, atrasos e serviços suspensos") +
     kpi("Acréscimos", brl(acr), "horas extras, coberturas e reembolsos");
+  renderOcorrenciasDash(comp, clis);
   // graficos
   var counts = {}; ["Não gerada"].concat(STATUS_MED).forEach(function(s){ counts[s] = 0; });
   clis.forEach(function(c){ counts[statusDe(c.id, comp)]++; });
   var colors = { "Não gerada":"#9aa0a6", "Rascunho":"#1a56c4", "Enviada":"#a8620a", "Contestada":"#b02a2a", "Aprovada":"#5b3cc4", "NF emitida":"#1e7d38" };
   drawChart("chStatus", { type:"bar", data:{ labels:Object.keys(counts), datasets:[{ data:Object.values(counts), backgroundColor:Object.keys(counts).map(function(k){ return colors[k]; }), borderRadius:6 }] },
     options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ precision:0 }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
-  var rows = meds.map(function(m){ var c = byId("clientes", m.ClienteId); return { n: c ? c.Title : "?", v: Number(m.ValorFaturar)||0 }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 12);
-  drawChart("chClientes", { type:"bar", data:{ labels: rows.map(function(r){ return r.n; }), datasets:[{ data: rows.map(function(r){ return r.v; }), backgroundColor:"#6e1423", borderRadius:6 }] },
+  var rows = prev.map(function(r){ return { n: r.c.Title, v: r.v, ok: r.ok }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 12);
+  drawChart("chClientes", { type:"bar", data:{ labels: rows.map(function(r){ return r.n; }), datasets:[{ data: rows.map(function(r){ return r.v; }), backgroundColor: rows.map(function(r){ return r.ok ? "#6e1423" : "#d9a3ad"; }), borderRadius:4, maxBarThickness:22 }] },
     options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ return brl(ctx.raw); } } } }, scales:{ x:{ ticks:{ callback:function(v){ return "R$ " + (v/1000).toLocaleString("pt-BR") + " mil"; } }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
   // pendencias
   var pend = [];
@@ -939,6 +956,45 @@ function renderDashboard(){
   $("dashPend").innerHTML = pend.length ? pend.map(function(p){ return '<div class="alert alert-' + p[0] + '">' + esc(p[1]) + "</div>"; }).join("") : '<div class="alert alert-green">Nada pendente nesta competência.</div>';
   var ren = renovacoesRows(area).filter(function(r){ return r.dias != null && r.dias <= 90; }).sort(function(a, b){ return a.dias - b.dias; });
   $("dashRenov").innerHTML = ren.length ? '<table class="tbl"><thead><tr><th>Cliente</th><th>Término</th><th>Prazo</th></tr></thead><tbody>' + ren.map(function(r){ return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td>" + esc(r.c.Title) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + "</td></tr>"; }).join("") + "</tbody></table>" : '<div class="alert alert-green">Nenhum contrato vence nos próximos 90 dias.</div>' + (renovacoesRows(area).some(function(r){ return r.dias == null; }) ? '<div class="alert alert-blue">Há contratos sem data de término cadastrada. Veja em Renovações.</div>' : "");
+}
+// ---- indicador de ocorrencias ----
+var OCO_GRUPOS = [
+  { k:"Faltas e atrasos", tipos:["Falta","Atraso / saída antecipada","Serviço suspenso"], cor:"#2a78d6" },
+  { k:"Horas extras", tipos:["Hora extra"], cor:"#eb6834" },
+  { k:"Coberturas", tipos:["Cobertura"], cor:"#1baf7a" },
+  { k:"Reembolsos e ajustes", tipos:["Reembolso","Consumo","Ajuste (acréscimo)","Ajuste (desconto)"], cor:"#eda100" }
+];
+function grupoOco(tipo){ for (var i = 0; i < OCO_GRUPOS.length; i++) if (OCO_GRUPOS[i].tipos.indexOf(tipo) >= 0) return OCO_GRUPOS[i]; return OCO_GRUPOS[3]; }
+function renderOcorrenciasDash(comp, clis){
+  var ids = {}; clis.forEach(function(c){ ids[String(c.id)] = c; });
+  var ocs = S.ocorrencias.filter(function(o){ return o.Competencia === comp && ids[String(o.ClienteId)]; });
+  $("dashOcoSub").textContent = ocs.length + " ocorrência(s) lançada(s) em " + compLabel(comp) + ". Passe o mouse nas barras para ver os detalhes.";
+  if (!ocs.length){
+    ["chOcoTipo","chOcoCli"].forEach(function(id){ if (CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } });
+    $("dashOcoBody").classList.add("hidden"); $("dashOcoEmpty").classList.remove("hidden"); $("dashOcoTbl").innerHTML = ""; return;
+  }
+  $("dashOcoBody").classList.remove("hidden"); $("dashOcoEmpty").classList.add("hidden");
+  // por tipo
+  var porTipo = {};
+  ocs.forEach(function(o){ var t = porTipo[o.Tipo] || (porTipo[o.Tipo] = { n:0, h:0, d:0, v:0, cli:{} }); t.n++; t.h += Number(o.Horas)||0; t.d += Number(o.Dias)||0; t.v += Number(o.Valor)||0; t.cli[o.ClienteId] = 1; });
+  var tipos = Object.keys(porTipo).sort(function(a, b){ return porTipo[b].n - porTipo[a].n; });
+  drawChart("chOcoTipo", { type:"bar", data:{ labels: tipos, datasets:[{ label:"Ocorrências", data: tipos.map(function(t){ return porTipo[t].n; }), backgroundColor: tipos.map(function(t){ return grupoOco(t).cor; }), borderRadius:4, maxBarThickness:22 }] },
+    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ var t = porTipo[ctx.label]; return [t.n + " ocorrência(s)", (t.h ? hFmt(t.h) : t.d ? num(t.d, t.d % 1 ? 1 : 0) + " dia(s)" : ""), "Valor: " + brl(t.v), Object.keys(t.cli).length + " cliente(s)"].filter(Boolean); } } } },
+      scales:{ x:{ ticks:{ precision:0, color:"#6b6f76" }, grid:{ color:"#eee" }, title:{ display:true, text:"quantidade", color:"#6b6f76" } }, y:{ grid:{ display:false }, ticks:{ color:"#1f2124" } } } } });
+  // por cliente (empilhado por grupo)
+  var porCli = {};
+  ocs.forEach(function(o){ var c = porCli[o.ClienteId] || (porCli[o.ClienteId] = { tot:0 }); var g = grupoOco(o.Tipo).k; c[g] = (c[g] || 0) + 1; c.tot++; });
+  var cids = Object.keys(porCli).sort(function(a, b){ return porCli[b].tot - porCli[a].tot; }).slice(0, 12);
+  var gruposUsados = OCO_GRUPOS.filter(function(g){ return cids.some(function(c){ return porCli[c][g.k]; }); });
+  drawChart("chOcoCli", { type:"bar", data:{ labels: cids.map(function(c){ return ids[c].Title; }), datasets: gruposUsados.map(function(g){ return { label:g.k, data: cids.map(function(c){ return porCli[c][g.k] || 0; }), backgroundColor:g.cor, borderColor:"#ffffff", borderWidth:{ left:2, right:0, top:0, bottom:0 }, borderRadius:4, borderSkipped:false, maxBarThickness:22 }; }) },
+    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:12, boxHeight:12, color:"#1f2124" } }, tooltip:{ callbacks:{ label:function(ctx){ return ctx.dataset.label + ": " + ctx.raw; } } } },
+      scales:{ x:{ stacked:true, ticks:{ precision:0, color:"#6b6f76" }, grid:{ color:"#eee" }, title:{ display:true, text:"quantidade", color:"#6b6f76" } }, y:{ stacked:true, grid:{ display:false }, ticks:{ color:"#1f2124" } } } } });
+  // tabela resumo
+  var T = { n:0, v:0 };
+  $("dashOcoTbl").innerHTML = "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Tipo</th><th class='num'>Quantidade</th><th class='num'>Horas / dias</th><th class='num'>Valor</th><th>Onde (clientes)</th></tr></thead><tbody>" + tipos.map(function(t){
+    var x = porTipo[t]; T.n += x.n; T.v += x.v; var g = grupoOco(t);
+    return "<tr><td><span style='display:inline-block;width:10px;height:10px;border-radius:3px;background:" + g.cor + ";margin-right:8px'></span>" + esc(t) + "</td><td class='num'>" + x.n + "</td><td class='num'>" + (x.h ? hFmt(x.h) : x.d ? num(x.d, x.d % 1 ? 1 : 0) + " dia(s)" : "–") + "</td><td class='num " + (x.v < 0 ? "neg" : "pos") + "'>" + brl(x.v) + "</td><td class='small'>" + Object.keys(x.cli).map(function(c){ return esc(ids[c].Title); }).join(", ") + "</td></tr>";
+  }).join("") + "</tbody><tfoot><tr><td>Total</td><td class='num'>" + T.n + "</td><td></td><td class='num'>" + brl(T.v) + "</td><td></td></tr></tfoot></table></div>";
 }
 function kpi(l, val, sub){ return '<div class="kpi"><p class="kpi-label">' + esc(l) + '</p><p class="kpi-value">' + esc(val) + '</p><p class="kpi-sub">' + esc(sub || "") + "</p></div>"; }
 function drawChart(id, cfg){ if (typeof Chart === "undefined") return; if (CHARTS[id]) CHARTS[id].destroy(); CHARTS[id] = new Chart($(id), cfg); }
