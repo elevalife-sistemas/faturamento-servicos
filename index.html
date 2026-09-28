@@ -342,7 +342,7 @@ var DEMO_SEED = {
       FaturarPorServico:true, Tomadores:'[{"k":"SA","nome":"S.A","razao":"Siderúrgica Gama S.A.","cnpj":"00.000.000/0003-03"},{"k":"P2","nome":"Planta 2","razao":"Siderúrgica Gama S.A. – Planta 2","cnpj":"00.000.000/0033-33"}]',
       itens:[["Enfermagem","Enfermeiro",45000,"DiasFixos",30,24,"","",'[{"t":"SA","pct":100,"pedido":"OC-5001","para":"paula@exemplo.com.br"}]'],
              ["Auxiliar Administrativo","Auxiliar Administrativo",7000,"DiasFixos",30,8,"","",'[{"t":"SA","pct":70,"pedido":"OC-5002","para":"paula@exemplo.com.br"},{"t":"P2","pct":30,"pedido":"OC-6002","para":"rui@exemplo.com.br"}]'],
-             ["Fisioterapia","Fisioterapeuta",18000,"DiasFixos",30,8,"","",'[{"t":"SA","pct":70,"pedido":"OC-5003","para":"paula@exemplo.com.br"},{"t":"P2","pct":30,"pedido":"OC-6003","para":"rui@exemplo.com.br"}]'],
+             ["Fisioterapia","Fisioterapeuta",18000,"DiasFixos",30,8,"","",'[{"t":"SA","pct":70,"pedido":"","para":"paula@exemplo.com.br"},{"t":"P2","pct":30,"pedido":"","para":"rui@exemplo.com.br"}]'],
              ["Medicina do Trabalho","Médico do Trabalho",28000,"HorasContratadas",84,4,"","",'[{"t":"SA","pct":100,"pedido":"OC-5004","para":"paula@exemplo.com.br"}]'],
              ["Ergonomia","Ergonomista",12000,"DiasFixos",22,7,"","",'[{"t":"SA","pct":100,"pedido":"OC-5005","para":"paula@exemplo.com.br"}]'],
              ["Ergonomia","Ergonomista",7000,"DiasFixos",22,4,"","",'[{"t":"P2","pct":100,"pedido":"OC-6005","para":"rui@exemplo.com.br"}]']],
@@ -1040,7 +1040,9 @@ function renderDashboard(){
   var cont = meds.filter(function(m){ return m.Status === "Contestada"; });
   if (cont.length) pend.push(["red", cont.length + " medição(ões) contestadas pelo cliente."]);
   var aprov = meds.filter(function(m){ return m.Status === "Aprovada"; });
-  if (aprov.length) pend.push(["amber", aprov.length + " medição(ões) aprovadas aguardando emissão da NF pelo coordenador."]);
+  var semOC = aprov.filter(faltaOC);
+  if (semOC.length) pend.push(["amber", semOC.length + " medição(ões) aprovadas aguardando a OC do cliente: " + semOC.map(function(m){ return (byId("clientes", m.ClienteId) || {}).Title + (m.UnidadeNome ? " – " + m.UnidadeNome : ""); }).join(", ") + "."]);
+  if (aprov.length - semOC.length) pend.push(["amber", (aprov.length - semOC.length) + " medição(ões) aprovadas aguardando emissão da NF pelo coordenador."]);
   var sj = S.ocorrencias.filter(function(o){ return o.Competencia === comp && !String(o.Justificativa||"").trim() && clis.some(function(c){ return String(c.id) === String(o.ClienteId); }); });
   if (sj.length) pend.push(["amber", sj.length + " ocorrência(s) de " + compLabel(comp) + " sem justificativa."]);
   $("dashPend").innerHTML = pend.length ? pend.map(function(p){ return '<div class="alert alert-' + p[0] + '">' + esc(p[1]) + "</div>"; }).join("") : '<div class="alert alert-green">Nada pendente nesta competência.</div>';
@@ -1102,6 +1104,18 @@ function faturamentosDoMes(area, comp){
   });
   return out;
 }
+// OC do mes: guardada na propria medicao (Linhas.oc). Quando a OC fixa do servico esta em branco
+// e o cliente fatura por servico, a OC muda todo mes e e obrigatoria antes da NF.
+function ocFixaDe(med){ var u = unidadeDe(med.ClienteId, med.Competencia, med.Unidade || ""); return (u && u.pedido) || ""; }
+function ocDe(med){ var L = linhasDe(med); return L.oc || L.pedido || ocFixaDe(med) || ""; }
+function ocObrigatoria(med){ var cli = byId("clientes", med.ClienteId); return !!(cli && (cli.FaturarPorServico === true || cli.FaturarPorServico === "true" || cli.FaturarPorServico === 1)) && !ocFixaDe(med); }
+function faltaOC(med){ return med && (med.Status === "Aprovada") && ocObrigatoria(med) && !ocDe(med); }
+async function salvarOC(id, valor, silent){
+  var med = byId("medicoes", id), L = linhasDe(med); L.oc = String(valor || "").trim();
+  var hist = historicoDe(med); hist.push({ s:med.Status, d:new Date().toISOString(), p:CURRENT_USER.name, o:"OC do mês: " + (L.oc || "(apagada)") });
+  await safe(function(){ return api.update("medicoes", id, { Linhas: JSON.stringify(L), Historico: JSON.stringify(hist) }); }, silent ? null : "OC salva.");
+}
+async function acaoSalvarOC(id){ var val = v("fOC"); if (!val){ showToast("Digite o número da OC.", true); return; } await salvarOC(id, val); reabrir(byId("medicoes", id)); renderCurrent(); }
 function ukArg(uk){ return String(uk || "").replace(/'/g, ""); }
 function renderMedicoes(){
   var comp = $("medComp").value || prevComp(curComp()), area = $("medArea").value, st = $("medStatus").value;
@@ -1115,8 +1129,8 @@ function renderMedicoes(){
     var nRed = r.conf.filter(function(x){ return x.n === "red"; }).length, nAmb = r.conf.filter(function(x){ return x.n === "amber"; }).length;
     var confB = nRed ? '<span class="badge b-red">' + nRed + " crítica(s)</span>" : nAmb ? '<span class="badge b-amber">' + nAmb + " alerta(s)</span>" : '<span class="badge b-green">OK</span>';
     var call = "openMedicao('" + r.c.id + "','" + comp + "','" + ukArg(r.u.key) + "')";
-    return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "<div class='small muted'>" + esc(r.c.Area || "") + (r.u.pedido ? " · OC " + esc(r.u.pedido) : "") + "</div></td>" +
-      "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? "" : "<div class='small muted'>prévia</div>") + "</td>" +
+    return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "<div class='small muted'>" + esc(r.c.Area || "") + ((r.m ? ocDe(r.m) : r.u.pedido) ? " · OC " + esc(r.m ? ocDe(r.m) : r.u.pedido) : "") + "</div></td>" +
+      "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? (faltaOC(r.m) ? "<div><span class='badge b-amber'>Falta OC</span></div>" : "") : "<div class='small muted'>prévia</div>") + "</td>" +
       "<td class='num'>" + brl(p) + "</td><td class='num " + (d ? "neg" : "muted") + "'>" + (d ? "−" + brl(d) : "–") + "</td><td class='num " + (a ? "pos" : "muted") + "'>" + (a ? "+" + brl(a) : "–") + "</td><td class='num'><b>" + brl(f) + "</b></td><td>" + confB + "</td>" +
       "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();" + call + "\">Abrir</button></td></tr>";
   }).join("");
@@ -1133,7 +1147,7 @@ async function gerarMedicao(cid, comp, uk, silent){
   var u = m.unidade || {};
   var fields = { Title: nomeUnidade(cli, u) + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:String(m.contrato.id), ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:"Rascunho",
     Unidade: uk, UnidadeNome: u.nome || "", Tomador: u.t || "",
-    Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:m.contrato.Versao, pedido:u.pedido || "" }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString() };
+    Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:m.contrato.Versao, pedido:u.pedido || "", oc: ex ? (linhasDe(ex).oc || "") : "" }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString() };
   if (ex) await api.update("medicoes", ex.id, fields); else await api.create("medicoes", fields);
   return true;
 }
@@ -1161,7 +1175,7 @@ function linhasTable(lines, compact){
 function openMedicao(cid, comp, uk){
   uk = uk || "";
   var cli = byId("clientes", cid), med = medicaoDe(cid, comp, uk), conf = conferir(cid, comp, med, uk), u = unidadeDe(cid, comp, uk), tm = tomadorDe(cli, u.t);
-  var h = "<h3>" + esc(nomeUnidade(cli, u)) + " · " + compLabel(comp) + "</h3><p class='msub'>" + esc(tm.razao || cli.RazaoSocial || "") + ((tm.cnpj || cli.CNPJ) ? " · CNPJ " + esc(tm.cnpj || cli.CNPJ) : "") + (u.pedido ? " · OC " + esc(u.pedido) : "") + "</p>";
+  var h = "<h3>" + esc(nomeUnidade(cli, u)) + " · " + compLabel(comp) + "</h3><p class='msub'>" + esc(tm.razao || cli.RazaoSocial || "") + ((tm.cnpj || cli.CNPJ) ? " · CNPJ " + esc(tm.cnpj || cli.CNPJ) : "") + ((med ? ocDe(med) : u.pedido) ? " · OC " + esc(med ? ocDe(med) : u.pedido) : "") + "</p>";
   h += stepsHtml(med ? med.Status : "Rascunho");
   h += conf.map(function(x){ return '<div class="alert alert-' + x.n + '">' + esc(x.t) + "</div>"; }).join("");
   if (!med){
@@ -1175,6 +1189,12 @@ function openMedicao(cid, comp, uk){
   h += "<p class='small muted'>Gerada em " + new Date(med.GeradoEm || Date.now()).toLocaleString("pt-BR") + " · contrato versão " + esc(L.versao || 1) + "</p>";
   h += linhasTable(L.lines || []);
   var st = med.Status, id = med.id, a = [];
+  if (st === "Aprovada" || (ocObrigatoria(med) && (st === "Enviada" || st === "Contestada"))){
+    var ocAt = L.oc || "";
+    h += "<div class='card' style='margin:14px 0 0;padding:12px 14px;border-left:4px solid " + (faltaOC(med) ? "#eda100" : "var(--grena)") + "'><p class='card-title' style='font-size:14px;margin:0 0 4px'>OC / Nº do pedido deste mês</p>" +
+      "<p class='small muted' style='margin:0 0 8px'>" + (ocObrigatoria(med) ? "Este cliente libera uma OC diferente a cada mês. Digite a OC recebida depois da validação do cliente. Ela é obrigatória para emitir a NF." : "Opcional. Se ficar em branco, vale a OC fixa do contrato" + (ocFixaDe(med) ? " (" + esc(ocFixaDe(med)) + ")" : "") + ".") + "</p>" +
+      "<div class='row' style='gap:8px;align-items:center'><input id='fOC' value='" + esc(ocAt) + "' placeholder='Ex.: 4500123456' style='max-width:260px'><button class='btn-o btn-s' onclick=\"acaoSalvarOC('" + id + "')\">Salvar OC</button></div></div>";
+  }
   a.push('<button class="btn-o" onclick="baixarBoletim(\'' + id + '\')">Baixar boletim (Excel)</button>');
   a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Boletim para o e-mail</button>');
   if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + "','" + ukArg(uk) + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
@@ -1198,7 +1218,7 @@ function formStatus(id, novo){
   if (novo === "Enviada" && med.Status === "Rascunho"){
     h = "<h3>Marcar como enviada</h3><p class='msub'>Registre o envio do boletim ao cliente.</p><div class='form'><div><label>Data do envio</label><input type='date' id='fDt' value='" + todayISO() + "'></div><div><label>Enviado para</label><input id='fObs' value='" + esc(unidadeDe(med.ClienteId, med.Competencia, med.Unidade || "").para || cli.AprovadorEmail || cli.AprovadorNome || "") + "'></div></div>";
   } else if (novo === "Aprovada"){
-    h = "<h3>Aprovação do cliente</h3><p class='msub'>Registre quem aprovou e quando.</p><div class='form'><div><label>Aprovado por</label><input id='fObs' value='" + esc(cli.AprovadorNome || "") + "'></div><div><label>Data da aprovação</label><input type='date' id='fDt' value='" + todayISO() + "'></div></div>";
+    h = "<h3>Aprovação do cliente</h3><p class='msub'>Registre quem aprovou e quando.</p><div class='form'><div><label>Aprovado por</label><input id='fObs' value='" + esc(cli.AprovadorNome || "") + "'></div><div><label>Data da aprovação</label><input type='date' id='fDt' value='" + todayISO() + "'></div>" + (ocObrigatoria(med) ? "<div class='full'><label>OC liberada pelo cliente (se já tiver; dá para informar depois)</label><input id='fOCap' value='" + esc(linhasDe(med).oc || "") + "' placeholder='Ex.: 4500123456'></div>" : "") + "</div>";
   } else if (novo === "Contestada"){
     h = "<h3>Contestação do cliente</h3><p class='msub'>Descreva o que o cliente questionou. A medição volta para correção.</p><div class='form'><div class='full'><label>Motivo</label><textarea id='fObs'></textarea></div><input type='hidden' id='fDt' value='" + todayISO() + "'></div>";
   } else {
@@ -1213,7 +1233,7 @@ async function salvarStatus(id, novo){
   var hist = historicoDe(med); hist.push({ s:novo, d:new Date().toISOString(), p:CURRENT_USER.name, o:obs });
   var f = { Status:novo, Historico: JSON.stringify(hist) };
   if (novo === "Enviada" && med.Status === "Rascunho") f.DataEnvio = dt;
-  if (novo === "Aprovada"){ f.DataAprovacao = dt; f.AprovadoPor = obs; }
+  if (novo === "Aprovada"){ f.DataAprovacao = dt; f.AprovadoPor = obs; var ocAp = v("fOCap"); if (ocAp){ var La = linhasDe(med); La.oc = ocAp.trim(); f.Linhas = JSON.stringify(La); hist[hist.length - 1].o = (obs ? obs + " · " : "") + "OC " + La.oc; f.Historico = JSON.stringify(hist); } }
   await safe(function(){ return api.update("medicoes", id, f); }, "Status atualizado para " + novo + ".");
   reabrir(med); renderCurrent();
 }
@@ -1221,7 +1241,7 @@ function nfInfo(med){
   var cli = byId("clientes", med.ClienteId), L = linhasDe(med), tm = tomadorDe(cli, med.Tomador || "");
   var itens = (L.lines || []).map(function(l){ return byId("itens", l.itemId || l.rel || ""); }).filter(Boolean);
   var uniq = function(arr){ return arr.filter(function(x, i){ return x && arr.indexOf(x) === i; }).join(" / "); };
-  var pedidos = L.pedido || uniq(itens.map(function(i){ var d = divisaoDe(i, cli).filter(function(x){ return (x.t || "") === (med.Tomador || ""); })[0]; return (d && d.pedido) || i.NumPedido; }));
+  var pedidos = L.oc || L.pedido || uniq(itens.map(function(i){ var d = divisaoDe(i, cli).filter(function(x){ return (x.t || "") === (med.Tomador || ""); })[0]; return (d && d.pedido) || i.NumPedido; }));
   var disc = "Prestação de serviços referente a " + compLabel(med.Competencia) + ":\n" + (L.lines || []).map(function(l){ return "- " + l.servico + ": " + brl(l.final); }).join("\n") + "\nTotal: " + brl(med.ValorFaturar);
   return { cli:cli, unidade: med.UnidadeNome || "", tomador: tm.razao || cli.RazaoSocial || cli.Title, cnpj: tm.cnpj || cli.CNPJ || "", valor: med.ValorFaturar, codigos: uniq(itens.map(function(i){ return i.CodigoServicoNF; })), retencoes: uniq(itens.map(function(i){ return i.Retencoes; })), pedidos: pedidos, rateio: uniq((L.lines || []).filter(function(l){ return l.pct && l.pct < 100; }).map(function(l){ return l.servico; })), disc: disc };
 }
@@ -1229,6 +1249,7 @@ function dadosNF(id){
   var med = byId("medicoes", id), n = nfInfo(med), emitida = med.Status === "NF emitida";
   var row = function(k, val, copy){ return "<div class='copy-row'><span class='k'>" + esc(k) + "</span><span class='val'>" + (val ? esc(val).replace(/\n/g, "<br>") : "<span class='muted'>não cadastrado</span>") + "</span>" + (val && copy !== false ? "<button class='btn-ghost' onclick='copyText(" + JSON.stringify(String(val)).replace(/'/g, "&#39;") + ")'>Copiar</button>" : "") + "</div>"; };
   var h = "<h3>" + (emitida ? "Dados da NF emitida" : "Conferir e emitir a NF") + "</h3><p class='msub'>" + esc(n.cli.Title) + " · " + compLabel(med.Competencia) + (emitida ? "" : ". Confira os dados, emita no site da prefeitura e registre o número abaixo.") + "</p>";
+  if (!emitida && faltaOC(med)) h += "<div class='alert alert-amber'>Falta a OC deste mês. Volte, digite a OC liberada pelo cliente e salve. Sem ela a NF não pode ser registrada.</div>";
   h += row("Tomador", n.tomador) + row("CNPJ", n.cnpj) + row("Valor", num(n.valor)) + row("Código do serviço", n.codigos) + row("Retenções", n.retencoes) + row("Nº do pedido", n.pedidos) + (n.rateio ? row("Rateio", n.rateio) : "") + row("Discriminação", n.disc);
   h += "<div class='form' style='margin-top:14px'><div class='full'><label>Observação para a NF</label><textarea id='fObsNF' placeholder='Ex.: horas extras em nota separada; informar folha de registro...'>" + esc(med.ObsNF || "") + "</textarea></div>";
   if (emitida) h += "<div><label>Nº da NF</label><input value='" + esc(med.NumNF || "") + "' disabled></div><div><label>Data de emissão</label><input value='" + fmtDate(med.DataNF) + "' disabled></div></div>";
@@ -1240,6 +1261,7 @@ function dadosNF(id){
 async function salvarObsNF(id){ await safe(function(){ return api.update("medicoes", id, { ObsNF: v("fObsNF") }); }, "Observação salva."); }
 async function registrarNF(id){
   var med = byId("medicoes", id), nf = v("fNum"), dt = v("fDtNF");
+  if (faltaOC(med)){ showToast("Informe a OC do mês antes de registrar a NF.", true); return; }
   if (!nf){ showToast("Informe o número da NF emitida.", true); return; }
   var hist = historicoDe(med); hist.push({ s:"NF emitida", d:new Date().toISOString(), p:CURRENT_USER.name, o:"NF " + nf });
   await safe(function(){ return api.update("medicoes", id, { Status:"NF emitida", NumNF:nf, DataNF:dt, ObsNF:v("fObsNF"), Historico: JSON.stringify(hist) }); }, "NF registrada.");
@@ -1621,7 +1643,7 @@ async function salvarRenovacao(ctId){
 }
 function divisaoForm(it, cli){
   var toms = tomadoresDe(cli), cur = divisaoDe(it, cli), porServ = !!cli.FaturarPorServico;
-  return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px'><label>Divisão entre tomadores (descontos e acréscimos seguem a mesma proporção)</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Tomador</th><th class='num'>%</th><th>Nº do pedido / OC</th>" + (porServ ? "<th>E-mail(s) do focal (Para)</th><th>E-mail(s) em cópia</th>" : "") + "</tr></thead><tbody>" +
+  return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px'><label>Divisão entre tomadores (descontos e acréscimos seguem a mesma proporção)</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Tomador</th><th class='num'>%</th><th>" + (porServ ? "OC fixa <span class='muted small'>(em branco se muda todo mês)</span>" : "Nº do pedido / OC") + "</th>" + (porServ ? "<th>E-mail(s) do focal (Para)</th><th>E-mail(s) em cópia</th>" : "") + "</tr></thead><tbody>" +
     toms.map(function(t, i){ var d = cur.filter(function(x){ return (x.t || "") === t.k; })[0] || { pct:0 }; var inp = function(id, val, w){ return "<input id='" + id + "' value='" + esc(val == null ? "" : val) + "' style='width:" + (w || "100%") + ";padding:7px;border:1px solid var(--border);border-radius:7px'>"; };
       return "<tr><td><b>" + esc(t.nome) + "</b><div class='small muted'>" + esc(t.cnpj || "") + "</div></td><td class='num'>" + inp("dv_p" + i, d.pct ? String(d.pct).replace(".", ",") : "", "70px") + "</td><td>" + inp("dv_o" + i, d.pedido || "") + "</td>" + (porServ ? "<td>" + inp("dv_e" + i, d.para || "") + "</td><td>" + inp("dv_c" + i, d.cc || "") + "</td>" : "") + "</tr>"; }).join("") +
     "</tbody></table></div><div class='hint'>A soma das porcentagens precisa dar 100%. Deixe 0 no tomador que não recebe este serviço." + (porServ ? " Cada linha com % vira um faturamento separado (boletim, OC, e-mail e NF próprios)." : "") + "</div></div>";
