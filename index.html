@@ -1004,7 +1004,9 @@ function renderDashboard(){
   // previsao: medicao salva quando existe; senao, previa calculada pelo contrato vigente + ocorrencias
   var RECONHECIDO = { "Enviada":1, "Aprovada":1, "NF emitida":1 };
   var prev = fats.map(function(r){
-    var m = r.m, src = m || montarMedicao(r.c.id, comp, r.u.key);
+    // rascunho ainda nao foi reconhecido: recalcula ao vivo para pegar ocorrencias lancadas depois
+    var m = r.m, src = (m && m.Status !== "Rascunho") ? m : montarMedicao(r.c.id, comp, r.u.key);
+    if (src.erro && m) src = m;
     if (src.erro) src = { ValorFaturar:0, Descontos:0, Acrescimos:0 };
     return { c:r.c, u:r.u, m:m, v:Number(src.ValorFaturar)||0, d:Number(src.Descontos)||0, a:Number(src.Acrescimos)||0, ok: !!(m && RECONHECIDO[m.Status]) };
   });
@@ -1035,6 +1037,8 @@ function renderDashboard(){
   if (semMed.length) pend.push(["red", semMed.length + " faturamento(s) sem medição gerada em " + compLabel(comp) + ": " + semMed.map(function(r){ return nomeUnidade(r.c, r.u); }).join(", ") + "."]);
   var rasc = meds.filter(function(m){ return m.Status === "Rascunho"; });
   if (rasc.length) pend.push(["blue", rasc.length + " medição(ões) em rascunho, aguardando revisão e envio ao cliente."]);
+  var desatL = rasc.filter(rascunhoDesatualizado);
+  if (desatL.length) pend.push(["red", desatL.length + " rascunho(s) desatualizado(s), com ocorrências lançadas depois de gerar: " + desatL.map(function(m){ return (byId("clientes", m.ClienteId) || {}).Title + (m.UnidadeNome ? " – " + m.UnidadeNome : ""); }).join(", ") + ". Gere novamente antes de enviar."]);
   var aguard = meds.filter(function(m){ return m.Status === "Enviada" && m.DataEnvio && daysBetween(m.DataEnvio, todayISO()) > 2; });
   if (aguard.length) pend.push(["amber", aguard.length + " medição(ões) enviadas há mais de 2 dias sem resposta do cliente."]);
   var cont = meds.filter(function(m){ return m.Status === "Contestada"; });
@@ -1116,10 +1120,16 @@ async function salvarOC(id, valor, silent){
   await safe(function(){ return api.update("medicoes", id, { Linhas: JSON.stringify(L), Historico: JSON.stringify(hist) }); }, silent ? null : "OC salva.");
 }
 async function acaoSalvarOC(id){ var val = v("fOC"); if (!val){ showToast("Digite o número da OC.", true); return; } await salvarOC(id, val); reabrir(byId("medicoes", id)); renderCurrent(); }
+// rascunho salvo difere do calculo atual (ocorrencia lancada/alterada depois de gerar)
+function rascunhoDesatualizado(med){
+  if (!med || med.Status !== "Rascunho") return null;
+  var mm = montarMedicao(med.ClienteId, med.Competencia, med.Unidade || ""); if (mm.erro) return null;
+  return Math.abs((Number(med.ValorFaturar)||0) - mm.ValorFaturar) > 0.009 ? mm : null;
+}
 function ukArg(uk){ return String(uk || "").replace(/'/g, ""); }
 function renderMedicoes(){
   var comp = $("medComp").value || prevComp(curComp()), area = $("medArea").value, st = $("medStatus").value;
-  var rows = faturamentosDoMes(area, comp).map(function(r){ r.prev = r.m ? null : montarMedicao(r.c.id, comp, r.u.key); r.status = r.m ? r.m.Status : "Não gerada"; r.conf = conferir(r.c.id, comp, r.m, r.u.key); return r; })
+  var rows = faturamentosDoMes(area, comp).map(function(r){ r.prev = r.m ? null : montarMedicao(r.c.id, comp, r.u.key); r.desat = rascunhoDesatualizado(r.m); r.status = r.m ? r.m.Status : "Não gerada"; r.conf = conferir(r.c.id, comp, r.m, r.u.key); return r; })
     .filter(function(r){ return !st || r.status === st; });
   if (!rows.length){ $("medTable").innerHTML = '<tr><td class="empty">Nenhum cliente com contrato vigente em ' + compLabel(comp) + ".</td></tr>"; return; }
   var tot = { p:0, d:0, a:0, f:0 };
@@ -1130,7 +1140,7 @@ function renderMedicoes(){
     var confB = nRed ? '<span class="badge b-red">' + nRed + " crítica(s)</span>" : nAmb ? '<span class="badge b-amber">' + nAmb + " alerta(s)</span>" : '<span class="badge b-green">OK</span>';
     var call = "openMedicao('" + r.c.id + "','" + comp + "','" + ukArg(r.u.key) + "')";
     return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "<div class='small muted'>" + esc(r.c.Area || "") + ((r.m ? ocDe(r.m) : r.u.pedido) ? " · OC " + esc(r.m ? ocDe(r.m) : r.u.pedido) : "") + "</div></td>" +
-      "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? (faltaOC(r.m) ? "<div><span class='badge b-amber'>Falta OC</span></div>" : "") : "<div class='small muted'>prévia</div>") + "</td>" +
+      "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? (faltaOC(r.m) ? "<div><span class='badge b-amber'>Falta OC</span></div>" : "") + (r.desat ? "<div><span class='badge b-red' title='Há ocorrências novas ou alteradas depois que o rascunho foi gerado'>Desatualizado</span></div><div class='small muted'>atual: " + brl(r.desat.ValorFaturar) + "</div>" : "") : "<div class='small muted'>prévia</div>") + "</td>" +
       "<td class='num'>" + brl(p) + "</td><td class='num " + (d ? "neg" : "muted") + "'>" + (d ? "−" + brl(d) : "–") + "</td><td class='num " + (a ? "pos" : "muted") + "'>" + (a ? "+" + brl(a) : "–") + "</td><td class='num'><b>" + brl(f) + "</b></td><td>" + confB + "</td>" +
       "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();" + call + "\">Abrir</button></td></tr>";
   }).join("");
@@ -1215,6 +1225,7 @@ function reabrir(med){ openMedicao(med.ClienteId, med.Competencia, med.Unidade |
 function formStatus(id, novo){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), h = "";
   var back = "<button class='btn-o' onclick=\"reabrir(byId('medicoes','" + med.id + "'))\">Voltar</button>";
+  if (novo === "Enviada" && med.Status === "Rascunho" && rascunhoDesatualizado(med)){ showToast("Rascunho desatualizado: clique em Gerar novamente antes de enviar.", true); return; }
   if (novo === "Enviada" && med.Status === "Rascunho"){
     h = "<h3>Marcar como enviada</h3><p class='msub'>Registre o envio do boletim ao cliente.</p><div class='form'><div><label>Data do envio</label><input type='date' id='fDt' value='" + todayISO() + "'></div><div><label>Enviado para</label><input id='fObs' value='" + esc(unidadeDe(med.ClienteId, med.Competencia, med.Unidade || "").para || cli.AprovadorEmail || cli.AprovadorNome || "") + "'></div></div>";
   } else if (novo === "Aprovada"){
@@ -1487,6 +1498,9 @@ async function salvarOcorrencia(id){
   var o = ocoForm(), r = calcOcorrencia(o);
   if (!o.ClienteId || !o.Data){ showToast("Informe cliente e data.", true); return; }
   if (r.erro){ showToast(r.erro, true); return; }
+  var cliO = byId("clientes", o.ClienteId), ctO = contratoVigente(o.ClienteId, o.Competencia);
+  if (cliO && cliO.FaturarPorServico && !o.ItemId && !(TIPOS[o.Tipo].grupo === "variavel" && ctO && itemPorCargo(itensDoContrato(ctO.id), o.Cargo))){
+    showToast("Este cliente fatura por serviço: selecione o serviço, senão a ocorrência não entra em nenhum boletim.", true); return; }
   var it = o.ItemId ? byId("itens", o.ItemId) : null;
   var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email });
   await safe(function(){ return id ? api.update("ocorrencias", id, f) : api.create("ocorrencias", f); }, id ? "Ocorrência atualizada." : "Ocorrência lançada.");
