@@ -901,7 +901,7 @@ document.addEventListener("DOMContentLoaded", function(){
   });
   $("modal").addEventListener("mousedown", function(e){ if (e.target.id === "modal") closeModal(); });
   document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeModal(); });
-  var dc = prevComp(curComp());
+  var dc = curComp();
   ["dashComp","medComp"].forEach(function(id){ $(id).value = dc; });
   ["ocoComp","marComp"].forEach(function(id){ $(id).value = curComp(); });
   if (/[?&]demo=1/.test(location.search)) { startDemo(); return; }
@@ -1036,7 +1036,7 @@ function copyHTML(html, text, msg){
 // ============================================================
 function statusDe(cid, comp, uk){ var m = medicaoDe(cid, comp, uk); return m ? m.Status : "Não gerada"; }
 function renderDashboard(){
-  var comp = $("dashComp").value || prevComp(curComp()), area = $("dashArea").value;
+  var comp = $("dashComp").value || curComp(), area = $("dashArea").value;
   var fats = faturamentosDoMes(area, comp);
   var clis = []; fats.forEach(function(r){ if (clis.indexOf(r.c) < 0) clis.push(r.c); });
   var meds = fats.map(function(r){ return r.m; }).filter(Boolean);
@@ -1170,7 +1170,7 @@ function rascunhoDesatualizado(med){
 }
 function ukArg(uk){ return String(uk || "").replace(/'/g, ""); }
 function renderMedicoes(){
-  var comp = $("medComp").value || prevComp(curComp()), area = $("medArea").value, st = $("medStatus").value;
+  var comp = $("medComp").value || curComp(), area = $("medArea").value, st = $("medStatus").value;
   var rows = faturamentosDoMes(area, comp).map(function(r){ r.prev = r.m ? null : montarMedicao(r.c.id, comp, r.u.key); r.desat = rascunhoDesatualizado(r.m); r.status = r.m ? r.m.Status : "Não gerada"; r.conf = conferir(r.c.id, comp, r.m, r.u.key); return r; })
     .filter(function(r){ return !st || r.status === st; });
   if (!rows.length){ $("medTable").innerHTML = '<tr><td class="empty">Nenhum cliente com contrato vigente em ' + compLabel(comp) + ".</td></tr>"; return; }
