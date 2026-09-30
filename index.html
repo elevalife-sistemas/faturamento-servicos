@@ -816,19 +816,23 @@ function montarMedicao(cid, comp, uk){
   var byItem = {}; itens.forEach(function(it){ byItem[String(it.id)] = it; });
   var base = itens.map(function(it){ return { tipo:"item", itemId:String(it.id), rel:String(it.id), servico:it.Title, cargo:it.Cargo||"", padrao:r2(it.ValorMensal), desconto:0, acrescimo:0, horas:0, just:[], oc:[] }; });
   var baseBy = {}; base.forEach(function(l){ baseBy[l.itemId] = l; });
-  var extra = {};
+  var extra = {}, hol = feriados(cli.Local), DSEM = ["dom","seg","ter","qua","qui","sex","sáb"];
   ocorrenciasDe(cid, comp).forEach(function(o){
-    var v = Number(o.Valor)||0; var txt = fmtDate(o.Data) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
+    var v = Number(o.Valor)||0, dw = o.Data ? parseISO(o.Data).getDay() : 1, fds = dw === 0 || dw === 6 || !!hol[o.Data];
+    var txt = fmtDate(o.Data) + " (" + DSEM[dw] + (hol[o.Data] ? ", feriado" : "") + ")" + (o.HoraInicio && o.HoraFim ? " · " + o.HoraInicio + "–" + o.HoraFim + (Number(o.Horas) ? " (" + hFmt(o.Horas) + ")" : "") : (Number(o.Dias) ? " · " + num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "")) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
     var isVar = (TIPOS[o.Tipo] || {}).grupo === "variavel";
     var target = !isVar && o.ItemId && baseBy[String(o.ItemId)];
     if (target){ if (v < 0) target.desconto = r2(target.desconto - v); else target.acrescimo = r2(target.acrescimo + v); target.just.push(txt); target.oc.push(String(o.id)); return; }
     var rel = (o.ItemId && byItem[String(o.ItemId)]) ? String(o.ItemId) : ((itemPorCargo(itens, o.Cargo) || {}).id || "");
-    var k = o.Tipo + "|" + (o.Cargo || "") + "|" + rel;
-    if (!extra[k]) extra[k] = { tipo:"variavel", itemId:"", rel:String(rel), servico: o.Tipo + (o.Cargo ? " – " + o.Cargo : ""), cargo:o.Cargo||"", padrao:0, desconto:0, acrescimo:0, horas:0, just:[], oc:[] };
+    // horas extras e coberturas: uma linha por servico e por periodo (dias uteis x fim de semana/feriado)
+    var per = isVar ? (fds ? "fds" : "util") : "";
+    var k = o.Tipo + "|" + (o.Cargo || "") + "|" + rel + "|" + per, relIt = rel && byItem[String(rel)];
+    var nomeServ = relIt ? relIt.Title : (o.Cargo || "");
+    if (!extra[k]) extra[k] = { tipo:"variavel", itemId:"", rel:String(rel), per:per, servico: o.Tipo + (nomeServ ? " – " + nomeServ : "") + (per === "fds" ? " · fim de semana/feriado" : per === "util" ? " · dias úteis" : ""), cargo:o.Cargo||"", padrao:0, desconto:0, acrescimo:0, horas:0, just:[], oc:[] };
     var e = extra[k]; if (v < 0) e.desconto = r2(e.desconto - v); else e.acrescimo = r2(e.acrescimo + v);
     e.horas = r2(e.horas + (Number(o.Horas)||0)); e.just.push(txt); e.oc.push(String(o.id));
   });
-  var all = base.concat(Object.keys(extra).map(function(k){ return extra[k]; }));
+  var all = base.concat(Object.keys(extra).map(function(k){ return extra[k]; }).sort(function(a, b){ return a.servico.replace(/ · .*$/, "").localeCompare(b.servico.replace(/ · .*$/, ""), "pt-BR") || (a.per === "fds") - (b.per === "fds"); }));
   var u = unidadeDe(cid, comp, uk), lines = [], ids = [];
   all.forEach(function(l){
     var it = l.rel && byItem[l.rel], div = it ? divisaoDe(it, cli) : [{ t: tomadoresDe(cli)[0].k, pct:100 }];
@@ -1660,8 +1664,9 @@ function openOcorrencia(id){
     "<div id='wDias'><label>Dias</label><input id='oDias' inputmode='decimal' value='" + esc(o.Dias || "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 1'></div>" +
     "<div id='wIni'><label>Início</label><input type='time' id='oIni' value='" + esc(o.HoraInicio || "") + "' oninput='ocoFormRefresh()'></div>" +
     "<div id='wFim'><label>Fim</label><input type='time' id='oFim' value='" + esc(o.HoraFim || "") + "' oninput='ocoFormRefresh()'></div>" +
-    "<div id='wManualChk' class='full'><label class='check'><input type='checkbox' id='oManual' " + (o.Manual ? "checked" : "") + " onchange='ocoFormRefresh()'> Informar o valor manualmente</label></div>" +
+    "<div id='wManualChk' class='full'><label class='check'><input type='checkbox' id='oManual' " + (o.Manual ? "checked" : "") + " onchange='ocoManualToggle()'> Informar o valor manualmente</label></div>" +
     "<div id='wValor'><label>Valor (R$)</label><input id='oValor' inputmode='decimal' value='" + (o.Manual || (TIPOS[o.Tipo]||{}).grupo === "manual" ? esc(num(Math.abs(Number(o.Valor)||0))) : "") + "' oninput='ocoFormRefresh()'></div>" +
+    "<div id='wCalc' class='full hidden'></div>" +
     "<div class='full'><label>Justificativa (aparece no boletim do cliente)</label><textarea id='oJust' placeholder='Ex.: cobertura solicitada pelo cliente para a reunião de planejamento'>" + esc(o.Justificativa || "") + "</textarea></div>" +
     "<div id='wSolic' class='full'><label class='check'><input type='checkbox' id='oSolic' " + (o.SolicitadoCliente ? "checked" : "") + "> Solicitado pelo cliente</label></div>" +
     "<div class='full' id='wEvid'><label>Evidência</label><input id='oEvid' value='" + esc(o.Evidencia || "") + "' placeholder='Ex.: e-mail do cliente em 25/02/2026, ou link do arquivo'></div>" +
@@ -1669,6 +1674,7 @@ function openOcorrencia(id){
     "<div class='modal-actions'>" + (id ? "<button class='btn-o btn-danger' onclick=\"excluirOcorrencia('" + id + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarOcorrencia('" + (id || "") + "')\">Salvar</button></div>";
   openModal(h, true);
   window.__ocoItemSel = o.ItemId || "";
+  window.__manualOk = !!o.Manual; window.__calcKey = ""; window.__ocoEditId = id || "";
   ocoFormRefresh(true);
 }
 function ocoCompSync(){ var d = v("oData"); if (d) $("oComp").value = compOf(d); }
@@ -1693,6 +1699,7 @@ function ocoFormRefresh(rebuildItems){
   show("wManualChk", t.grupo !== "manual");
   show("wValor", t.grupo === "manual" || v("oManual"));
   show("wSolic", t.grupo === "variavel"); show("wEvid", true);
+  atualizarCalculadora();
   if (t.grupo === "variavel" && !v("oCargo") && v("oItem")){ var it = byId("itens", v("oItem")); if (it) $("oCargo").value = it.Cargo || ""; }
   var o = ocoForm(), r = calcOcorrencia(o), box = $("oCalc"), warn = "";
   var med = cid ? medicoesDoMes(cid, o.Competencia).filter(function(m){ return m.Status !== "Rascunho"; })[0] : null;
@@ -1700,9 +1707,134 @@ function ocoFormRefresh(rebuildItems){
   if (r.erro) box.innerHTML = "<div class='muted'>" + esc(r.erro) + "</div>" + (r.detalhe ? "<div class='d'>" + esc(r.detalhe) + "</div>" : "") + warn;
   else box.innerHTML = "<div class='small muted'>Valor calculado</div><div class='v'>" + (r.valor < 0 ? "−" : "+") + brl(Math.abs(r.valor)) + "</div><div class='d'>" + esc(r.detalhe) + (r.horas ? "\nDuração: " + hFmt(r.horas) : "") + "</div>" + warn;
 }
+// ------------------------------------------------------------
+// Calculadora do valor manual + precos de referencia aprendidos com o uso
+// ------------------------------------------------------------
+function ocoCtx(o){
+  var cli = byId("clientes", o.ClienteId), comp = o.Competencia || compOf(o.Data), ct = cli ? contratoVigente(cli.id, comp) : null, its = ct ? itensDoContrato(ct.id) : [];
+  var item = o.ItemId ? byId("itens", o.ItemId) : (o.Cargo ? itemPorCargo(its, o.Cargo) : null);
+  return { cli:cli, comp:comp, item:item, t: TIPOS[o.Tipo] || {} };
+}
+// precos vigentes (um por cargo/tipo/periodo) do cliente na data
+function precosVigentes(cid, cargo, varTipo, dateISO){
+  var seen = {}, out = [];
+  S.variaveis.filter(function(v){ return String(v.ClienteId) === String(cid) && (!cargo || norm(v.Cargo) === norm(cargo)) && (!varTipo || v.Tipo === varTipo) && (!v.VigenciaInicio || !dateISO || v.VigenciaInicio <= dateISO); })
+    .sort(function(a, b){ return String(b.VigenciaInicio || "").localeCompare(String(a.VigenciaInicio || "")); })
+    .forEach(function(v){ var k = norm(v.Cargo) + "|" + v.Tipo + "|" + v.Periodo; if (!seen[k]){ seen[k] = 1; out.push(v); } });
+  return out;
+}
+function valorConsolidado(o){
+  var c = ocoCtx(o);
+  if (!c.cli) return null;
+  if (c.t.grupo === "variavel"){
+    var ps = o.Cargo ? precosVigentes(c.cli.id, o.Cargo, c.t.varTipo, o.Data) : [];
+    if (ps.length) return (o.Tipo === "Hora extra" ? "hora extra" : "cobertura") + " para " + o.Cargo + ": " + ps.map(function(v){ return brl(v.Valor) + "/h" + (v.Periodo !== "Unico" ? " (" + PERIODOS[v.Periodo].toLowerCase() + ")" : ""); }).join(", ");
+  } else if (c.t.grupo === "desconto" && c.item){
+    var d = descontoItem(c.item, c.comp, 1, 0), hh = descontoItem(c.item, c.comp, 0, 1);
+    if (!d.erro) return "desconto de \"" + c.item.Title + "\" pelo contrato: 1 dia = " + brl(d.valor) + (hh.erro ? "" : ", 1 hora = " + brl(hh.valor));
+  }
+  return null;
+}
+function refsOcorrencia(o){
+  var c = ocoCtx(o), out = []; if (!c.cli) return out;
+  if (c.t.grupo === "variavel" || c.t.grupo === "manual"){
+    precosVigentes(c.cli.id, c.t.grupo === "variavel" ? o.Cargo : "", c.t.grupo === "variavel" ? c.t.varTipo : "", o.Data).forEach(function(v){
+      out.push({ g:"Tabela de variáveis", l:(v.Tipo === "HE" ? "Hora extra" : v.Tipo) + " · " + (PERIODOS[v.Periodo] || v.Periodo) + (c.t.grupo === "variavel" ? "" : " · " + v.Cargo), v:Number(v.Valor), u:"h" });
+    });
+  }
+  if (c.item){
+    var d = descontoItem(c.item, c.comp, 1, 0), hh = descontoItem(c.item, c.comp, 0, 1);
+    if (!d.erro) out.push({ g:"Contrato · " + c.item.Title, l:"Valor de 1 dia", v:d.valor, u:"d" });
+    if (!hh.erro) out.push({ g:"Contrato · " + c.item.Title, l:"Valor de 1 hora", v:hh.valor, u:"h" });
+  }
+  S.ocorrencias.filter(function(x){ return String(x.ClienteId) === String(c.cli.id) && x.Tipo === o.Tipo && x.Manual && String(x.id) !== String(window.__ocoEditId || "") && (!o.Cargo || !x.Cargo || norm(x.Cargo) === norm(o.Cargo)); })
+    .sort(function(a, b){ return String(b.Data).localeCompare(String(a.Data)); }).slice(0, 5).forEach(function(x){
+      var val = Math.abs(Number(x.Valor) || 0), hh2 = Number(x.Horas) || 0, dd = Number(x.Dias) || 0;
+      var u = hh2 ? "h" : dd ? "d" : "t", unit = hh2 ? val / hh2 : dd ? val / dd : val;
+      out.push({ g:"Lançamentos manuais anteriores", l: fmtDate(x.Data) + (x.Profissional ? " · " + x.Profissional : "") + " · " + brl(val) + (hh2 ? " em " + hFmt(hh2) : dd ? " em " + num(dd, dd % 1 ? 1 : 0) + " dia(s)" : ""), v: r2(unit), u:u });
+    });
+  return out;
+}
+function ocoManualToggle(){
+  if (v("oManual")){
+    var cons = valorConsolidado(ocoForm());
+    window.__manualOk = !cons; window.__consMsg = cons || ""; window.__calcKey = "";
+  }
+  ocoFormRefresh();
+}
+function manualConfirmado(ok){
+  if (ok){ window.__manualOk = true; window.__calcKey = ""; }
+  else { $("oManual").checked = false; window.__manualOk = false; }
+  ocoFormRefresh();
+}
+function atualizarCalculadora(){
+  var box = $("wCalc"); if (!box) return;
+  var o = ocoForm(), t = TIPOS[o.Tipo] || {}, aberta = t.grupo === "manual" || v("oManual");
+  if (!aberta){ box.classList.add("hidden"); window.__calcKey = ""; return; }
+  box.classList.remove("hidden");
+  if (!window.__manualOk && t.grupo !== "manual" && window.__consMsg){
+    box.innerHTML = "<div class='alert alert-amber' style='display:block;margin:0'><b>Este valor já está consolidado.</b> O cliente já tem " + esc(window.__consMsg) + ". O sistema calcula sozinho. Deseja mesmo informar outro valor?<div style='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap'><button class='btn-o btn-s' onclick='manualConfirmado(false)'>Não, usar o cálculo automático</button><button class='btn btn-s' onclick='manualConfirmado(true)'>Sim, informar outro valor</button></div></div>";
+    window.__calcKey = "aviso"; return;
+  }
+  var sp = (o.HoraInicio && o.HoraFim && o.Data) ? splitHoras(o.Data, o.HoraInicio, o.HoraFim, feriados((byId("clientes", o.ClienteId) || {}).Local)) : null;
+  var horas = sp ? r2(sp.total) : 0, dias = Number(o.Dias) || 0;
+  var key = [o.ClienteId, o.Tipo, o.Cargo, o.ItemId, horas, dias, o.Data].join("|");
+  if (window.__calcKey === key) return;
+  window.__calcKey = key;
+  var refs = refsOcorrencia(o); window.__calcRefs = refs;
+  var grupos = {}; refs.forEach(function(r, i){ (grupos[r.g] = grupos[r.g] || []).push("<button type='button' class='chip' style='margin:3px 6px 3px 0' onclick='calcUsar(" + i + ")'>" + esc(r.l) + " · <b>" + brl(r.v) + (r.u === "h" ? "/h" : r.u === "d" ? "/dia" : "") + "</b></button>"); });
+  var qtdIni = horas || dias || 1, uIni = horas ? "h" : dias ? "d" : "t";
+  var inp = function(id, val, w){ return "<input id='" + id + "' value='" + esc(val) + "' inputmode='decimal' oninput='calcRecalc()' style='width:" + (w || 110) + "px;padding:7px;border:1px solid var(--border);border-radius:7px'>"; };
+  box.innerHTML = "<div class='card' style='margin:0;padding:12px 14px;border-left:4px solid var(--grena)'><p class='card-title' style='font-size:14px;margin:0 0 6px'>Calculadora</p>" +
+    (refs.length ? Object.keys(grupos).map(function(g){ return "<div class='small muted' style='margin-top:4px;font-weight:700'>" + esc(g) + "</div><div>" + grupos[g].join("") + "</div>"; }).join("") : "<p class='small muted' style='margin:0'>Ainda não há referência para este cliente e cargo. O valor que você informar agora pode virar referência para os próximos lançamentos.</p>") +
+    "<div style='display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px'>" +
+      "<div><label>Quantidade</label>" + inp("cQtd", num(qtdIni, qtdIni % 1 ? 2 : 0), 90) + "</div>" +
+      "<div><label>Unidade</label><select id='cUni' onchange='calcRecalc()' style='padding:7px;border:1px solid var(--border);border-radius:7px'>" + opt("h", "horas", uIni) + opt("d", "dias", uIni) + opt("t", "valor fechado", uIni) + "</select></div>" +
+      "<div><label>Valor unitário (R$)</label>" + inp("cUnit", "", 120) + "</div>" +
+      "<div><label>Ajuste (+/−)</label>" + inp("cAj", "", 100) + "</div>" +
+      "<div style='flex:1;min-width:160px'><label>Resultado</label><div id='cRes' style='font-size:20px;font-weight:800;color:var(--grena)'>–</div><div id='cDet' class='small muted'></div></div>" +
+      "<button type='button' class='btn btn-s' onclick='calcAplicar()'>Usar este valor</button></div>" +
+    (horas ? "<p class='small muted' style='margin:8px 0 0'>Horas do lançamento: " + hFmt(horas) + " (" + num(horas, 2) + " h).</p>" : "") + "</div>";
+  calcRecalc();
+}
+function calcUsar(i){
+  var r = (window.__calcRefs || [])[i]; if (!r) return;
+  $("cUni").value = r.u; $("cUnit").value = num(r.v);
+  if (r.u === "t") $("cQtd").value = "1";
+  else if (r.u === "d" && !Number(v("oDias"))) $("cQtd").value = "1";
+  calcRecalc();
+}
+function calcRecalc(){
+  var q = parseNum(v("cQtd")), u = parseNum(v("cUnit")), aj = parseNum(v("cAj")), un = v("cUni");
+  if (!u){ $("cRes").textContent = "–"; $("cDet").textContent = "Escolha uma referência ou digite o valor unitário."; window.__calcRes = null; return; }
+  var res = r2((un === "t" ? u : q * u) + aj); window.__calcRes = res;
+  $("cRes").textContent = brl(res);
+  $("cDet").textContent = (un === "t" ? brl(u) : num(q, q % 1 ? 2 : 0) + (un === "h" ? " h" : " dia(s)") + " × " + brl(u)) + (aj ? (aj > 0 ? " + " : " − ") + brl(Math.abs(aj)) : "");
+}
+function calcAplicar(){
+  if (window.__calcRes == null){ showToast("Informe o valor unitário na calculadora.", true); return; }
+  $("oValor").value = num(Math.abs(window.__calcRes)); ocoFormRefresh(); showToast("Valor aplicado no lançamento.");
+}
+// depois de salvar: valor manual de hora extra/cobertura vira preco de referencia (vale a partir da data do lancamento)
+function oferecerPrecoReferencia(f, r){
+  var t = TIPOS[f.Tipo] || {};
+  if (t.grupo !== "variavel" || !f.Manual || !(r.horas > 0) || !f.Cargo) return;
+  var taxa = r2(Math.abs(Number(f.Valor) || 0) / r.horas); if (!taxa) return;
+  var cats = r.cats || {}, cat = Object.keys(cats).sort(function(a, b){ return cats[b] - cats[a]; })[0] || "Diurno";
+  var p = precoVariavel(f.ClienteId, f.Cargo, t.varTipo, cat, f.Data), cli = byId("clientes", f.ClienteId), nomeT = f.Tipo === "Hora extra" ? "hora extra" : "cobertura";
+  if (p && Math.abs(p.valor - taxa) < 0.01) return;
+  var periodo = p ? p.periodo : "Unico";
+  var msg = p ? "O preço cadastrado de " + nomeT + " para " + f.Cargo + " em " + cli.Title + " é " + brl(p.valor) + "/h" + (periodo !== "Unico" ? " (" + PERIODOS[periodo].toLowerCase() + ")" : "") + ". O valor informado equivale a " + brl(taxa) + "/h. Deseja atualizar o preço para " + brl(taxa) + "/h nos próximos cálculos automáticos, a partir de " + fmtDate(f.Data) + "?"
+    : cli.Title + " ainda não tem preço de " + nomeT + " para " + f.Cargo + ". O valor informado equivale a " + brl(taxa) + "/h. Deseja salvar como preço de referência para os próximos cálculos automáticos, a partir de " + fmtDate(f.Data) + "?";
+  askConfirm(msg, async function(){
+    await safe(function(){ return api.create("variaveis", { Title: (t.varTipo === "HE" ? "HE" : "Cobertura") + " – " + f.Cargo + " (definido por " + (CURRENT_USER.name || CURRENT_USER.email) + " em " + fmtDate(todayISO()) + ")", ClienteId:String(f.ClienteId), Cargo:f.Cargo, Tipo:t.varTipo, Periodo:periodo, Valor:taxa, VigenciaInicio:f.Data }); }, "Preço de referência salvo.");
+    renderCurrent();
+  }, p ? "Atualizar preço" : "Salvar preço");
+}
 async function salvarOcorrencia(id){
   var o = ocoForm(), r = calcOcorrencia(o);
   if (!o.ClienteId || !o.Data){ showToast("Informe cliente e data.", true); return; }
+  if (v("oManual") && !window.__manualOk && window.__consMsg && (TIPOS[o.Tipo] || {}).grupo !== "manual"){ showToast("Responda o aviso de valor consolidado antes de salvar.", true); return; }
   if (r.erro){ showToast(r.erro, true); return; }
   var cliO = byId("clientes", o.ClienteId), ctO = contratoVigente(o.ClienteId, o.Competencia);
   if (cliO && cliO.FaturarPorServico && !o.ItemId && !(TIPOS[o.Tipo].grupo === "variavel" && ctO && itemPorCargo(itensDoContrato(ctO.id), o.Cargo))){
@@ -1711,6 +1843,7 @@ async function salvarOcorrencia(id){
   var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email });
   await safe(function(){ return id ? api.update("ocorrencias", id, f) : api.create("ocorrencias", f); }, id ? "Ocorrência atualizada." : "Ocorrência lançada.");
   closeModal(); renderCurrent();
+  oferecerPrecoReferencia(f, r);
 }
 function excluirOcorrencia(id){ askConfirm("Excluir esta ocorrência? Se ela já estiver num boletim, gere a medição novamente.", async function(){ await safe(function(){ return api.remove("ocorrencias", id); }, "Ocorrência excluída."); renderCurrent(); }, "Excluir"); }
 
