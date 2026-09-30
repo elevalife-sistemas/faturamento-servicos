@@ -381,6 +381,7 @@ var MSAL_CLIENT_ID = "fa1e77d1-f0b6-4294-80cf-3fadd39ba867";
 var MSAL_TENANT_ID = "cfb770f9-787a-45dd-8368-a47edc43fc12";
 var GRAPH_SCOPES = ["Sites.ReadWrite.All", "User.Read"];
 var MANAGE_SCOPES = ["Sites.Manage.All"]; // so para criar as listas (Configuracao)
+var MAIL_SCOPES = ["Mail.ReadWrite"];      // so para criar o rascunho do e-mail no Outlook do proprio usuario
 var SITE_HOST = "elevalife.sharepoint.com";
 var SITE_PATH = "/sites/BUSINESSPROCESSMANAGEMENT";
 var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + SITE_PATH + ":";
@@ -388,7 +389,7 @@ var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + S
 // ---- Estrutura das listas no SharePoint ----
 // tipos: t = texto, ml = texto longo, n = numero, b = sim/nao
 var SCHEMA = {
-  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"]] },
+  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"],["CoordenadorEmail","t"],["Pendencias","ml"],["OCMensal","b"]] },
   contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"]] },
   itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
@@ -763,6 +764,26 @@ function repartir(total, pcts){
   return out;
 }
 // unidades de faturamento de um cliente numa competencia (cada uma gera um boletim, uma OC e uma NF)
+// ---- Pendencias de cadastro (avisadas ao coordenador no login) ----
+function ehCoordenador(cli, email){ email = String(email || "").toLowerCase(); return !!email && emailsLista(cli.CoordenadorEmail).indexOf(email) >= 0; }
+function emailsLista(t){ return String(t || "").toLowerCase().split(/[;,\s]+/).filter(Boolean); }
+function pendenciasCliente(cli){
+  var out = [], comp = curComp(), ct = contratoVigente(cli.id, comp) || contratoAtual(cli.id);
+  if (!ct) out.push("Cadastrar o contrato (nº, início e término da vigência).");
+  else {
+    if (!ct.Fim) out.push("Informar o término da vigência do contrato.");
+    var its = itensDoContrato(ct.id);
+    if (!its.length) out.push("Cadastrar os serviços do contrato, com valor mensal e regra de desconto.");
+    its.forEach(function(i){ if (!Number(i.ValorMensal)) out.push("Informar o valor mensal do serviço \"" + i.Title + "\"."); });
+    if (its.length){
+      var semEmail = unidadesDe(cli.id, comp).filter(function(u){ return !u.antiga && !(u.para || cli.AprovadorEmail); });
+      if (semEmail.length) out.push("Informar o e-mail do focal que aprova o boletim" + (semEmail[0].nome ? " (" + semEmail.map(function(u){ return u.nome; }).join(", ") + ")" : "") + ".");
+    }
+  }
+  if (!ct && !cli.AprovadorEmail && !tomadoresDe(cli).some(function(t){ return t.para; })) out.push("Informar o e-mail do focal que aprova o boletim.");
+  String(cli.Pendencias || "").split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean).forEach(function(x){ out.push(x); });
+  return out;
+}
 function unidadesDe(cid, comp){
   var cli = byId("clientes", cid), ct = contratoVigente(cid, comp), out = [];
   if (!cli) return [{ key:"", nome:"" }];
@@ -770,10 +791,10 @@ function unidadesDe(cid, comp){
   if (ct){
     var itens = itensDoContrato(ct.id);
     if (cli.FaturarPorServico){
-      itens.forEach(function(it){ divisaoDe(it, cli).forEach(function(d){ var tm = tomadorDe(cli, d.t); out.push({ key: it.id + "|" + (d.t || ""), nome: it.Title + (tm.nome ? " " + tm.nome : ""), itemId:String(it.id), t:d.t || "", pct:Number(d.pct), pedido:d.pedido || it.NumPedido || "", para:d.para || "", cc:d.cc || "" }); }); });
+      itens.forEach(function(it){ divisaoDe(it, cli).forEach(function(d){ var tm = tomadorDe(cli, d.t); out.push({ key: it.id + "|" + (d.t || ""), nome: it.Title + (tm.nome ? " " + tm.nome : ""), itemId:String(it.id), t:d.t || "", pct:Number(d.pct), pedido:d.pedido || it.NumPedido || "", para:d.para || tm.para || "", cc:d.cc || tm.cc || "" }); }); });
     } else if (multi){
       var usados = {}; itens.forEach(function(it){ divisaoDe(it, cli).forEach(function(d){ usados[d.t || ""] = 1; }); });
-      toms.forEach(function(tm){ if (usados[tm.k]) out.push({ key:"T:" + tm.k, nome: tm.nome, t: tm.k }); });
+      toms.forEach(function(tm){ if (usados[tm.k]) out.push({ key:"T:" + tm.k, nome: tm.nome, t: tm.k, para: tm.para || "", cc: tm.cc || "" }); });
     }
   }
   if (!out.length) out.push({ key:"", nome:"" });
@@ -909,11 +930,25 @@ async function afterLogin(acc){
   catch (e){ setLoading(false); console.error(e); showToast("Não consegui ler o SharePoint: " + e.message, true); return; }
   setLoading(false);
   enterApp();
+  if (!MISSING_LISTS.length) setTimeout(avisoPendencias, 300);
   if (!MISSING_LISTS.length && Object.keys(MISSING_COLS).length && isGestor()){ showTab("config"); showToast("Há uma atualização de estrutura pendente nesta tela."); }
   if (MISSING_LISTS.length){
     if (isGestor()){ showTab("config"); showToast("Primeiro acesso: crie a base de dados do sistema nesta tela."); }
     else { $("mainArea").classList.add("hidden"); $("gate").classList.remove("hidden"); $("gate").innerHTML = "<h2>O sistema ainda não foi configurado</h2><p>A base de dados no SharePoint ainda não foi criada. Peça ao BPM para concluir a configuração.</p>"; }
   }
+}
+// aviso no login: cadastros dos clientes do coordenador que ainda precisam de informacao
+function meusPendentes(){
+  return S.clientes.filter(function(c){ return c.Ativo !== false && ehCoordenador(c, CURRENT_USER.email); })
+    .map(function(c){ return { c:c, p: pendenciasCliente(c) }; }).filter(function(x){ return x.p.length; })
+    .sort(function(a, b){ return String(a.c.Title).localeCompare(String(b.c.Title), "pt-BR"); });
+}
+function avisoPendencias(){
+  var l = meusPendentes(); if (!l.length) return;
+  var h = "<h3>Olá, " + esc(String(CURRENT_USER.name || "").split(" ")[0]) + "! Há informações faltando nos seus clientes</h3><p class='msub'>Sem elas o sistema não consegue gerar o boletim de medição. Clique no cliente para completar o cadastro.</p>" +
+    l.map(function(x){ return "<div class='card' style='margin:0 0 10px;padding:12px 14px;border-left:4px solid #eda100'><div style='display:flex;justify-content:space-between;gap:10px;align-items:flex-start'><div><b>" + esc(x.c.Title) + "</b><ul class='small' style='margin:6px 0 0 18px;padding:0'>" + x.p.map(function(t){ return "<li>" + esc(t) + "</li>"; }).join("") + "</ul></div><button class='btn-o btn-s' onclick=\"closeModal();goCliente('" + x.c.id + "')\">Completar</button></div></div>"; }).join("") +
+    "<div class='modal-actions'><button class='btn' onclick='closeModal()'>Ver depois</button></div>";
+  openModal(h, true);
 }
 function enterApp(){
   $("gate").classList.add("hidden"); $("mainArea").classList.remove("hidden");
@@ -933,7 +968,7 @@ function startDemo(){
   $("userChip").textContent = CURRENT_USER.name; $("userChip").classList.remove("hidden");
   $("logoutBtn").classList.remove("hidden"); $("logoutBtn").textContent = "Sair";
   $("demoBanner").classList.remove("hidden");
-  buildDemoData(); stampHeader(); enterApp();
+  buildDemoData(); stampHeader(); enterApp(); setTimeout(avisoPendencias, 300);
 }
 
 // ------------------------------------------------------------
@@ -1047,6 +1082,8 @@ function renderDashboard(){
   var semOC = aprov.filter(faltaOC);
   if (semOC.length) pend.push(["amber", semOC.length + " medição(ões) aprovadas aguardando a OC do cliente: " + semOC.map(function(m){ return (byId("clientes", m.ClienteId) || {}).Title + (m.UnidadeNome ? " – " + m.UnidadeNome : ""); }).join(", ") + "."]);
   if (aprov.length - semOC.length) pend.push(["amber", (aprov.length - semOC.length) + " medição(ões) aprovadas aguardando emissão da NF pelo coordenador."]);
+  var incompl = S.clientes.filter(function(c){ return c.Ativo !== false && (!area || c.Area === area) && pendenciasCliente(c).length; });
+  if (incompl.length && isGestor()) pend.push(["amber", incompl.length + " cliente(s) com cadastro incompleto (contrato, serviços ou e-mail do focal): " + incompl.map(function(c){ return c.Title; }).join(", ") + "."]);
   var sj = S.ocorrencias.filter(function(o){ return o.Competencia === comp && !String(o.Justificativa||"").trim() && clis.some(function(c){ return String(c.id) === String(o.ClienteId); }); });
   if (sj.length) pend.push(["amber", sj.length + " ocorrência(s) de " + compLabel(comp) + " sem justificativa."]);
   $("dashPend").innerHTML = pend.length ? pend.map(function(p){ return '<div class="alert alert-' + p[0] + '">' + esc(p[1]) + "</div>"; }).join("") : '<div class="alert alert-green">Nada pendente nesta competência.</div>';
@@ -1112,7 +1149,8 @@ function faturamentosDoMes(area, comp){
 // e o cliente fatura por servico, a OC muda todo mes e e obrigatoria antes da NF.
 function ocFixaDe(med){ var u = unidadeDe(med.ClienteId, med.Competencia, med.Unidade || ""); return (u && u.pedido) || ""; }
 function ocDe(med){ var L = linhasDe(med); return L.oc || L.pedido || ocFixaDe(med) || ""; }
-function ocObrigatoria(med){ var cli = byId("clientes", med.ClienteId); return !!(cli && (cli.FaturarPorServico === true || cli.FaturarPorServico === "true" || cli.FaturarPorServico === 1)) && !ocFixaDe(med); }
+function simB(x){ return x === true || x === "true" || x === 1; }
+function ocObrigatoria(med){ var cli = byId("clientes", med.ClienteId); return !!(cli && (simB(cli.OCMensal) || simB(cli.FaturarPorServico))) && !ocFixaDe(med); }
 function faltaOC(med){ return med && (med.Status === "Aprovada") && ocObrigatoria(med) && !ocDe(med); }
 async function salvarOC(id, valor, silent){
   var med = byId("medicoes", id), L = linhasDe(med); L.oc = String(valor || "").trim();
@@ -1206,7 +1244,8 @@ function openMedicao(cid, comp, uk){
       "<div class='row' style='gap:8px;align-items:center'><input id='fOC' value='" + esc(ocAt) + "' placeholder='Ex.: 4500123456' style='max-width:260px'><button class='btn-o btn-s' onclick=\"acaoSalvarOC('" + id + "')\">Salvar OC</button></div></div>";
   }
   a.push('<button class="btn-o" onclick="baixarBoletim(\'' + id + '\')">Baixar boletim (Excel)</button>');
-  a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Boletim para o e-mail</button>');
+  a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Copiar boletim</button>');
+  if (st === "Rascunho" || st === "Enviada" || st === "Contestada") a.push('<button class="btn-o" style="border-color:var(--grena);font-weight:700" onclick="prepararEmail(\'' + id + '\')">&#9993; Preparar e-mail no Outlook</button>');
   if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + "','" + ukArg(uk) + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
   if (st === "Enviada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
   if (st === "Contestada") a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho e corrigir</button>');
@@ -1378,6 +1417,154 @@ function copiarPreviewEmail(){
 }
 
 // ------------------------------------------------------------
+// E-mail no Outlook (rascunho criado na caixa do proprio coordenador via Graph)
+// Nada e enviado automaticamente: o coordenador revisa e clica em Enviar no Outlook.
+// ------------------------------------------------------------
+function emailsDe(t){ return String(t || "").split(/[;,\s]+/).map(function(x){ return x.trim(); }).filter(Boolean); }
+function emailValido(e){ return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e); }
+function juntarEmails(listas){ var out = []; listas.forEach(function(l){ emailsDe(l).forEach(function(e){ if (out.map(function(x){ return x.toLowerCase(); }).indexOf(e.toLowerCase()) < 0) out.push(e); }); }); return out.join("; "); }
+function destinatariosDe(med){
+  var cli = byId("clientes", med.ClienteId), u = unidadeDe(med.ClienteId, med.Competencia, med.Unidade || "") || {};
+  return { para: u.para || cli.AprovadorEmail || "", cc: u.cc || cli.EmailsCopia || "" };
+}
+function irmasDe(med){
+  var ordemU = unidadesDe(med.ClienteId, med.Competencia).map(function(u){ return u.key; });
+  return medicoesDoMes(med.ClienteId, med.Competencia).sort(function(a, b){ return ordemU.indexOf(a.Unidade || "") - ordemU.indexOf(b.Unidade || ""); });
+}
+function saudacao(){ var h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
+function assuntoEmail(lista){
+  var m = lista[0], cli = byId("clientes", m.ClienteId);
+  return "Boletim de medição – " + cli.Title + (lista.length === 1 && m.UnidadeNome ? " – " + m.UnidadeNome : "") + " – " + compLabel(m.Competencia);
+}
+function textoPadraoEmail(lista){
+  var m = lista[0], cli = byId("clientes", m.ClienteId);
+  var nomes = lista.length > 1 ? lista.map(function(x){ return x.UnidadeNome || cli.Title; }) : [];
+  return saudacao() + ".\n\nSegue " + (lista.length > 1 ? "os boletins de medição" : "o boletim de medição") + " dos serviços prestados pela ElevaLife referente a " + compLabel(m.Competencia) + (nomes.length ? " (" + nomes.join(", ") + ")" : (m.UnidadeNome ? " – " + m.UnidadeNome : "")) + ".\n\n" +
+    "Pedimos, por gentileza, a validação dos valores respondendo a este e-mail. Havendo qualquer divergência, estamos à disposição para ajustar. Após a aprovação, " + (ocObrigatoria(m) ? "solicitamos também o envio do número da OC para a emissão da nota fiscal." : "emitiremos a nota fiscal.") + "\n\n" +
+    "O detalhamento das ocorrências segue na planilha anexa.";
+}
+function corpoEmailHTML(texto, lista){
+  var F = "font-family:Calibri,Arial,Helvetica,sans-serif;font-size:11pt;color:#1f2124;";
+  var par = String(texto || "").split(/\n{2,}/).map(function(p){ return "<p style='" + F + "margin:0 0 12px;'>" + esc(p).replace(/\n/g, "<br>") + "</p>"; }).join("");
+  var bol = lista.map(function(m){ return emailBoletimHTML(m); }).join("<div style='height:22px;line-height:22px;'>&nbsp;</div>");
+  var ass = "<p style='" + F + "margin:16px 0 0;'>Atenciosamente,<br><b>" + esc(CURRENT_USER.name || "") + "</b><br><span style='color:#6e1423;'><b>ElevaLife Saúde e Educação</b></span><br>" + esc(CURRENT_USER.email || "") + "</p>";
+  return "<html><head><meta charset='utf-8'></head><body>" + par + "<div style='margin:14px 0;'>" + bol + "</div>" + ass + "</body></html>";
+}
+function prepararEmail(id, modo){
+  var ABERTO = { "Rascunho":1, "Enviada":1, "Contestada":1 };
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), todasM = irmasDe(med), irmas = todasM.filter(function(m){ return ABERTO[m.Status] || m === med; });
+  modo = irmas.length > 1 ? (modo || "um") : "um";
+  var grupos = modo === "juntos" ? [irmas] : modo === "separados" ? irmas.map(function(m){ return [m]; }) : [[med]];
+  window.__emailGrupos = grupos.map(function(g){ return g.map(function(m){ return m.id; }); });
+  var chip = function(k, t){ return "<button class='chip" + (modo === k ? " active" : "") + "' onclick=\"prepararEmail('" + id + "','" + k + "')\">" + t + "</button>"; };
+  var h = "<h3>Preparar e-mail no Outlook</h3><p class='msub'>O sistema cria um <b>rascunho</b> na sua caixa do Outlook com destinatários, texto, boletim e planilha. Você revisa e clica em Enviar por lá. Nada é enviado automaticamente.</p>";
+  if (irmas.length > 1) h += "<div class='chip-row' style='margin-bottom:12px'>" + chip("um", "Só este faturamento" + (med.UnidadeNome ? " (" + esc(med.UnidadeNome) + ")" : "")) + chip("separados", "Todos de " + esc(cli.Title) + " em e-mails separados (" + irmas.length + ")") + chip("juntos", "Todos de " + esc(cli.Title) + " em um e-mail só") + "</div>";
+  var faltam = unidadesDe(med.ClienteId, med.Competencia).length - irmas.length;
+  if (modo !== "um" && faltam > 0) h += "<div class='alert alert-amber'>" + faltam + " faturamento(s) deste cliente ainda não têm medição gerada e ficam de fora.</div>";
+  var fechadas = todasM.length - irmas.length;
+  if (modo !== "um" && fechadas > 0) h += "<div class='alert alert-blue'>" + fechadas + " faturamento(s) já aprovados ou com NF emitida ficam de fora.</div>";
+  var todas = [].concat.apply([], grupos), desat = todas.filter(rascunhoDesatualizado);
+  if (desat.length) h += "<div class='alert alert-red'>Rascunho desatualizado: " + desat.map(function(m){ return esc(m.UnidadeNome || cli.Title); }).join(", ") + ". Clique em Gerar novamente na medição antes de preparar o e-mail.</div>";
+  h += "<div class='form'>";
+  grupos.forEach(function(g, gi){
+    var d = g.map(destinatariosDe), para = juntarEmails(d.map(function(x){ return x.para; })), cc = juntarEmails(d.map(function(x){ return x.cc; }));
+    if (grupos.length > 1) h += "<div class='full' style='border-top:1px dashed var(--border);padding-top:10px;margin-top:4px'><b style='color:var(--grena)'>E-mail " + (gi + 1) + ": " + esc(g[0].UnidadeNome || cli.Title) + "</b> <span class='small muted'>· " + brl(g[0].ValorFaturar) + "</span></div>";
+    h += "<div><label>Para</label><input id='ePara" + gi + "' value='" + esc(para) + "' placeholder='email@cliente.com.br; outro@cliente.com.br'></div><div><label>Cc</label><input id='eCc" + gi + "' value='" + esc(cc) + "' placeholder='opcional'></div>";
+    if (grupos.length === 1) h += "<div class='full'><label>Assunto</label><input id='eAss0' value='" + esc(assuntoEmail(g)) + "'></div>";
+  });
+  h += "<div class='full'><label>Mensagem" + (grupos.length > 1 ? " (a mesma para todos; o nome do serviço entra no assunto de cada um)" : "") + "</label><textarea id='eTxt' style='min-height:150px'>" + esc(textoPadraoEmail(grupos[0])) + "</textarea><div class='hint'>Depois da mensagem entram " + (grupos[0].length > 1 ? "os boletins" : "o boletim") + " (com as cores da ElevaLife) e a sua assinatura.</div></div>";
+  h += "<div class='full'><label class='check'><input type='checkbox' id='eXls' checked> Anexar o boletim em Excel (com o detalhamento das ocorrências)</label></div>";
+  h += "<div class='full'><label class='check'><input type='checkbox' id='eSalvar' checked> Guardar estes e-mails no cadastro para os próximos meses</label></div>";
+  h += "</div><div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar</button><button class='btn-o' onclick=\"previaEmail('" + id + "')\">Ver prévia</button><button class='btn' " + (desat.length ? "disabled" : "") + " onclick=\"criarRascunhos('" + id + "')\">" + (grupos.length > 1 ? "Criar " + grupos.length + " rascunhos no Outlook" : "Criar rascunho no Outlook") + "</button></div>";
+  h += "<p class='small muted' style='margin-top:8px'>Na primeira vez, a Microsoft pode pedir sua autorização para o sistema criar rascunhos na sua caixa de e-mail.</p>";
+  openModal(h, true);
+}
+function lerGruposEmail(){
+  return (window.__emailGrupos || []).map(function(ids, gi){
+    var lista = ids.map(function(i){ return byId("medicoes", i); });
+    return { lista: lista, para: v("ePara" + gi), cc: v("eCc" + gi), assunto: $("eAss" + gi) ? v("eAss" + gi) : assuntoEmail(lista) };
+  });
+}
+function previaEmail(id){
+  var gs = lerGruposEmail(), g = gs[0];
+  var w = window.open("", "_blank"); if (!w){ showToast("O navegador bloqueou a janela da prévia.", true); return; }
+  w.document.write("<title>" + esc(g.assunto) + "</title><div style='font-family:Calibri,Arial;font-size:13px;color:#555;border-bottom:1px solid #ddd;padding:8px 0 10px;margin-bottom:14px'><b>Para:</b> " + esc(g.para) + "<br><b>Cc:</b> " + esc(g.cc) + "<br><b>Assunto:</b> " + esc(g.assunto) + (gs.length > 1 ? "<br><i>(prévia do 1º de " + gs.length + " e-mails)</i>" : "") + "</div>" + corpoEmailHTML(v("eTxt"), g.lista));
+  w.document.close();
+}
+function toBase64(buf){ var b = new Uint8Array(buf), s = "", ch = 0x8000; for (var i = 0; i < b.length; i += ch) s += String.fromCharCode.apply(null, b.subarray(i, i + ch)); return btoa(s); }
+async function salvarDestinatarios(med, para, cc){
+  var cli = byId("clientes", med.ClienteId), u = unidadeDe(med.ClienteId, med.Competencia, med.Unidade || "") || {};
+  if (u.itemId){
+    var it = byId("itens", u.itemId), dv = divisaoDe(it, cli), mud = false;
+    dv.forEach(function(d){ if ((d.t || "") === (u.t || "") && (d.para !== para || (d.cc || "") !== cc)){ d.para = para; d.cc = cc; mud = true; } });
+    if (mud) await api.update("itens", it.id, { Divisao: JSON.stringify(dv) });
+  } else if (u.t && String(u.key || "").indexOf("T:") === 0){
+    var ts = jparse(cli.Tomadores, []), mudT = false;
+    ts.forEach(function(t){ if (t.k === u.t && (t.para !== para || (t.cc || "") !== cc)){ t.para = para; t.cc = cc; mudT = true; } });
+    if (mudT) await api.update("clientes", cli.id, { Tomadores: JSON.stringify(ts) });
+  } else if ((cli.AprovadorEmail || "") !== para || (cli.EmailsCopia || "") !== cc){
+    await api.update("clientes", cli.id, { AprovadorEmail: para, EmailsCopia: cc });
+  }
+}
+async function criarRascunhos(id){
+  var gs = lerGruposEmail(), txt = v("eTxt"), anexar = v("eXls"), salvar = v("eSalvar");
+  for (var i = 0; i < gs.length; i++){
+    var ps = emailsDe(gs[i].para), cs = emailsDe(gs[i].cc), inval = ps.concat(cs).filter(function(e){ return !emailValido(e); });
+    if (!ps.length){ showToast("Informe pelo menos um destinatário em Para" + (gs.length > 1 ? " no e-mail " + (i + 1) : "") + ".", true); return; }
+    if (inval.length){ showToast("E-mail inválido: " + inval.join(", "), true); return; }
+  }
+  if (anexar && typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou. Recarregue a página ou desmarque o anexo.", true); return; }
+  var criados = [];
+  setLoading(true, "Criando rascunho no Outlook...");
+  try {
+    if (!DEMO) await getToken(MAIL_SCOPES); // pede a autorizacao logo no clique (evita bloqueio da janela da Microsoft)
+    for (var g = 0; g < gs.length; g++){
+      var G = gs[g]; setLoading(true, "Criando rascunho " + (g + 1) + " de " + gs.length + "...");
+      var msg = { subject: G.assunto, importance: "normal", body: { contentType: "HTML", content: corpoEmailHTML(txt, G.lista) },
+        toRecipients: emailsDe(G.para).map(function(e){ return { emailAddress: { address: e } }; }),
+        ccRecipients: emailsDe(G.cc).map(function(e){ return { emailAddress: { address: e } }; }), attachments: [] };
+      if (anexar) for (var k = 0; k < G.lista.length; k++){
+        var buf = await boletimWorkbook(G.lista[k].id).xlsx.writeBuffer();
+        msg.attachments.push({ "@odata.type": "#microsoft.graph.fileAttachment", name: nomeBoletimXlsx(G.lista[k]), contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", contentBytes: toBase64(buf) });
+      }
+      var r = DEMO ? { id: "demo" + g, webLink: "" } : await graph("https://graph.microsoft.com/v1.0/me/messages", { method: "POST", body: JSON.stringify(msg) }, MAIL_SCOPES);
+      criados.push({ g: G, link: r && r.webLink });
+      for (var j = 0; j < G.lista.length; j++){
+        var m = G.lista[j], hist = historicoDe(m); hist.push({ s: m.Status, d: new Date().toISOString(), p: CURRENT_USER.name, o: "Rascunho de e-mail criado no Outlook para " + G.para });
+        // num e-mail unico com varios servicos, so preenche quem ainda nao tinha contato (nao sobrescreve o de cada servico)
+        if (salvar && (G.lista.length === 1 || !destinatariosDe(m).para)) await salvarDestinatarios(m, emailsDe(G.para).join("; "), emailsDe(G.cc).join("; "));
+        await api.update("medicoes", m.id, { Historico: JSON.stringify(hist) });
+      }
+    }
+    setLoading(false);
+  } catch (e){
+    setLoading(false); console.error(e);
+    var perm = e.status === 403 || e.status === 401 || /consent|AADSTS65001|AADSTS90094/i.test(String(e.message));
+    showToast(perm ? "A Microsoft não autorizou criar rascunhos. O administrador precisa liberar a permissão Mail.ReadWrite do sistema no Entra." : "Não consegui criar o rascunho: " + e.message, true);
+    if (!criados.length) return;
+  }
+  var h = "<h3>" + (criados.length > 1 ? criados.length + " rascunhos criados" : "Rascunho criado") + " no seu Outlook</h3><p class='msub'>Está na pasta <b>Rascunhos</b>, no Outlook do computador e no Outlook na web. Revise e clique em <b>Enviar</b>.</p>";
+  if (DEMO) h += "<div class='alert alert-blue'>Modo demonstração: nenhum rascunho foi criado de verdade. Use \"Ver prévia\" para ver como o e-mail fica.</div>";
+  h += criados.map(function(c, i){ return "<div class='copy-row'><span class='k'>" + esc(c.g.lista.map(function(m){ return m.UnidadeNome || byId("clientes", m.ClienteId).Title; }).join(", ")) + "</span><span class='val'>Para: " + esc(c.g.para) + "</span>" + (c.link ? "<a class='btn-o btn-s' href='" + esc(c.link) + "' target='_blank' rel='noopener'>Abrir no Outlook</a>" : "") + "</div>"; }).join("");
+  var pend = [].concat.apply([], criados.map(function(c){ return c.g.lista; })).filter(function(m){ return m.Status === "Rascunho"; });
+  window.__emailEnviar = pend.map(function(m){ return { id: m.id, para: criados.filter(function(c){ return c.g.lista.indexOf(m) >= 0; })[0].g.para }; });
+  h += "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar para a medição</button>" + (pend.length ? "<button class='btn' onclick='marcarEnviadasEmail()'>Já enviei: marcar " + (pend.length > 1 ? pend.length + " medições" : "a medição") + " como enviada" + (pend.length > 1 ? "s" : "") + "</button>" : "") + "</div>";
+  h += "<p class='small muted' style='margin-top:8px'>Marque como enviada só depois de clicar em Enviar no Outlook. Se preferir, faça isso mais tarde pela própria medição.</p>";
+  openModal(h, true); renderCurrent();
+}
+async function marcarEnviadasEmail(){
+  var lista = window.__emailEnviar || [], hoje = todayISO();
+  await safe(async function(){
+    for (var i = 0; i < lista.length; i++){
+      var m = byId("medicoes", lista[i].id); if (!m || m.Status !== "Rascunho") continue;
+      var hist = historicoDe(m); hist.push({ s: "Enviada", d: new Date().toISOString(), p: CURRENT_USER.name, o: lista[i].para });
+      await api.update("medicoes", m.id, { Status: "Enviada", DataEnvio: hoje, Historico: JSON.stringify(hist) });
+    }
+  }, lista.length > 1 ? lista.length + " medições marcadas como enviadas." : "Medição marcada como enviada.");
+  closeModal(); renderCurrent();
+}
+
+// ------------------------------------------------------------
 // Excel (boletim e ocorrencias)
 // ------------------------------------------------------------
 function safeName(n){ return String(n).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[–—]/g, "-").replace(/[^A-Za-z0-9 ._-]/g, "").replace(/\s+/g, " ").trim(); }
@@ -1389,8 +1576,12 @@ function saveWorkbook(wb, name){
   });
 }
 function styleHeader(row){ row.eachCell(function(c){ c.font = { bold:true, color:{ argb:"FFFFFFFF" } }; c.fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FF6E1423" } }; c.alignment = { vertical:"middle", wrapText:true }; }); }
+function nomeBoletimXlsx(med){ var cli = byId("clientes", med.ClienteId); return safeName("Boletim " + cli.Title.replace(/[\\/:*?"<>|]/g, "") + (med.UnidadeNome ? " " + med.UnidadeNome : "") + " " + med.Competencia) + ".xlsx"; }
 function baixarBoletim(id){
   if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou. Recarregue a página.", true); return; }
+  saveWorkbook(boletimWorkbook(id), nomeBoletimXlsx(byId("medicoes", id)));
+}
+function boletimWorkbook(id){
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), L = linhasDe(med), n = nfInfo(med);
   var wb = new ExcelJS.Workbook(); var ws = wb.addWorksheet("Boletim");
   ws.columns = [{ width:44 }, { width:16 }, { width:16 }, { width:16 }, { width:16 }, { width:60 }];
@@ -1409,7 +1600,7 @@ function baixarBoletim(id){
     var h2 = w2.getRow(1); h2.values = ["Data", "Tipo", "Serviço / cargo", "Profissional", "Início", "Fim", "Horas", "Valor", "Justificativa"]; styleHeader(h2);
     ocs.forEach(function(o, i){ var it = o.ItemId ? byId("itens", o.ItemId) : null; var rr = w2.getRow(i + 2); rr.values = [fmtDate(o.Data), o.Tipo, it ? it.Title : (o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || (o.Dias ? o.Dias + " dia(s)" : ""), Number(o.Valor)||0, o.Justificativa || ""]; rr.getCell(8).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; rr.getCell(9).alignment = { wrapText:true, vertical:"top" }; });
   }
-  saveWorkbook(wb, "Boletim " + cli.Title.replace(/[\\/:*?"<>|]/g, "") + " " + med.Competencia + ".xlsx");
+  return wb;
 }
 function exportOcorrencias(){
   if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou.", true); return; }
@@ -1530,7 +1721,7 @@ function renderClientesList(){
   var list = S.clientes.filter(function(c){ return (!area || c.Area === area) && (!q || norm(c.Title + " " + c.RazaoSocial + " " + c.CNPJ).indexOf(q) >= 0); })
     .sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
   if (!SEL.cliente && list.length) SEL.cliente = String(list[0].id);
-  $("cliList").innerHTML = list.length ? list.map(function(c){ var ct = contratoAtual(c.id); return "<div class='list-item" + (String(c.id) === SEL.cliente ? " active" : "") + "' onclick=\"selCliente('" + c.id + "')\"><div class='list-item-title'>" + esc(c.Title) + (c.Ativo === false ? " <span class='badge b-gray'>inativo</span>" : "") + "</div><div class='list-item-sub'>" + esc(c.Area || "") + " · " + (ct ? brl(totalContrato(ct.id)) + "/mês" : "sem contrato") + " · " + vigenciaBadge(ct) + "</div></div>"; }).join("") : "<div class='empty'>Nenhum cliente.</div>";
+  $("cliList").innerHTML = list.length ? list.map(function(c){ var ct = contratoAtual(c.id); return "<div class='list-item" + (String(c.id) === SEL.cliente ? " active" : "") + "' onclick=\"selCliente('" + c.id + "')\"><div class='list-item-title'>" + esc(c.Title) + (c.Ativo === false ? " <span class='badge b-gray'>inativo</span>" : (pendenciasCliente(c).length ? " <span class='badge b-amber' title='Cadastro incompleto'>pendente</span>" : "")) + "</div><div class='list-item-sub'>" + esc(c.Area || "") + " · " + (ct ? brl(totalContrato(ct.id)) + "/mês" : "sem contrato") + " · " + vigenciaBadge(ct) + "</div></div>"; }).join("") : "<div class='empty'>Nenhum cliente.</div>";
 }
 function selCliente(id){ SEL.cliente = String(id); SEL.contrato = null; renderClientes(); }
 function renderClienteDetail(){
@@ -1539,9 +1730,11 @@ function renderClienteDetail(){
   var cts = contratosDoCliente(c.id); var ct = SEL.contrato ? byId("contratos", SEL.contrato) : contratoAtual(c.id);
   if (ct) SEL.contrato = String(ct.id);
   var dl = function(k, val){ return "<div><dt>" + esc(k) + "</dt><dd>" + (val ? esc(val) : "<span class='muted'>–</span>") + "</dd></div>"; };
-  var h = "<div class='card'><div class='section-head'><h4 style='font-size:19px'>" + esc(c.Title) + "</h4><div><button class='btn-o btn-s' onclick=\"openCliente('" + c.id + "')\">Editar cliente</button></div></div><dl class='dl'>" +
-    dl("Razão social", c.RazaoSocial) + dl("CNPJ", c.CNPJ) + dl("Área", c.Area) + dl("Unidade", c.Unidade) + dl("Local (feriados)", c.Local) + dl("Coordenador", c.Coordenador) + dl("Aprovador", c.AprovadorNome) + dl("E-mail do aprovador", c.AprovadorEmail) + dl("Modelo de boletim", c.ModeloBoletim) + dl("Condição de pagamento", c.CondicaoPagamento) + dl("E-mails em cópia", c.EmailsCopia) + dl("Faturamento", c.FaturarPorServico ? "Cada serviço separado" : "Único por tomador") +
-    (tomadoresDe(c)[0].k ? "<div style='grid-column:1/-1'><dt>Tomadores</dt><dd>" + tomadoresDe(c).map(function(t){ return "<span class='badge b-grena' style='margin:2px 6px 2px 0'>" + esc(t.nome) + "</span>" + esc(t.razao || "") + (t.cnpj ? " · " + esc(t.cnpj) : ""); }).join("<br>") + "</dd></div>" : "") + "</dl>" + (c.Observacoes ? "<p class='small muted' style='margin:12px 0 0'>" + esc(c.Observacoes) + "</p>" : "") + "</div>";
+  var pend = pendenciasCliente(c);
+  var h = pend.length && c.Ativo !== false ? "<div class='alert alert-amber' style='display:block'><b>Informações faltando neste cadastro:</b><ul style='margin:6px 0 0 18px;padding:0'>" + pend.map(function(t){ return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>" + (c.Pendencias ? "<div style='margin-top:8px'><button class='btn-o btn-s' onclick=\"resolverPendencias('" + c.id + "')\">Já resolvi os itens combinados com a gestão</button></div>" : "") + "</div>" : "";
+  h += "<div class='card'><div class='section-head'><h4 style='font-size:19px'>" + esc(c.Title) + "</h4><div><button class='btn-o btn-s' onclick=\"openCliente('" + c.id + "')\">Editar cliente</button></div></div><dl class='dl'>" +
+    dl("Razão social", c.RazaoSocial) + dl("CNPJ", c.CNPJ) + dl("Área", c.Area) + dl("Unidade", c.Unidade) + dl("Local (feriados)", c.Local) + dl("Coordenador", c.Coordenador) + dl("E-mail do coordenador", c.CoordenadorEmail) + dl("Aprovador", c.AprovadorNome) + dl("E-mail do aprovador", c.AprovadorEmail) + dl("Modelo de boletim", c.ModeloBoletim) + dl("Condição de pagamento", c.CondicaoPagamento) + dl("E-mails em cópia", c.EmailsCopia) + dl("Faturamento", (c.FaturarPorServico ? "Cada serviço separado" : "Único por tomador") + (simB(c.OCMensal) ? " · OC nova todo mês" : "")) +
+    (tomadoresDe(c)[0].k ? "<div style='grid-column:1/-1'><dt>Tomadores</dt><dd>" + tomadoresDe(c).map(function(t){ return "<span class='badge b-grena' style='margin:2px 6px 2px 0'>" + esc(t.nome) + "</span>" + esc(t.razao || "") + (t.cnpj ? " · " + esc(t.cnpj) : "") + (t.para ? "<div class='small muted' style='margin:0 0 4px'>Para: " + esc(t.para) + (t.cc ? " · Cc: " + esc(t.cc) : "") + "</div>" : ""); }).join("<br>") + "</dd></div>" : "") + "</dl>" + (c.Observacoes ? "<p class='small muted' style='margin:12px 0 0'>" + esc(c.Observacoes) + "</p>" : "") + "</div>";
   h += "<div class='card'><div class='section-head'><h4>Contrato</h4><div style='display:flex;gap:8px;flex-wrap:wrap'>" + (ct ? "<button class='btn-o btn-s' onclick=\"openContrato('" + c.id + "','" + ct.id + "')\">Editar contrato</button><button class='btn btn-s' onclick=\"openRenovar('" + ct.id + "')\">Renovar / nova versão</button>" : "<button class='btn btn-s' onclick=\"openContrato('" + c.id + "')\">Cadastrar contrato</button>") + "</div></div>";
   if (cts.length > 1) h += "<div class='version-tabs'>" + cts.map(function(x){ return "<button class='chip" + (ct && String(x.id) === String(ct.id) ? " active" : "") + "' onclick=\"SEL.contrato='" + x.id + "';renderClienteDetail()\">Versão " + esc(x.Versao || 1) + (x.Inicio ? " · desde " + fmtDate(x.Inicio) : "") + "</button>"; }).join("") + "</div>";
   if (ct){
@@ -1558,44 +1751,53 @@ function renderClienteDetail(){
   h += "<div class='card'><div class='section-head'><h4>Preços de horas extras e coberturas</h4><button class='btn-o btn-s' onclick=\"openVariavel(null,'" + c.id + "')\">+ Novo preço</button></div>" + (vars.length ? "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Cargo</th><th>Tipo</th><th>Período</th><th class='num'>Valor/hora</th></tr></thead><tbody>" + vars.map(function(x){ return "<tr class='click' onclick=\"openVariavel('" + x.id + "')\"><td>" + esc(x.Cargo) + "</td><td>" + esc(x.Tipo === "HE" ? "Hora extra" : x.Tipo) + "</td><td>" + esc(PERIODOS[x.Periodo] || x.Periodo) + "</td><td class='num'>" + brl(x.Valor) + "</td></tr>"; }).join("") + "</tbody></table></div>" : "<p class='small muted'>Nenhum preço cadastrado. Sem preço, horas extras deste cliente precisam de valor manual.</p>") + "</div>";
   $("cliDetail").innerHTML = h;
 }
+function resolverPendencias(id){
+  askConfirm("Confirma que os itens combinados com a gestão (lista escrita no cadastro) foram resolvidos? Os itens calculados pelo sistema continuam aparecendo até serem preenchidos.", async function(){
+    await safe(function(){ return api.update("clientes", id, { Pendencias: "" }); }, "Pendências marcadas como resolvidas."); renderCurrent();
+  }, "Resolvido");
+}
 function openCliente(id){
   var c = id ? byId("clientes", id) : { Area: AREAS[0], ModeloBoletim:"Eleva", Ativo:true };
   var f = function(k, lbl, extra){ return "<div" + (extra && extra.full ? " class='full'" : "") + "><label>" + lbl + "</label><input id='c_" + k + "' value='" + esc(c[k] || "") + "'" + (extra && extra.type ? " type='" + extra.type + "'" : "") + "></div>"; };
   var h = "<h3>" + (id ? "Editar cliente" : "Novo cliente") + "</h3><p class='msub'>Se o cliente tem mais de um CNPJ recebendo NF (ex.: S.A e Cilindros), cadastre-os em Tomadores.</p><div class='form'>" +
     f("Title", "Nome (como aparece no sistema)") + f("RazaoSocial", "Razão social (tomador da NF)") + f("CNPJ", "CNPJ") +
     "<div><label>Área</label><select id='c_Area'>" + AREAS.map(function(a){ return opt(a, a, c.Area); }).join("") + "</select></div>" +
-    f("Unidade", "Unidade") + f("Local", "Cidade (para feriados)") + f("Coordenador", "Coordenador (e-mail)") + f("AprovadorNome", "Aprovador no cliente") + f("AprovadorEmail", "E-mail do aprovador", { type:"email" }) +
+    f("Unidade", "Unidade") + f("Local", "Cidade (para feriados)") + f("Coordenador", "Coordenador (nome)") + f("CoordenadorEmail", "E-mail(s) do coordenador (separe com ;)") + f("AprovadorNome", "Aprovador no cliente") + f("AprovadorEmail", "E-mail do aprovador", { type:"email" }) +
     "<div><label>Modelo de boletim</label><select id='c_ModeloBoletim'>" + opt("Eleva", "Modelo ElevaLife", c.ModeloBoletim) + opt("Cliente", "Modelo do cliente", c.ModeloBoletim) + "</select></div>" +
     f("CondicaoPagamento", "Condição de pagamento") + f("EmailsCopia", "E-mails em cópia (separe com ;)") +
     tomadoresForm(c) +
     "<div class='full'><label>Observações</label><textarea id='c_Observacoes'>" + esc(c.Observacoes || "") + "</textarea></div>" +
+    "<div class='full'><label>Pendências para o coordenador (uma por linha; aparecem no aviso ao entrar)</label><textarea id='c_Pendencias'>" + esc(c.Pendencias || "") + "</textarea></div>" +
     "<div class='full'><label class='check'><input type='checkbox' id='c_Ativo' " + (c.Ativo !== false ? "checked" : "") + "> Cliente ativo</label></div></div>" +
     "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarCliente('" + (id || "") + "')\">Salvar</button></div>";
   openModal(h, true);
 }
 function tomadoresForm(c){
   var ts = jparse(c.Tomadores, []).filter(function(t){ return t && t.k; });
-  while (ts.length < 3) ts.push({ k:"", nome:"", razao:"", cnpj:"" });
+  while (ts.length < 6) ts.push({ k:"", nome:"", razao:"", cnpj:"" });
+  var inpT = function(id, val, ph){ return "<input id='" + id + "' value='" + esc(val || "") + "'" + (ph ? " placeholder='" + ph + "'" : "") + " style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'>"; };
   return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px;margin-top:4px'><label>Faturamento</label>" +
     "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_FaturarPorServico' " + (c.FaturarPorServico ? "checked" : "") + "> Cada serviço é faturado separadamente (OC, boletim e NF próprios por serviço)</label>" +
-    "<label>Tomadores (CNPJs que recebem NF) — deixe em branco se for um só</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Nome curto</th><th>Razão social</th><th>CNPJ</th></tr></thead><tbody>" +
-    ts.map(function(t, i){ return "<tr><td><input id='tm_n" + i + "' data-k='" + esc(t.k) + "' value='" + esc(t.nome) + "' placeholder='Ex.: S.A' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td><td><input id='tm_r" + i + "' value='" + esc(t.razao) + "' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td><td><input id='tm_c" + i + "' value='" + esc(t.cnpj) + "' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td></tr>"; }).join("") +
+    "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_OCMensal' " + (simB(c.OCMensal) ? "checked" : "") + "> O cliente libera uma OC nova todo mês (a OC passa a ser obrigatória antes da NF)</label>" +
+    "<label>Tomadores (CNPJs que recebem NF) — deixe em branco se for um só</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Nome curto</th><th>Razão social</th><th>CNPJ</th><th>E-mail(s) do focal (Para)</th><th>Cópia</th></tr></thead><tbody>" +
+    ts.map(function(t, i){ return "<tr><td><input id='tm_n" + i + "' data-k='" + esc(t.k) + "' value='" + esc(t.nome) + "' placeholder='Ex.: S.A' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td><td>" + inpT("tm_r" + i, t.razao) + "</td><td>" + inpT("tm_c" + i, t.cnpj) + "</td><td>" + inpT("tm_e" + i, t.para) + "</td><td>" + inpT("tm_x" + i, t.cc) + "</td></tr>"; }).join("") +
     "</tbody></table></div><div class='hint'>Depois, em cada serviço, informe quanto vai para cada tomador (ex.: 70% S.A / 30% Cilindros).</div></div>";
 }
 function lerTomadoresForm(){
   var out = [], usados = {};
-  for (var i = 0; i < 3; i++){
+  for (var i = 0; i < 6; i++){
     var el = $("tm_n" + i); if (!el) break;
     var nome = el.value.trim(), razao = v("tm_r" + i), cnpj = v("tm_c" + i);
     if (!nome && !razao && !cnpj) continue;
     var k = el.getAttribute("data-k") || norm(nome || razao).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || ("T" + (i + 1));
     while (usados[k]) k += "X"; usados[k] = 1;
-    out.push({ k:k, nome: nome || razao, razao: razao, cnpj: cnpj });
+    var t = { k:k, nome: nome || razao, razao: razao, cnpj: cnpj }; if (v("tm_e" + i)) t.para = v("tm_e" + i); if (v("tm_x" + i)) t.cc = v("tm_x" + i);
+    out.push(t);
   }
   return out;
 }
 async function salvarCliente(id){
-  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Ativo","EmailsCopia","FaturarPorServico"].forEach(function(k){ f[k] = v("c_" + k); });
+  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","CoordenadorEmail","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Pendencias","Ativo","EmailsCopia","FaturarPorServico","OCMensal"].forEach(function(k){ f[k] = v("c_" + k); });
   f.Tomadores = JSON.stringify(lerTomadoresForm());
   if (!f.Title){ showToast("Informe o nome do cliente.", true); return; }
   var r = await safe(function(){ return id ? api.update("clientes", id, f) : api.create("clientes", f); }, "Cliente salvo.");
@@ -1952,6 +2154,10 @@ function buildDemoData(){
     s.variaveis.forEach(function(x){ S.variaveis.push({ id:nid(), Title:x[1] + " – " + x[0], ClienteId:c.id, Cargo:x[0], Tipo:x[1], Periodo:x[2], Valor:x[3] }); });
   });
   DEMO_SEED.parametros.forEach(function(p){ S.parametros.push(Object.assign({ id:nid() }, p)); });
+  // coordenador de demonstracao + um cliente novo sem contrato (para o aviso de pendencias)
+  map.a.CoordenadorEmail = "demo@elevalife.com.br"; map.a.Coordenador = "Usuário demonstração";
+  map.c.CoordenadorEmail = "demo@elevalife.com.br"; map.c.Coordenador = "Usuário demonstração";
+  S.clientes.push({ id:nid(), Title:"Comércio Ômega", RazaoSocial:"Comércio Ômega Ltda.", CNPJ:"00.000.000/0007-07", Area:"Atividades Físicas", ModeloBoletim:"Eleva", Ativo:true, Coordenador:"Usuário demonstração", CoordenadorEmail:"demo@elevalife.com.br", AprovadorNome:"Lia", AprovadorEmail:"lia@exemplo.com.br", Pendencias:"Confirmar com o cliente se a academia entra na mesma NF da ginástica laboral." });
   var itemOf = function(key, nome){ return S.itens.filter(function(i){ return i.ClienteId === map[key].id && i.Title === nome; })[0]; };
   var dia = function(c, d){ return c + "-" + pad(d); };
   var oc = [
