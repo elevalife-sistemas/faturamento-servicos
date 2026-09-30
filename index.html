@@ -261,7 +261,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="panel" id="panel-ocorrencias">
         <div class="page-head"><div><h1 class="page-title">Ocorrências</h1><p class="page-sub">Faltas, atrasos, horas extras, coberturas e ajustes. Lance no dia em que acontecem.</p></div>
           <button class="btn" onclick="openOcorrencia()">+ Lançar ocorrência</button></div>
-        <div class="toolbar"><label>Competência</label><input type="month" id="ocoComp" onchange="renderOcorrencias()"><label>Cliente</label><select id="ocoCliente" onchange="renderOcorrencias()"></select><label>Tipo</label><select id="ocoTipo" onchange="renderOcorrencias()"></select><div class="spacer"></div><button class="btn-o" onclick="exportOcorrencias()">Exportar Excel</button></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="ocoComp" onchange="renderOcorrencias()"><label>Cliente</label><select id="ocoCliente" onchange="renderOcorrencias()"></select><label>Tipo</label><select id="ocoTipo" onchange="renderOcorrencias()"></select><label>Cargo</label><select id="ocoCargo" onchange="renderOcorrencias()"></select><label>Profissional</label><select id="ocoProf" onchange="renderOcorrencias()"></select><label>Ordem</label><select id="ocoOrdem" onchange="renderOcorrencias()"><option value="desc">Data mais recente primeiro</option><option value="asc">Data mais antiga primeiro</option></select><div class="spacer"></div><button class="btn-o" onclick="exportOcorrencias()">Exportar Excel</button></div>
         <div class="tbl-wrap"><table class="tbl" id="ocoTable"></table></div>
       </div>
 
@@ -1614,10 +1614,25 @@ function exportOcorrencias(){
 // ============================================================
 // OCORRENCIAS
 // ============================================================
+function cargoOco(o){ var it = o.ItemId ? byId("itens", o.ItemId) : null; return String(o.Cargo || (it && it.Cargo) || "").trim(); }
+function profOco(o){ return String(o.Profissional || "").trim(); }
+// opcoes de cargo e profissional montadas a partir das ocorrencias da competencia/cliente/tipo (mantem a escolha atual)
+function atualizarFiltrosOco(base){
+  [["ocoCargo", cargoOco, "Todos os cargos"], ["ocoProf", profOco, "Todos os profissionais"]].forEach(function(f){
+    var el = $(f[0]); if (!el) return; var cur = el.value, vals = [];
+    base.forEach(function(o){ var x = f[1](o); if (x && vals.indexOf(x) < 0) vals.push(x); });
+    if (cur && vals.indexOf(cur) < 0) vals.push(cur);
+    vals.sort(function(a, b){ return a.localeCompare(b, "pt-BR"); });
+    el.innerHTML = opt("", f[2], cur) + vals.map(function(x){ return opt(x, x, cur); }).join("");
+  });
+}
 function ocorrenciasFiltradas(){
   var comp = $("ocoComp").value, cid = $("ocoCliente").value, tipo = $("ocoTipo").value;
-  return S.ocorrencias.filter(function(o){ return (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); })
-    .sort(function(a, b){ return String(b.Data).localeCompare(String(a.Data)); });
+  var base = S.ocorrencias.filter(function(o){ return (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); });
+  atualizarFiltrosOco(base);
+  var cargo = $("ocoCargo") ? $("ocoCargo").value : "", prof = $("ocoProf") ? $("ocoProf").value : "", ordem = $("ocoOrdem") ? $("ocoOrdem").value : "desc";
+  return base.filter(function(o){ return (!cargo || cargoOco(o) === cargo) && (!prof || profOco(o) === prof); })
+    .sort(function(a, b){ var r = String(a.Data).localeCompare(String(b.Data)) || String(a.HoraInicio || "").localeCompare(String(b.HoraInicio || "")); return ordem === "asc" ? r : -r; });
 }
 function renderOcorrencias(){
   var rows = ocorrenciasFiltradas();
