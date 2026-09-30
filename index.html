@@ -195,6 +195,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <p class="tab-group-label">Visão Executiva</p>
       <div class="tab active" data-tab="dashboard"><span class="tab-icon">&#128200;</span>Dashboard</div>
       <p class="tab-group-label">Faturamento</p>
+      <div class="tab" data-tab="fechamento"><span class="tab-icon">&#9989;</span>Fechamento do mês</div>
       <div class="tab" data-tab="medicoes"><span class="tab-icon">&#129534;</span>Medições do mês</div>
       <div class="tab" data-tab="ocorrencias"><span class="tab-icon">&#128221;</span>Ocorrências</div>
       <p class="tab-group-label">Contratos</p>
@@ -212,6 +213,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
     <div class="header">
       <div class="header-brand"><img src="data:image/png;base64,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" alt="elevalife" class="header-logo"><p class="header-tagline">15 anos elevando pessoas e resultados · faturamento de serviços recorrentes · atualizado em <span id="headerUpdatedAt">--</span></p></div>
       <div class="header-right">
+        <button class="btn-h hidden" id="meusBtn" onclick="toggleMeus()"></button>
         <div class="user-chip hidden" id="userChip"></div>
         <button class="btn-h hidden" id="refreshBtn" onclick="reloadAll()">Atualizar</button>
         <button class="btn-h hidden" id="logoutBtn" onclick="logout()">Sair</button>
@@ -247,6 +249,14 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
           <div class="card"><p class="card-title">Pendências</p><p class="card-sub">O que precisa de ação agora.</p><div id="dashPend"></div></div>
           <div class="card"><p class="card-title">Contratos vencendo em até 90 dias</p><p class="card-sub">Apoio ao comercial na renovação.</p><div id="dashRenov"></div></div>
         </div>
+      </div>
+
+      <!-- FECHAMENTO -->
+      <div class="panel" id="panel-fechamento">
+        <div class="page-head"><div><h1 class="page-title">Fechamento do mês</h1><p class="page-sub">Roteiro do mês: cada faturamento, as etapas cumpridas e o próximo passo. Os que precisam de você aparecem primeiro.</p></div></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="fecComp" onchange="renderFechamento()"></div>
+        <div class="kpi-grid" id="fecKpis"></div>
+        <div class="tbl-wrap"><table class="tbl" id="fecTable"></table></div>
       </div>
 
       <!-- MEDICOES -->
@@ -623,8 +633,11 @@ function isGestor(){
 // ============================================================
 // Motor de calculo
 // ============================================================
+// "Meus clientes": quando ligado, as telas mostram so os clientes do coordenador logado
+var SO_MEUS = false;
+function visivel(c){ return !SO_MEUS || ehCoordenador(c, CURRENT_USER.email); }
 function clientesAtivos(area){
-  return S.clientes.filter(function(c){ return c.Ativo !== false && (!area || c.Area === area); })
+  return S.clientes.filter(function(c){ return c.Ativo !== false && (!area || c.Area === area) && visivel(c); })
     .sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
 }
 function contratosDoCliente(cid){
@@ -902,7 +915,7 @@ document.addEventListener("DOMContentLoaded", function(){
   $("modal").addEventListener("mousedown", function(e){ if (e.target.id === "modal") closeModal(); });
   document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeModal(); });
   var dc = curComp();
-  ["dashComp","medComp"].forEach(function(id){ $(id).value = dc; });
+  ["dashComp","medComp","fecComp"].forEach(function(id){ $(id).value = dc; });
   ["ocoComp","marComp"].forEach(function(id){ $(id).value = curComp(); });
   if (/[?&]demo=1/.test(location.search)) { startDemo(); return; }
   initMsal().then(function(acc){ if (acc) afterLogin(acc); }).catch(function(e){ console.error(e); });
@@ -917,7 +930,7 @@ function showTab(name){
   window.scrollTo(0, 0);
 }
 function renderCurrent(){
-  var f = { dashboard:renderDashboard, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig }[CURRENT_TAB];
+  var f = { dashboard:renderDashboard, fechamento:renderFechamento, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig }[CURRENT_TAB];
   if (f) f();
   renderRenovBadge();
 }
@@ -954,7 +967,17 @@ function avisoPendencias(){
     "<div class='modal-actions'><button class='btn' onclick='closeModal()'>Ver depois</button></div>";
   openModal(h, true);
 }
+function meusQtd(){ return S.clientes.filter(function(c){ return c.Ativo !== false && ehCoordenador(c, CURRENT_USER.email); }).length; }
+function atualizarBotaoMeus(){
+  var b = $("meusBtn"), n = meusQtd(); if (!b) return;
+  b.classList.toggle("hidden", !n);
+  b.textContent = SO_MEUS ? "Meus clientes (" + n + ")" : "Todos os clientes";
+  b.title = SO_MEUS ? "Clique para ver todos os clientes" : "Clique para ver só os clientes em que você é o coordenador";
+}
+function toggleMeus(){ SO_MEUS = !SO_MEUS; atualizarBotaoMeus(); fillSelects(); SEL.cliente = null; renderCurrent(); }
 function enterApp(){
+  if (!window.__meusInit){ window.__meusInit = true; SO_MEUS = meusQtd() > 0; }
+  atualizarBotaoMeus();
   $("gate").classList.add("hidden"); $("mainArea").classList.remove("hidden");
   document.querySelectorAll(".gestor-only").forEach(function(el){ el.classList.toggle("hidden", !isGestor()); });
   fillSelects();
@@ -1034,6 +1057,43 @@ function copyHTML(html, text, msg){
 // ============================================================
 // DASHBOARD
 // ============================================================
+// ============================================================
+// FECHAMENTO DO MES: roteiro por faturamento com o proximo passo
+// ============================================================
+function etapaFechamento(r, comp){
+  var m = r.m, cell = function(ok, txt, cls){ return "<span class='badge " + (cls || (ok ? "b-green" : "b-gray")) + "'>" + txt + "</span>"; };
+  var prev = m ? null : montarMedicao(r.c.id, comp, r.u.key), ids = m ? (linhasDe(m).ocorrIds || []) : (prev.ocorrIds || []);
+  var ocs = S.ocorrencias.filter(function(o){ return ids.indexOf(String(o.id)) >= 0; }), semJ = ocs.filter(function(o){ return !String(o.Justificativa || "").trim(); }).length;
+  var desat = rascunhoDesatualizado(m), st = m ? m.Status : "", dias = m && m.DataEnvio ? daysBetween(m.DataEnvio, todayISO()) : 0;
+  var c = {};
+  c.oco = ocs.length ? cell(!semJ, ocs.length + (semJ ? " · " + semJ + " sem justif." : ""), semJ ? "b-amber" : "b-green") : cell(true, "nenhuma", "b-gray");
+  c.ras = !m ? cell(false, "não gerado", "b-red") : desat ? cell(false, "desatualizado", "b-amber") : cell(true, "gerado");
+  c.env = st === "Contestada" ? cell(false, "contestado", "b-red") : m && m.DataEnvio ? cell(true, fmtDate(m.DataEnvio)) : cell(false, "–");
+  c.apr = m && m.DataAprovacao && (st === "Aprovada" || st === "NF emitida") ? cell(true, fmtDate(m.DataAprovacao)) : st === "Enviada" ? cell(false, "aguardando" + (dias ? " · " + dias + "d" : ""), dias > 2 ? "b-amber" : "b-gray") : cell(false, "–");
+  c.oc = !m || !ocObrigatoria(m) ? cell(true, "não exige", "b-gray") : ocDe(m) ? cell(true, ocDe(m)) : cell(false, "falta", (st === "Aprovada") ? "b-amber" : "b-gray");
+  c.nf = st === "NF emitida" ? cell(true, "nº " + (m.NumNF || "?")) : cell(false, "–");
+  var uk = ukArg(r.u.key), btn = function(txt, call, primary){ return "<button class='" + (primary ? "btn" : "btn-o") + " btn-s' onclick=\"" + call + "\">" + txt + "</button>"; };
+  var passo, quem;
+  if (!m){ passo = btn("Gerar rascunho", "acaoGerar('" + r.c.id + "','" + comp + "','" + uk + "').then(renderFechamento)", true); quem = "eu"; }
+  else if (desat){ passo = btn("Gerar novamente", "acaoGerar('" + r.c.id + "','" + comp + "','" + uk + "').then(renderFechamento)", true); quem = "eu"; }
+  else if (st === "Rascunho"){ passo = btn("Preparar e-mail", "prepararEmail('" + m.id + "')", true); quem = "eu"; }
+  else if (st === "Contestada"){ passo = btn("Corrigir e reenviar", "reabrir(byId('medicoes','" + m.id + "'))", true); quem = "eu"; }
+  else if (st === "Enviada"){ passo = (dias > 2 ? btn("&#128276; Cobrar cliente", "prepararEmail('" + m.id + "','um',true)", true) + " " : "") + btn("Registrar resposta", "reabrir(byId('medicoes','" + m.id + "'))"); quem = dias > 2 ? "eu" : "cliente"; }
+  else if (st === "Aprovada" && faltaOC(m)){ passo = btn("Informar OC", "reabrir(byId('medicoes','" + m.id + "'))", true); quem = "eu"; }
+  else if (st === "Aprovada"){ passo = btn("Emitir NF", "dadosNF('" + m.id + "')", true); quem = "eu"; }
+  else { passo = "<span class='badge b-green'>Concluído</span>"; quem = "ok"; }
+  return { c:c, passo:passo, quem:quem };
+}
+function renderFechamento(){
+  var comp = $("fecComp").value || curComp();
+  var rows = faturamentosDoMes("", comp).filter(function(r){ return !r.u.antiga || r.m; }).map(function(r){ r.e = etapaFechamento(r, comp); return r; });
+  var ord = { eu:0, cliente:1, ok:2 }; rows.sort(function(a, b){ return ord[a.e.quem] - ord[b.e.quem] || String(a.c.Title).localeCompare(String(b.c.Title), "pt-BR"); });
+  var n = function(q){ return rows.filter(function(r){ return r.e.quem === q; }).length; };
+  $("fecKpis").innerHTML = kpi("Faturamentos", String(rows.length), (SO_MEUS ? "seus clientes" : "todos os clientes") + " em " + compLabel(comp)) + kpi("Com você", String(n("eu")), "precisam de uma ação sua agora") + kpi("Com o cliente", String(n("cliente")), "boletim enviado, aguardando resposta") + kpi("Concluídos", String(n("ok")), "NF emitida");
+  if (!rows.length){ $("fecTable").innerHTML = '<tr><td class="empty">Nenhum faturamento com contrato vigente em ' + compLabel(comp) + ".</td></tr>"; return; }
+  $("fecTable").innerHTML = "<thead><tr><th>Cliente / faturamento</th><th>Ocorrências</th><th>Rascunho</th><th>Enviado</th><th>Aprovado</th><th>OC</th><th>NF</th><th>Próximo passo</th></tr></thead><tbody>" + rows.map(function(r){
+    return "<tr><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "</td><td>" + r.e.c.oco + "</td><td>" + r.e.c.ras + "</td><td>" + r.e.c.env + "</td><td>" + r.e.c.apr + "</td><td>" + r.e.c.oc + "</td><td>" + r.e.c.nf + "</td><td style='white-space:nowrap'>" + r.e.passo + "</td></tr>"; }).join("") + "</tbody>";
+}
 function statusDe(cid, comp, uk){ var m = medicaoDe(cid, comp, uk); return m ? m.Status : "Não gerada"; }
 function renderDashboard(){
   var comp = $("dashComp").value || curComp(), area = $("dashArea").value;
@@ -1086,7 +1146,7 @@ function renderDashboard(){
   var semOC = aprov.filter(faltaOC);
   if (semOC.length) pend.push(["amber", semOC.length + " medição(ões) aprovadas aguardando a OC do cliente: " + semOC.map(function(m){ return (byId("clientes", m.ClienteId) || {}).Title + (m.UnidadeNome ? " – " + m.UnidadeNome : ""); }).join(", ") + "."]);
   if (aprov.length - semOC.length) pend.push(["amber", (aprov.length - semOC.length) + " medição(ões) aprovadas aguardando emissão da NF pelo coordenador."]);
-  var incompl = S.clientes.filter(function(c){ return c.Ativo !== false && (!area || c.Area === area) && pendenciasCliente(c).length; });
+  var incompl = S.clientes.filter(function(c){ return c.Ativo !== false && visivel(c) && (!area || c.Area === area) && pendenciasCliente(c).length; });
   if (incompl.length && isGestor()) pend.push(["amber", incompl.length + " cliente(s) com cadastro incompleto (contrato, serviços ou e-mail do focal): " + incompl.map(function(c){ return c.Title; }).join(", ") + "."]);
   var sj = S.ocorrencias.filter(function(o){ return o.Competencia === comp && !String(o.Justificativa||"").trim() && clis.some(function(c){ return String(c.id) === String(o.ClienteId); }); });
   if (sj.length) pend.push(["amber", sj.length + " ocorrência(s) de " + compLabel(comp) + " sem justificativa."]);
@@ -1251,7 +1311,7 @@ function openMedicao(cid, comp, uk){
   a.push('<button class="btn-o" onclick="copiarTabelaEmail(\'' + id + '\')">Copiar boletim</button>');
   if (st === "Rascunho" || st === "Enviada" || st === "Contestada") a.push('<button class="btn-o" style="border-color:var(--grena);font-weight:700" onclick="prepararEmail(\'' + id + '\')">&#9993; Preparar e-mail no Outlook</button>');
   if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + "','" + ukArg(uk) + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
-  if (st === "Enviada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
+  if (st === "Enviada"){ a.push('<button class="btn-o" onclick="prepararEmail(\'' + id + '\',\'um\',true)">&#128276; Cobrar cliente</button>'); a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
   if (st === "Contestada") a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho e corrigir</button>');
   if (st === "Aprovada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Enviada\')">Desfazer aprovação</button>'); a.push('<button class="btn" onclick="dadosNF(\'' + id + '\')">Conferir e emitir a NF</button>'); }
   if (st === "NF emitida"){ a.push('<button class="btn-o" onclick="dadosNF(\'' + id + '\')">Dados da NF</button>'); a.push('<button class="btn" onclick="copiarAvisoFinanceiro(\'' + id + '\')">Copiar aviso ao financeiro</button>'); }
@@ -1435,6 +1495,11 @@ function irmasDe(med){
   var ordemU = unidadesDe(med.ClienteId, med.Competencia).map(function(u){ return u.key; });
   return medicoesDoMes(med.ClienteId, med.Competencia).sort(function(a, b){ return ordemU.indexOf(a.Unidade || "") - ordemU.indexOf(b.Unidade || ""); });
 }
+function textoCobranca(lista){
+  var m = lista[0], cli = byId("clientes", m.ClienteId);
+  return saudacao() + ".\n\nReenviamos " + (lista.length > 1 ? "os boletins de medição" : "o boletim de medição") + " dos serviços prestados pela ElevaLife referente a " + compLabel(m.Competencia) + (lista.length === 1 && m.UnidadeNome ? " – " + m.UnidadeNome : "") + ", enviado em " + fmtDate(m.DataEnvio) + ", que ainda aguarda validação.\n\n" +
+    "Pedimos, por gentileza, o retorno com a aprovação ou com eventuais ajustes, para seguirmos com a emissão da nota fiscal" + (ocObrigatoria(m) ? " (e, se possível, o envio do número da OC)" : "") + ".\n\nFicamos à disposição.";
+}
 function saudacao(){ var h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
 function assuntoEmail(lista){
   var m = lista[0], cli = byId("clientes", m.ClienteId);
@@ -1454,14 +1519,16 @@ function corpoEmailHTML(texto, lista){
   var ass = "<p style='" + F + "margin:16px 0 0;'>Atenciosamente,<br><b>" + esc(CURRENT_USER.name || "") + "</b><br><span style='color:#6e1423;'><b>ElevaLife Saúde e Educação</b></span><br>" + esc(CURRENT_USER.email || "") + "</p>";
   return "<html><head><meta charset='utf-8'></head><body>" + par + "<div style='margin:14px 0;'>" + bol + "</div>" + ass + "</body></html>";
 }
-function prepararEmail(id, modo){
-  var ABERTO = { "Rascunho":1, "Enviada":1, "Contestada":1 };
+function prepararEmail(id, modo, cobr){
+  window.__emailCobr = !!cobr;
+  var ABERTO = cobr ? { "Enviada":1 } : { "Rascunho":1, "Enviada":1, "Contestada":1 };
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), todasM = irmasDe(med), irmas = todasM.filter(function(m){ return ABERTO[m.Status] || m === med; });
   modo = irmas.length > 1 ? (modo || "um") : "um";
   var grupos = modo === "juntos" ? [irmas] : modo === "separados" ? irmas.map(function(m){ return [m]; }) : [[med]];
   window.__emailGrupos = grupos.map(function(g){ return g.map(function(m){ return m.id; }); });
-  var chip = function(k, t){ return "<button class='chip" + (modo === k ? " active" : "") + "' onclick=\"prepararEmail('" + id + "','" + k + "')\">" + t + "</button>"; };
-  var h = "<h3>Preparar e-mail no Outlook</h3><p class='msub'>O sistema cria um <b>rascunho</b> na sua caixa do Outlook com destinatários, texto, boletim e planilha. Você revisa e clica em Enviar por lá. Nada é enviado automaticamente.</p>";
+  var chip = function(k, t){ return "<button class='chip" + (modo === k ? " active" : "") + "' onclick=\"prepararEmail('" + id + "','" + k + "'," + (cobr ? "true" : "false") + ")\">" + t + "</button>"; };
+  var h = cobr ? "<h3>Cobrar cliente</h3><p class='msub'>O boletim foi enviado em " + fmtDate(med.DataEnvio) + (med.DataEnvio ? " (há " + daysBetween(med.DataEnvio, todayISO()) + " dia(s))" : "") + " e ainda não teve resposta. O sistema cria no seu Outlook um <b>e-mail de lembrete</b> com o boletim e a planilha. Você revisa e clica em Enviar por lá.</p>"
+    : "<h3>Preparar e-mail no Outlook</h3><p class='msub'>O sistema cria um <b>rascunho</b> na sua caixa do Outlook com destinatários, texto, boletim e planilha. Você revisa e clica em Enviar por lá. Nada é enviado automaticamente.</p>";
   if (irmas.length > 1) h += "<div class='chip-row' style='margin-bottom:12px'>" + chip("um", "Só este faturamento" + (med.UnidadeNome ? " (" + esc(med.UnidadeNome) + ")" : "")) + chip("separados", "Todos de " + esc(cli.Title) + " em e-mails separados (" + irmas.length + ")") + chip("juntos", "Todos de " + esc(cli.Title) + " em um e-mail só") + "</div>";
   var faltam = unidadesDe(med.ClienteId, med.Competencia).length - irmas.length;
   if (modo !== "um" && faltam > 0) h += "<div class='alert alert-amber'>" + faltam + " faturamento(s) deste cliente ainda não têm medição gerada e ficam de fora.</div>";
@@ -1474,9 +1541,9 @@ function prepararEmail(id, modo){
     var d = g.map(destinatariosDe), para = juntarEmails(d.map(function(x){ return x.para; })), cc = juntarEmails(d.map(function(x){ return x.cc; }));
     if (grupos.length > 1) h += "<div class='full' style='border-top:1px dashed var(--border);padding-top:10px;margin-top:4px'><b style='color:var(--grena)'>E-mail " + (gi + 1) + ": " + esc(g[0].UnidadeNome || cli.Title) + "</b> <span class='small muted'>· " + brl(g[0].ValorFaturar) + "</span></div>";
     h += "<div><label>Para</label><input id='ePara" + gi + "' value='" + esc(para) + "' placeholder='email@cliente.com.br; outro@cliente.com.br'></div><div><label>Cc</label><input id='eCc" + gi + "' value='" + esc(cc) + "' placeholder='opcional'></div>";
-    if (grupos.length === 1) h += "<div class='full'><label>Assunto</label><input id='eAss0' value='" + esc(assuntoEmail(g)) + "'></div>";
+    if (grupos.length === 1) h += "<div class='full'><label>Assunto</label><input id='eAss0' value='" + esc((cobr ? "Lembrete: " : "") + assuntoEmail(g)) + "'></div>";
   });
-  h += "<div class='full'><label>Mensagem" + (grupos.length > 1 ? " (a mesma para todos; o nome do serviço entra no assunto de cada um)" : "") + "</label><textarea id='eTxt' style='min-height:150px'>" + esc(textoPadraoEmail(grupos[0])) + "</textarea><div class='hint'>Depois da mensagem entram " + (grupos[0].length > 1 ? "os boletins" : "o boletim") + " (com as cores da ElevaLife) e a sua assinatura.</div></div>";
+  h += "<div class='full'><label>Mensagem" + (grupos.length > 1 ? " (a mesma para todos; o nome do serviço entra no assunto de cada um)" : "") + "</label><textarea id='eTxt' style='min-height:150px'>" + esc(cobr ? textoCobranca(grupos[0]) : textoPadraoEmail(grupos[0])) + "</textarea><div class='hint'>Depois da mensagem entram " + (grupos[0].length > 1 ? "os boletins" : "o boletim") + " (com as cores da ElevaLife) e a sua assinatura.</div></div>";
   h += "<div class='full'><label class='check'><input type='checkbox' id='eXls' checked> Anexar o boletim em Excel (com o detalhamento das ocorrências)</label></div>";
   h += "<div class='full'><label class='check'><input type='checkbox' id='eSalvar' checked> Guardar estes e-mails no cadastro para os próximos meses</label></div>";
   h += "</div><div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar</button><button class='btn-o' onclick=\"previaEmail('" + id + "')\">Ver prévia</button><button class='btn' " + (desat.length ? "disabled" : "") + " onclick=\"criarRascunhos('" + id + "')\">" + (grupos.length > 1 ? "Criar " + grupos.length + " rascunhos no Outlook" : "Criar rascunho no Outlook") + "</button></div>";
@@ -1486,7 +1553,7 @@ function prepararEmail(id, modo){
 function lerGruposEmail(){
   return (window.__emailGrupos || []).map(function(ids, gi){
     var lista = ids.map(function(i){ return byId("medicoes", i); });
-    return { lista: lista, para: v("ePara" + gi), cc: v("eCc" + gi), assunto: $("eAss" + gi) ? v("eAss" + gi) : assuntoEmail(lista) };
+    return { lista: lista, para: v("ePara" + gi), cc: v("eCc" + gi), assunto: $("eAss" + gi) ? v("eAss" + gi) : (window.__emailCobr ? "Lembrete: " : "") + assuntoEmail(lista) };
   });
 }
 function previaEmail(id){
@@ -1534,7 +1601,7 @@ async function criarRascunhos(id){
       var r = DEMO ? { id: "demo" + g, webLink: "" } : await graph("https://graph.microsoft.com/v1.0/me/messages", { method: "POST", body: JSON.stringify(msg) }, MAIL_SCOPES);
       criados.push({ g: G, link: r && r.webLink });
       for (var j = 0; j < G.lista.length; j++){
-        var m = G.lista[j], hist = historicoDe(m); hist.push({ s: m.Status, d: new Date().toISOString(), p: CURRENT_USER.name, o: "Rascunho de e-mail criado no Outlook para " + G.para });
+        var m = G.lista[j], hist = historicoDe(m); hist.push({ s: m.Status, d: new Date().toISOString(), p: CURRENT_USER.name, o: (window.__emailCobr ? "Cobrança ao cliente criada no Outlook para " : "Rascunho de e-mail criado no Outlook para ") + G.para });
         // num e-mail unico com varios servicos, so preenche quem ainda nao tinha contato (nao sobrescreve o de cada servico)
         if (salvar && (G.lista.length === 1 || !destinatariosDe(m).para)) await salvarDestinatarios(m, emailsDe(G.para).join("; "), emailsDe(G.cc).join("; "));
         await api.update("medicoes", m.id, { Historico: JSON.stringify(hist) });
@@ -1632,7 +1699,7 @@ function atualizarFiltrosOco(base){
 }
 function ocorrenciasFiltradas(){
   var comp = $("ocoComp").value, cid = $("ocoCliente").value, tipo = $("ocoTipo").value;
-  var base = S.ocorrencias.filter(function(o){ return (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); });
+  var base = S.ocorrencias.filter(function(o){ var c = byId("clientes", o.ClienteId); return (!c || visivel(c)) && (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); });
   atualizarFiltrosOco(base);
   var cargo = $("ocoCargo") ? $("ocoCargo").value : "", prof = $("ocoProf") ? $("ocoProf").value : "", ordem = $("ocoOrdem") ? $("ocoOrdem").value : "desc";
   return base.filter(function(o){ return (!cargo || cargoOco(o) === cargo) && (!prof || profOco(o) === prof); })
@@ -1739,7 +1806,7 @@ function refsOcorrencia(o){
   var c = ocoCtx(o), out = []; if (!c.cli) return out;
   if (c.t.grupo === "variavel" || c.t.grupo === "manual"){
     precosVigentes(c.cli.id, c.t.grupo === "variavel" ? o.Cargo : "", c.t.grupo === "variavel" ? c.t.varTipo : "", o.Data).forEach(function(v){
-      out.push({ g:"Tabela de variáveis", l:(v.Tipo === "HE" ? "Hora extra" : v.Tipo) + " · " + (PERIODOS[v.Periodo] || v.Periodo) + (c.t.grupo === "variavel" ? "" : " · " + v.Cargo), v:Number(v.Valor), u:"h" });
+      out.push({ g:"Tabela de variáveis", l: v.Cargo + " · " + (v.Tipo === "HE" ? "Hora extra" : v.Tipo) + (v.Periodo !== "Unico" ? " · " + (PERIODOS[v.Periodo] || v.Periodo) : ""), v:Number(v.Valor), u:"h" });
     });
   }
   if (c.item){
@@ -1786,6 +1853,7 @@ function atualizarCalculadora(){
   var qtdIni = horas || dias || 1, uIni = horas ? "h" : dias ? "d" : "t";
   var inp = function(id, val, w){ return "<input id='" + id + "' value='" + esc(val) + "' inputmode='decimal' oninput='calcRecalc()' style='width:" + (w || 110) + "px;padding:7px;border:1px solid var(--border);border-radius:7px'>"; };
   box.innerHTML = "<div class='card' style='margin:0;padding:12px 14px;border-left:4px solid var(--grena)'><p class='card-title' style='font-size:14px;margin:0 0 6px'>Calculadora</p>" +
+    ((TIPOS[o.Tipo] || {}).grupo === "variavel" && !o.Cargo ? "<p class='small' style='margin:0 0 6px;color:#8a5a00'>Preencha o <b>Cargo</b> para ver só os preços dele.</p>" : "") +
     (refs.length ? Object.keys(grupos).map(function(g){ return "<div class='small muted' style='margin-top:4px;font-weight:700'>" + esc(g) + "</div><div>" + grupos[g].join("") + "</div>"; }).join("") : "<p class='small muted' style='margin:0'>Ainda não há referência para este cliente e cargo. O valor que você informar agora pode virar referência para os próximos lançamentos.</p>") +
     "<div style='display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px'>" +
       "<div><label>Quantidade</label>" + inp("cQtd", num(qtdIni, qtdIni % 1 ? 2 : 0), 90) + "</div>" +
@@ -1866,7 +1934,7 @@ function prazoBadge(d){
 }
 function renderClientesList(){
   var q = norm($("cliSearch").value), area = $("cliArea").value;
-  var list = S.clientes.filter(function(c){ return (!area || c.Area === area) && (!q || norm(c.Title + " " + c.RazaoSocial + " " + c.CNPJ).indexOf(q) >= 0); })
+  var list = S.clientes.filter(function(c){ return visivel(c) && (!area || c.Area === area) && (!q || norm(c.Title + " " + c.RazaoSocial + " " + c.CNPJ).indexOf(q) >= 0); })
     .sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
   if (!SEL.cliente && list.length) SEL.cliente = String(list[0].id);
   $("cliList").innerHTML = list.length ? list.map(function(c){ var ct = contratoAtual(c.id); return "<div class='list-item" + (String(c.id) === SEL.cliente ? " active" : "") + "' onclick=\"selCliente('" + c.id + "')\"><div class='list-item-title'>" + esc(c.Title) + (c.Ativo === false ? " <span class='badge b-gray'>inativo</span>" : (pendenciasCliente(c).length ? " <span class='badge b-amber' title='Cadastro incompleto'>pendente</span>" : "")) + "</div><div class='list-item-sub'>" + esc(c.Area || "") + " · " + (ct ? brl(totalContrato(ct.id)) + "/mês" : "sem contrato") + " · " + vigenciaBadge(ct) + "</div></div>"; }).join("") : "<div class='empty'>Nenhum cliente.</div>";
