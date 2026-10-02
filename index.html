@@ -712,6 +712,8 @@ function descontoItem(item, comp, dias, horas){
   return { valor: r2(val), detalhe: det };
 }
 // calcula valor (com sinal), custo e detalhe de uma ocorrencia
+// servicos de uma ocorrencia (ItemId pode ter varios ids separados por virgula = media)
+function idsDaOco(o){ return String(o.ItemId || "").split(",").map(function(x){ return x.trim(); }).filter(Boolean); }
 function calcOcorrencia(o){
   var t = TIPOS[o.Tipo]; if (!t) return { erro:"Tipo inválido" };
   var cli = byId("clientes", o.ClienteId); if (!cli) return { erro:"Selecione o cliente" };
@@ -728,12 +730,17 @@ function calcOcorrencia(o){
   }
   if (t.grupo === "manual") return { erro:"Informe o valor" };
   if (t.grupo === "desconto"){
-    var item = byId("itens", o.ItemId); if (!item) return { erro:"Selecione o serviço afetado" };
+    var ids = idsDaOco(o), itens = ids.map(function(i){ return byId("itens", i); }).filter(Boolean);
+    if (!itens.length) return { erro:"Selecione o serviço afetado" };
+    if (ids.length > 1 && itens.length < 2) return { erro:"Marque pelo menos dois serviços para a média" };
     var dias = t.modo === "dias" ? parseNum(o.Dias) : 0;
     if (t.modo === "dias" && !dias) return { erro:"Informe a quantidade de dias" };
     if (t.modo === "horario" && !res.horas) return { erro:"Informe o horário de início e fim" };
-    var d = descontoItem(item, comp, dias, res.horas); if (d.erro) return d;
-    res.valor = -d.valor; res.detalhe = d.detalhe; return res;
+    if (itens.length === 1){ var d = descontoItem(itens[0], comp, dias, res.horas); if (d.erro) return d; res.valor = -d.valor; res.detalhe = d.detalhe; return res; }
+    // mais de um servico: media dos descontos (o coordenador nao sabe qual dos servicos foi afetado)
+    var soma = 0, det = [];
+    for (var k = 0; k < itens.length; k++){ var dk = descontoItem(itens[k], comp, dias, res.horas); if (dk.erro) return { erro: itens[k].Title + ": " + dk.erro }; soma += dk.valor; det.push(itens[k].Title + ": " + brl(dk.valor)); }
+    res.valor = -r2(soma / itens.length); res.detalhe = "Média de " + itens.length + " serviços\n" + det.join("\n") + "\nMédia = " + brl(soma / itens.length); return res;
   }
   // variavel: HE / Cobertura
   if (!o.Cargo) return { erro:"Informe o cargo" };
@@ -834,6 +841,16 @@ function montarMedicao(cid, comp, uk){
     var v = Number(o.Valor)||0, dw = o.Data ? parseISO(o.Data).getDay() : 1, fds = dw === 0 || dw === 6 || !!hol[o.Data];
     var txt = fmtDate(o.Data) + " (" + DSEM[dw] + (hol[o.Data] ? ", feriado" : "") + ")" + (o.HoraInicio && o.HoraFim ? " · " + o.HoraInicio + "–" + o.HoraFim + (Number(o.Horas) ? " (" + hFmt(o.Horas) + ")" : "") : (Number(o.Dias) ? " · " + num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "")) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
     var isVar = (TIPOS[o.Tipo] || {}).grupo === "variavel";
+    var idsO = idsDaOco(o);
+    if (!isVar && idsO.length > 1){
+      var alvos = idsO.map(function(i){ return baseBy[i]; }).filter(Boolean);
+      if (alvos.length){
+        var pesos = alvos.map(function(l){ var it0 = byItem[l.itemId], dd = descontoItem(it0, comp, 1, 0); return dd.erro ? 1 : dd.valor; });
+        var partes = repartir(Math.abs(v), pesos.map(function(w){ return w / pesos.reduce(function(a, b){ return a + b; }, 0) * 100; }));
+        alvos.forEach(function(l, ix){ if (v < 0) l.desconto = r2(l.desconto + partes[ix]); else l.acrescimo = r2(l.acrescimo + partes[ix]); l.just.push(txt + " (média entre " + alvos.map(function(a){ return a.servico; }).join(" e ") + ")"); l.oc.push(String(o.id)); });
+        return;
+      }
+    }
     var target = !isVar && o.ItemId && baseBy[String(o.ItemId)];
     if (target){ if (v < 0) target.desconto = r2(target.desconto - v); else target.acrescimo = r2(target.acrescimo + v); target.just.push(txt); target.oc.push(String(o.id)); return; }
     var rel = (o.ItemId && byItem[String(o.ItemId)]) ? String(o.ItemId) : ((itemPorCargo(itens, o.Cargo) || {}).id || "");
@@ -1671,7 +1688,7 @@ function boletimWorkbook(id){
   if (ocs.length){
     var w2 = wb.addWorksheet("Ocorrências"); w2.columns = [{ width:12 }, { width:24 }, { width:30 }, { width:22 }, { width:9 }, { width:9 }, { width:9 }, { width:15 }, { width:60 }];
     var h2 = w2.getRow(1); h2.values = ["Data", "Tipo", "Serviço / cargo", "Profissional", "Início", "Fim", "Horas", "Valor", "Justificativa"]; styleHeader(h2);
-    ocs.forEach(function(o, i){ var it = o.ItemId ? byId("itens", o.ItemId) : null; var rr = w2.getRow(i + 2); rr.values = [fmtDate(o.Data), o.Tipo, it ? it.Title : (o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || (o.Dias ? o.Dias + " dia(s)" : ""), Number(o.Valor)||0, o.Justificativa || ""]; rr.getCell(8).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; rr.getCell(9).alignment = { wrapText:true, vertical:"top" }; });
+    ocs.forEach(function(o, i){ var it = o.ItemId ? byId("itens", o.ItemId) : null; var rr = w2.getRow(i + 2); rr.values = [fmtDate(o.Data), o.Tipo, (itensOcoNome(o) || o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || (o.Dias ? o.Dias + " dia(s)" : ""), Number(o.Valor)||0, o.Justificativa || ""]; rr.getCell(8).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; rr.getCell(9).alignment = { wrapText:true, vertical:"top" }; });
   }
   return wb;
 }
@@ -1680,14 +1697,15 @@ function exportOcorrencias(){
   var rows = ocorrenciasFiltradas(); var wb = new ExcelJS.Workbook(); var ws = wb.addWorksheet("Ocorrências");
   ws.columns = [{ width:12 }, { width:10 }, { width:28 }, { width:24 }, { width:30 }, { width:22 }, { width:9 }, { width:9 }, { width:9 }, { width:15 }, { width:15 }, { width:55 }, { width:30 }];
   var h = ws.getRow(1); h.values = ["Data", "Competência", "Cliente", "Tipo", "Serviço / cargo", "Profissional", "Início", "Fim", "Horas/dias", "Valor", "Custo MO", "Justificativa", "Evidência"]; styleHeader(h);
-  rows.forEach(function(o, i){ var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null; var r = ws.getRow(i + 2); r.values = [fmtDate(o.Data), o.Competencia, c ? c.Title : "", o.Tipo, it ? it.Title : (o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || o.Dias || "", Number(o.Valor)||0, Number(o.Custo)||0, o.Justificativa || "", o.Evidencia || ""]; [10,11].forEach(function(cc){ r.getCell(cc).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; }); });
+  rows.forEach(function(o, i){ var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null; var r = ws.getRow(i + 2); r.values = [fmtDate(o.Data), o.Competencia, c ? c.Title : "", o.Tipo, (itensOcoNome(o) || o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || o.Dias || "", Number(o.Valor)||0, Number(o.Custo)||0, o.Justificativa || "", o.Evidencia || ""]; [10,11].forEach(function(cc){ r.getCell(cc).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; }); });
   saveWorkbook(wb, "Ocorrencias " + ($("ocoComp").value || "todas") + ".xlsx");
 }
 
 // ============================================================
 // OCORRENCIAS
 // ============================================================
-function cargoOco(o){ var it = o.ItemId ? byId("itens", o.ItemId) : null; return String(o.Cargo || (it && it.Cargo) || "").trim(); }
+function itensOcoNome(o){ return idsDaOco(o).map(function(i){ var it = byId("itens", i); return it ? it.Title : ""; }).filter(Boolean).join(" + ") + (idsDaOco(o).length > 1 ? " (média)" : ""); }
+function cargoOco(o){ var it = byId("itens", idsDaOco(o)[0] || ""); return String(o.Cargo || (it && it.Cargo) || "").trim(); }
 function profOco(o){ return String(o.Profissional || "").trim(); }
 // opcoes de cargo e profissional montadas a partir das ocorrencias da competencia/cliente/tipo (mantem a escolha atual)
 function atualizarFiltrosOco(base){
@@ -1715,7 +1733,7 @@ function renderOcorrencias(){
     var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null, val = Number(o.Valor)||0; tv += val;
     var grp = (TIPOS[o.Tipo] || {}).grupo; var tb = grp === "desconto" ? "b-red" : grp === "variavel" ? "b-green" : "b-gray";
     var med = medicoesDoMes(o.ClienteId, o.Competencia).filter(function(m){ return m.Status !== "Rascunho" && (linhasDe(m).ocorrIds || []).indexOf(String(o.id)) >= 0; })[0]; var lock = !!med;
-    return "<tr class='click' onclick=\"openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + (o.Competencia !== compOf(o.Data) ? "<div class='small muted'>fatura em " + compLabel(o.Competencia) + "</div>" : "") + "</td><td>" + esc(c ? c.Title : "?") + "</td><td><span class='badge " + tb + "'>" + esc(o.Tipo) + "</span></td><td>" + esc(it ? it.Title : (o.Cargo || "")) + "</td><td>" + esc(o.Profissional || "") + "</td>" +
+    return "<tr class='click' onclick=\"openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + (o.Competencia !== compOf(o.Data) ? "<div class='small muted'>fatura em " + compLabel(o.Competencia) + "</div>" : "") + "</td><td>" + esc(c ? c.Title : "?") + "</td><td><span class='badge " + tb + "'>" + esc(o.Tipo) + "</span></td><td>" + esc((itensOcoNome(o) || o.Cargo || "")) + "</td><td>" + esc(o.Profissional || "") + "</td>" +
       "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "") + "</td><td class='num " + (val < 0 ? "neg" : "pos") + "'>" + brl(val) + "</td><td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
   }).join("");
   $("ocoTable").innerHTML = "<thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Serviço / cargo</th><th>Profissional</th><th>Horário</th><th class='num'>Valor</th><th>Justificativa</th><th></th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='6'>" + rows.length + " ocorrência(s)</td><td class='num'>" + brl(tv) + "</td><td colspan='2'></td></tr></tfoot>";
@@ -1727,7 +1745,8 @@ function openOcorrencia(id){
     "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
     "<div><label>Data</label><input type='date' id='oData' value='" + esc(o.Data || "") + "' onchange='ocoCompSync();ocoFormRefresh(true)'></div>" +
     "<div><label>Faturar na competência</label><input type='month' id='oComp' value='" + esc(o.Competencia || compOf(o.Data)) + "' onchange='ocoFormRefresh(true)'><div class='hint'>Mude só para ajustes de meses anteriores.</div></div>" +
-    "<div id='wItem'><label id='lItem'>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select></div>" +
+    "<div id='wItem'><label id='lItem'>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select><div id='oItemHint' class='hint'></div></div>" +
+    "<div id='wItemMulti' class='full hidden'></div>" +
     "<div id='wCargo'><label>Cargo</label><input id='oCargo' list='dlCargos' value='" + esc(o.Cargo || "") + "' oninput='ocoFormRefresh()'>" + cargoDatalist() + "</div>" +
     "<div><label>Profissional</label><input id='oProf' value='" + esc(o.Profissional || "") + "'></div>" +
     "<div id='wDias'><label>Dias</label><input id='oDias' inputmode='decimal' value='" + esc(o.Dias || "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 1'></div>" +
@@ -1742,24 +1761,31 @@ function openOcorrencia(id){
     "<div class='calc-box' id='oCalc'></div></div>" +
     "<div class='modal-actions'>" + (id ? "<button class='btn-o btn-danger' onclick=\"excluirOcorrencia('" + id + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarOcorrencia('" + (id || "") + "')\">Salvar</button></div>";
   openModal(h, true);
-  window.__ocoItemSel = o.ItemId || "";
+  window.__ocoItemSel = o.ItemId || ""; window.__ocoMulti = [];
   window.__manualOk = !!o.Manual; window.__calcKey = ""; window.__ocoEditId = id || "";
   ocoFormRefresh(true);
 }
 function ocoCompSync(){ var d = v("oData"); if (d) $("oComp").value = compOf(d); }
 function ocoForm(){
-  return { ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId:v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias:parseNum(v("oDias")),
+  return { ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId: v("oItem") === "__multi" ? [].slice.call(document.querySelectorAll(".oItemM:checked")).map(function(x){ return x.value; }).join(",") : v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias:parseNum(v("oDias")),
     HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid") };
 }
 function ocoFormRefresh(rebuildItems){
   var t = TIPOS[v("oTipo")] || {}, cid = v("oCli"), comp = v("oComp") || compOf(v("oData"));
   if (rebuildItems !== undefined){
     var ct = cid ? contratoVigente(cid, comp) : null, cur = $("oItem").value || window.__ocoItemSel || "";
-    var its = ct ? itensDoContrato(ct.id) : [];
-    $("oItem").innerHTML = opt("", its.length ? "Selecione..." : "Sem contrato vigente nesta competência", cur) + its.map(function(i){ return opt(i.id, i.Title + " (" + brl(i.ValorMensal) + ")", cur); }).join("");
+    var its = ct ? itensDoContrato(ct.id) : [], multiSel = cur.indexOf(",") >= 0 ? cur.split(",") : (window.__ocoMulti || []);
+    if (cur.indexOf(",") >= 0) cur = "__multi";
+    $("oItem").innerHTML = opt("", its.length ? "Selecione..." : "Sem contrato vigente nesta competência", cur) + its.map(function(i){ return opt(i.id, i.Title + " (" + brl(i.ValorMensal) + ")", cur); }).join("") + (its.length > 1 ? opt("__multi", "Mais de um serviço (média)", cur) : "");
+    $("wItemMulti").innerHTML = "<label>Marque os serviços (o desconto será a média entre eles)</label>" + its.map(function(i){ return "<label class='check' style='margin:2px 14px 2px 0;display:inline-flex'><input type='checkbox' class='oItemM' value='" + i.id + "'" + (multiSel.indexOf(String(i.id)) >= 0 ? " checked" : "") + " onchange='ocoFormRefresh()'> " + esc(i.Title) + "</label>"; }).join("");
   }
   var show = function(id, on){ $(id).classList.toggle("hidden", !on); };
   show("wItem", true);
+  show("wItemMulti", $("oItem").value === "__multi" && t.grupo !== "variavel");
+  window.__ocoMulti = [].slice.call(document.querySelectorAll(".oItemM:checked")).map(function(x){ return x.value; });
+  var hintEl = $("oItemHint"); if (hintEl){ var ctH = cid ? contratoVigente(cid, comp) : null, itsH = ctH ? itensDoContrato(ctH.id) : [], sel = byId("itens", $("oItem").value);
+    var mesmos = sel ? itsH.filter(function(i){ return norm(i.Cargo) === norm(sel.Cargo); }).length : 0;
+    hintEl.textContent = (t.grupo !== "variavel" && mesmos > 1) ? "Este cargo atende " + mesmos + " serviços neste cliente. Se não souber qual foi afetado, escolha \"Mais de um serviço (média)\"." : ""; }
   $("lItem").textContent = t.grupo === "variavel" ? "Serviço relacionado" : "Serviço afetado";
   var o0 = $("oItem").options[0]; if (o0 && o0.value === "" && $("oItem").options.length > 1) o0.textContent = t.grupo === "variavel" ? "Automático (pelo cargo)" : "Selecione...";
   show("wCargo", t.grupo === "variavel");
@@ -1781,7 +1807,7 @@ function ocoFormRefresh(rebuildItems){
 // ------------------------------------------------------------
 function ocoCtx(o){
   var cli = byId("clientes", o.ClienteId), comp = o.Competencia || compOf(o.Data), ct = cli ? contratoVigente(cli.id, comp) : null, its = ct ? itensDoContrato(ct.id) : [];
-  var item = o.ItemId ? byId("itens", o.ItemId) : (o.Cargo ? itemPorCargo(its, o.Cargo) : null);
+  var item = o.ItemId ? byId("itens", idsDaOco(o)[0]) : (o.Cargo ? itemPorCargo(its, o.Cargo) : null);
   return { cli:cli, comp:comp, item:item, t: TIPOS[o.Tipo] || {} };
 }
 // precos vigentes (um por cargo/tipo/periodo) do cliente na data
@@ -1909,7 +1935,7 @@ async function salvarOcorrencia(id){
   var cliO = byId("clientes", o.ClienteId), ctO = contratoVigente(o.ClienteId, o.Competencia);
   if (cliO && cliO.FaturarPorServico && !o.ItemId && !(TIPOS[o.Tipo].grupo === "variavel" && ctO && itemPorCargo(itensDoContrato(ctO.id), o.Cargo))){
     showToast("Este cliente fatura por serviço: selecione o serviço, senão a ocorrência não entra em nenhum boletim.", true); return; }
-  var it = o.ItemId ? byId("itens", o.ItemId) : null;
+  var it = byId("itens", idsDaOco(o)[0] || "");
   var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email });
   await safe(function(){ return id ? api.update("ocorrencias", id, f) : api.create("ocorrencias", f); }, id ? "Ocorrência atualizada." : "Ocorrência lançada.");
   closeModal(); renderCurrent();
