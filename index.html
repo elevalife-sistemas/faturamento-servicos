@@ -2508,11 +2508,17 @@ async function graphRaw(url, options, scopes){
   if (!resp.ok){ var t = await resp.text(); var e = new Error("Erro " + resp.status + ": " + t.slice(0, 200)); e.status = resp.status; throw e; }
   return resp;
 }
-function urlPasta(nomeArq){ return GRAPH_SITE + "/drive/root:/" + encodeURIComponent(MODELOS_PASTA) + (nomeArq ? "/" + encodeURIComponent(nomeArq) : "") + ":"; }
+// a Graph nao aceita dois enderecos por caminho seguidos (site:...: + root:...:), entao resolve o id do site antes
+var SITE_ID_URL = null;
+async function siteBase(){
+  if (SITE_ID_URL) return SITE_ID_URL;
+  var r = await graph(GRAPH_SITE + "?$select=id"); SITE_ID_URL = "https://graph.microsoft.com/v1.0/sites/" + r.id; return SITE_ID_URL;
+}
+async function urlPasta(nomeArq){ return (await siteBase()) + "/drive/root:/" + encodeURIComponent(MODELOS_PASTA) + (nomeArq ? "/" + encodeURIComponent(nomeArq) : "") + ":"; }
 async function listarModelos(){
   if (DEMO){ S.modelos = window.__DEMO_MODELOS ? Object.keys(window.__DEMO_MODELOS) : []; return S.modelos; }
   try {
-    var r = await graph(urlPasta() + "/children?$select=name,id,lastModifiedDateTime&$top=200");
+    var r = await graph((await urlPasta()) + "/children?$select=name,id,lastModifiedDateTime&$top=200");
     S.modelos = (r.value || []).filter(function(f){ return /\.xlsx$/i.test(f.name); }).map(function(f){ return f.name.replace(/\.xlsx$/i, ""); }).sort();
   } catch (e){ if (e.status !== 404) console.warn("modelos:", e.message); S.modelos = []; }
   return S.modelos;
@@ -2520,13 +2526,13 @@ async function listarModelos(){
 async function baixarModelo(nome){
   if (MODELO_CACHE[nome]) return MODELO_CACHE[nome];
   if (DEMO){ if (!window.__DEMO_MODELOS || !window.__DEMO_MODELOS[nome]) throw new Error("Modelo \"" + nome + "\" não encontrado."); MODELO_CACHE[nome] = await window.__DEMO_MODELOS[nome](); return MODELO_CACHE[nome]; }
-  var r = await graphRaw(urlPasta(nome + ".xlsx") + "/content");
+  var r = await graphRaw((await urlPasta(nome + ".xlsx")) + "/content");
   MODELO_CACHE[nome] = await r.arrayBuffer(); return MODELO_CACHE[nome];
 }
 async function enviarModelo(file, nome){
   var buf = await file.arrayBuffer();
   if (DEMO){ window.__DEMO_MODELOS = window.__DEMO_MODELOS || {}; window.__DEMO_MODELOS[nome] = function(){ return Promise.resolve(buf); }; }
-  else await graphRaw(urlPasta(nome + ".xlsx") + "/content", { method:"PUT", headers:{ "Content-Type":"application/octet-stream" }, body: buf });
+  else await graphRaw((await urlPasta(nome + ".xlsx")) + "/content", { method:"PUT", headers:{ "Content-Type":"application/octet-stream" }, body: buf });
   delete MODELO_CACHE[nome]; await listarModelos();
 }
 
