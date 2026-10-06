@@ -403,7 +403,7 @@ var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + S
 var SCHEMA = {
   clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"],["CoordenadorEmail","t"],["Pendencias","ml"],["OCMensal","b"]] },
   contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"]] },
-  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"]] },
+  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"],["ResponsavelEmail","t"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
   parametros: { list:"FAT_Parametros", label:"Parâmetros", cols:[["Tipo","t"],["Cargo","t"],["Valor","n"],["Data","t"],["Local","t"],["Texto","t"]] },
   ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"]] },
@@ -637,7 +637,21 @@ function isGestor(){
 // ============================================================
 // "Meus clientes": quando ligado, as telas mostram so os clientes do coordenador logado
 var SO_MEUS = false;
-function visivel(c){ return !SO_MEUS || ehCoordenador(c, CURRENT_USER.email); }
+function visivel(c){ return !SO_MEUS || ehMeuCliente(c, CURRENT_USER.email); }
+// responsavel por um servico: o do proprio servico (ex.: Ergonomia -> Alexandre) ou, em branco, o coordenador do cliente
+function responsavelItem(it, cli){ return (it && String(it.ResponsavelEmail || "").trim()) || (cli && cli.CoordenadorEmail) || ""; }
+function ehResponsavelItem(it, cli, email){ email = String(email || "").toLowerCase(); return !!email && emailsLista(responsavelItem(it, cli)).indexOf(email) >= 0; }
+function ehMeuCliente(c, email){
+  if (ehCoordenador(c, email)) return true;
+  var ct = contratoVigente(c.id, curComp()) || contratoAtual(c.id);
+  return !!ct && itensDoContrato(ct.id).some(function(it){ return ehResponsavelItem(it, c, email); });
+}
+// linha de faturamento visivel em "Meus clientes": cliente que fatura por servico mostra so os servicos do usuario
+function unidadeVisivel(c, u){
+  if (!SO_MEUS) return true;
+  if (c.FaturarPorServico && u.itemId){ var it = byId("itens", u.itemId); return ehResponsavelItem(it, c, CURRENT_USER.email); }
+  return ehMeuCliente(c, CURRENT_USER.email);
+}
 function clientesAtivos(area){
   return S.clientes.filter(function(c){ return c.Ativo !== false && (!area || c.Area === area) && visivel(c); })
     .sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
@@ -987,7 +1001,7 @@ function avisoPendencias(){
     "<div class='modal-actions'><button class='btn' onclick='closeModal()'>Ver depois</button></div>";
   openModal(h, true);
 }
-function meusQtd(){ return S.clientes.filter(function(c){ return c.Ativo !== false && ehCoordenador(c, CURRENT_USER.email); }).length; }
+function meusQtd(){ return S.clientes.filter(function(c){ return c.Ativo !== false && ehMeuCliente(c, CURRENT_USER.email); }).length; }
 function atualizarBotaoMeus(){
   var b = $("meusBtn"), n = meusQtd(); if (!b) return;
   b.classList.toggle("hidden", !n);
@@ -1225,7 +1239,7 @@ function faturamentosDoMes(area, comp){
   var out = [];
   clientesAtivos(area).forEach(function(c){
     if (!contratoVigente(c.id, comp) && !medicoesDoMes(c.id, comp).length) return;
-    unidadesDe(c.id, comp).forEach(function(u){ out.push({ c:c, u:u, m: medicaoDe(c.id, comp, u.key) }); });
+    unidadesDe(c.id, comp).forEach(function(u){ if (!unidadeVisivel(c, u)) return; out.push({ c:c, u:u, m: medicaoDe(c.id, comp, u.key) }); });
   });
   return out;
 }
@@ -2158,6 +2172,7 @@ function openItem(ctId, itemId){
     "<div><label>Retenções (conforme contrato)</label><input id='i_Retencoes' value='" + esc(it.Retencoes || "") + "' placeholder='Ex.: ISS 2%, INSS 11%'></div>" +
     (multiTom ? divisaoForm(it, cli) : "<div><label>Nº do pedido / OC</label><input id='i_NumPedido' value='" + esc(it.NumPedido || "") + "'></div>") +
     "<div><label>Ordem no boletim</label><input id='i_Ordem' inputmode='numeric' value='" + esc(it.Ordem || "") + "'></div>" +
+    "<div class='full'><label>Responsável por este serviço (e-mail)</label><input id='i_ResponsavelEmail' value='" + esc(it.ResponsavelEmail || "") + "' placeholder='Em branco = coordenador do cliente (" + esc(cli.CoordenadorEmail || "não informado") + ")'><div class='hint'>Use quando outro coordenador cuida deste serviço (ex.: Ergonomia). Separe vários com ;</div></div>" +
     "<div class='full' style='border-top:1px dashed var(--border);padding-top:10px'><label>Boletim no modelo do cliente (opcional)</label></div>" +
     "<div><label>Descrição no boletim</label><input id='i_DescBoletim' value='" + esc(it.DescBoletim || "") + "' placeholder='Ex.: GL MANHÃ (em branco = nome do serviço)'></div>" +
     "<div><label>Requisitante</label><input id='i_Requisitante' value='" + esc(it.Requisitante || "") + "'></div>" +
@@ -2188,7 +2203,7 @@ async function salvarItem(ctId, itemId){
     if (Math.abs(soma - 100) > 0.001){ showToast("A divisão entre tomadores precisa somar 100% (hoje soma " + num(soma, 1) + "%).", true); return; }
     f.Divisao = JSON.stringify(dv); f.Rateio = dv.length > 1 ? dv.map(function(d){ return num(d.pct, d.pct % 1 ? 1 : 0) + "% " + tomadorDe(cli, d.t).nome; }).join(" / ") : ""; f.NumPedido = dv.length === 1 ? dv[0].pedido : "";
   } else { f.NumPedido = v("i_NumPedido"); }
-  ["DescBoletim","Requisitante","Unid","Localidade","CentroCusto","RelTipo","RelHoras","RelFonte"].forEach(function(k){ f[k] = v("i_" + k); });
+  ["DescBoletim","Requisitante","Unid","Localidade","CentroCusto","RelTipo","RelHoras","RelFonte","ResponsavelEmail"].forEach(function(k){ f[k] = v("i_" + k); });
   if (!f.Title || !f.ValorMensal){ showToast("Informe o serviço e o valor mensal.", true); return; }
   await safe(function(){ return itemId ? api.update("itens", itemId, f) : api.create("itens", f); }, "Serviço salvo.");
   closeModal(); renderCurrent();
