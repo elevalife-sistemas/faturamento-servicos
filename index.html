@@ -407,7 +407,7 @@ var SCHEMA = {
   itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"],["ResponsavelEmail","t"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
   parametros: { list:"FAT_Parametros", label:"Parâmetros", cols:[["Tipo","t"],["Cargo","t"],["Valor","n"],["Data","t"],["Local","t"],["Texto","t"]] },
-  ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"]] },
+  ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"],["Tomador","t"]] },
   medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"],["Unidade","t"],["UnidadeNome","t"],["Tomador","t"]] }
 };
 var NUMERIC = {}; var BOOLS = {};
@@ -854,6 +854,13 @@ function montarMedicao(cid, comp, uk){
   var base = itens.map(function(it){ return { tipo:"item", itemId:String(it.id), rel:String(it.id), servico:it.Title, cargo:it.Cargo||"", padrao:r2(it.ValorMensal), desconto:0, acrescimo:0, horas:0, just:[], oc:[] }; });
   var baseBy = {}; base.forEach(function(l){ baseBy[l.itemId] = l; });
   var extra = {}, hol = feriados(cli.Local), DSEM = ["dom","seg","ter","qua","qui","sex","sáb"];
+  // ocorrencia com tomador escolhido vai inteira para ele (ex.: ajuste de pedido so da Fisio Cilindros); sem tomador, divide pelo % do contrato
+  var lanca = function(l, v, o, txt, horas){
+    var t = o.Tomador || "";
+    if (t){ l.fx = l.fx || {}; var f = l.fx[t] = l.fx[t] || { d:0, a:0, h:0 }; if (v < 0) f.d = r2(f.d - v); else f.a = r2(f.a + v); f.h = r2(f.h + (horas || 0)); }
+    else { if (v < 0) l.desconto = r2(l.desconto - v); else l.acrescimo = r2(l.acrescimo + v); l.horas = r2(l.horas + (horas || 0)); }
+    l.just.push({ s: txt, t: t }); l.oc.push({ id: String(o.id), t: t });
+  };
   ocorrenciasDe(cid, comp).forEach(function(o){
     var v = Number(o.Valor)||0, dw = o.Data ? parseISO(o.Data).getDay() : 1, fds = dw === 0 || dw === 6 || !!hol[o.Data];
     var txt = fmtDate(o.Data) + " (" + DSEM[dw] + (hol[o.Data] ? ", feriado" : "") + ")" + (o.HoraInicio && o.HoraFim ? " · " + o.HoraInicio + "–" + o.HoraFim + (Number(o.Horas) ? " (" + hFmt(o.Horas) + ")" : "") : (Number(o.Dias) ? " · " + num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "")) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
@@ -864,20 +871,19 @@ function montarMedicao(cid, comp, uk){
       if (alvos.length){
         var pesos = alvos.map(function(l){ var it0 = byItem[l.itemId], dd = descontoItem(it0, comp, 1, 0); return dd.erro ? 1 : dd.valor; });
         var partes = repartir(Math.abs(v), pesos.map(function(w){ return w / pesos.reduce(function(a, b){ return a + b; }, 0) * 100; }));
-        alvos.forEach(function(l, ix){ if (v < 0) l.desconto = r2(l.desconto + partes[ix]); else l.acrescimo = r2(l.acrescimo + partes[ix]); l.just.push(txt + " (média entre " + alvos.map(function(a){ return a.servico; }).join(" e ") + ")"); l.oc.push(String(o.id)); });
+        alvos.forEach(function(l, ix){ lanca(l, v < 0 ? -partes[ix] : partes[ix], o, txt + " (média entre " + alvos.map(function(a){ return a.servico; }).join(" e ") + ")", 0); });
         return;
       }
     }
     var target = !isVar && o.ItemId && baseBy[String(o.ItemId)];
-    if (target){ if (v < 0) target.desconto = r2(target.desconto - v); else target.acrescimo = r2(target.acrescimo + v); target.just.push(txt); target.oc.push(String(o.id)); return; }
+    if (target){ lanca(target, v, o, txt, 0); return; }
     var rel = (o.ItemId && byItem[String(o.ItemId)]) ? String(o.ItemId) : ((itemPorCargo(itens, o.Cargo) || {}).id || "");
     // horas extras e coberturas: uma linha por servico e por periodo (dias uteis x fim de semana/feriado)
     var per = isVar ? (fds ? "fds" : "util") : "";
     var k = o.Tipo + "|" + (o.Cargo || "") + "|" + rel + "|" + per, relIt = rel && byItem[String(rel)];
     var nomeServ = relIt ? relIt.Title : (o.Cargo || "");
     if (!extra[k]) extra[k] = { tipo:"variavel", itemId:"", rel:String(rel), per:per, servico: o.Tipo + (nomeServ ? " – " + nomeServ : "") + (per === "fds" ? " · fim de semana/feriado" : per === "util" ? " · dias úteis" : ""), cargo:o.Cargo||"", padrao:0, desconto:0, acrescimo:0, horas:0, just:[], oc:[] };
-    var e = extra[k]; if (v < 0) e.desconto = r2(e.desconto - v); else e.acrescimo = r2(e.acrescimo + v);
-    e.horas = r2(e.horas + (Number(o.Horas)||0)); e.just.push(txt); e.oc.push(String(o.id));
+    lanca(extra[k], v, o, txt, Number(o.Horas) || 0);
   });
   var all = base.concat(Object.keys(extra).map(function(k){ return extra[k]; }).sort(function(a, b){ return a.servico.replace(/ · .*$/, "").localeCompare(b.servico.replace(/ · .*$/, ""), "pt-BR") || (a.per === "fds") - (b.per === "fds"); }));
   var u = unidadeDe(cid, comp, uk), lines = [], ids = [];
@@ -887,19 +893,28 @@ function montarMedicao(cid, comp, uk){
     if (u.itemId){ if (l.rel !== u.itemId) return; div.forEach(function(d, i){ if ((d.t || "") === u.t) idx = i; }); }
     else if (u.key.indexOf("T:") === 0){ div.forEach(function(d, i){ if ((d.t || "") === u.t) idx = i; }); }
     else { if (div.length === 1) idx = 0; }
-    var part;
-    if (idx < 0 && !u.itemId && u.key.indexOf("T:") !== 0){ part = { padrao:l.padrao, desconto:l.desconto, acrescimo:l.acrescimo, horas:l.horas, pct:100 }; }
-    else if (idx < 0) return;
+    var part, inteiro = idx < 0 && !u.itemId && u.key.indexOf("T:") !== 0, fx = l.fx || {}, meuT = inteiro ? null : (u.t || "");
+    var fixos = { d:0, a:0, h:0 }; Object.keys(fx).forEach(function(t){ if (inteiro || t === meuT){ fixos.d = r2(fixos.d + fx[t].d); fixos.a = r2(fixos.a + fx[t].a); fixos.h = r2(fixos.h + fx[t].h); } });
+    var dirigida = Object.keys(fx).length > 0;
+    if (inteiro){ part = { padrao:l.padrao, desconto:l.desconto, acrescimo:l.acrescimo, horas:l.horas, pct:100 }; }
+    else if (idx < 0){ if (!(fixos.d || fixos.a || fixos.h)) return; part = { padrao:0, desconto:0, acrescimo:0, horas:0, pct:100 }; }
     else {
       var pcts = div.map(function(d){ return Number(d.pct); });
       var f = function(v){ return repartir(v, pcts)[idx]; };
       part = { padrao:f(l.padrao), desconto:f(l.desconto), acrescimo:f(l.acrescimo), horas:r2(l.horas * pcts[idx] / 100), pct:pcts[idx] };
     }
+    part.desconto = r2(part.desconto + fixos.d); part.acrescimo = r2(part.acrescimo + fixos.a); part.horas = r2(part.horas + fixos.h);
+    // linha so de ocorrencias dirigidas a outro tomador: nao aparece aqui
+    if (l.tipo === "variavel" && !part.padrao && !part.desconto && !part.acrescimo && !part.horas) return;
+    var visJ = function(j){ return typeof j === "string" || inteiro || !j.t || j.t === meuT; };
+    var just = l.just.filter(visJ).map(function(j){ return typeof j === "string" ? j : j.s + (j.t && !inteiro && part.pct < 100 ? " (integral para esta unidade)" : ""); });
+    var ocs = l.oc.filter(visJ).map(function(x){ return typeof x === "string" ? x : x.id; });
+    if (dirigida && part.pct < 100 && !l.desconto && !l.acrescimo && !l.horas && l.tipo === "variavel") part.pct = 100;
     var nome = l.servico;
     if (u.itemId && l.tipo === "item") nome = u.nome;
     else if (part.pct < 100) nome += " (" + num(part.pct, part.pct % 1 ? 1 : 0) + "%)";
-    lines.push({ tipo:l.tipo, itemId:l.itemId, rel:l.rel, servico:nome, cargo:l.cargo, padrao:part.padrao, desconto:part.desconto, acrescimo:part.acrescimo, horas:part.horas, pct:part.pct, just:l.just, final: r2(part.padrao - part.desconto + part.acrescimo) });
-    l.oc.forEach(function(id){ if (ids.indexOf(id) < 0) ids.push(id); });
+    lines.push({ tipo:l.tipo, itemId:l.itemId, rel:l.rel, servico:nome, cargo:l.cargo, padrao:part.padrao, desconto:part.desconto, acrescimo:part.acrescimo, horas:part.horas, pct:part.pct, just:just, final: r2(part.padrao - part.desconto + part.acrescimo) });
+    ocs.forEach(function(id){ if (ids.indexOf(id) < 0) ids.push(id); });
   });
   var tot = lines.reduce(function(a, l){ a.p += l.padrao; a.d += l.desconto; a.a += l.acrescimo; return a; }, { p:0, d:0, a:0 });
   return { contrato: ct, unidade:u, lines: lines, ocorrIds: ids, ValorPadrao: r2(tot.p), Descontos: r2(tot.d), Acrescimos: r2(tot.a), ValorFaturar: r2(tot.p - tot.d + tot.a) };
@@ -1750,7 +1765,7 @@ function exportOcorrencias(){
 // ============================================================
 // OCORRENCIAS
 // ============================================================
-function itensOcoNome(o){ return idsDaOco(o).map(function(i){ var it = byId("itens", i); return it ? it.Title : ""; }).filter(Boolean).join(" + ") + (idsDaOco(o).length > 1 ? " (média)" : ""); }
+function itensOcoNome(o){ var c = o.Tomador ? byId("clientes", o.ClienteId) : null; return idsDaOco(o).map(function(i){ var it = byId("itens", i); return it ? it.Title : ""; }).filter(Boolean).join(" + ") + (idsDaOco(o).length > 1 ? " (média)" : "") + (c ? " · só " + (tomadorDe(c, o.Tomador).nome || o.Tomador) : ""); }
 function cargoOco(o){ var it = byId("itens", idsDaOco(o)[0] || ""); return String(o.Cargo || (it && it.Cargo) || "").trim(); }
 function profOco(o){ return String(o.Profissional || "").trim(); }
 // opcoes de cargo e profissional montadas a partir das ocorrencias da competencia/cliente/tipo (mantem a escolha atual)
@@ -1793,6 +1808,7 @@ function openOcorrencia(id){
     "<div><label>Faturar na competência</label><input type='month' id='oComp' value='" + esc(o.Competencia || compOf(o.Data)) + "' onchange='ocoFormRefresh(true)'><div class='hint'>Mude só para ajustes de meses anteriores.</div></div>" +
     "<div id='wItem'><label id='lItem'>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select><div id='oItemHint' class='hint'></div></div>" +
     "<div id='wItemMulti' class='full hidden'></div>" +
+    "<div id='wTom' class='hidden'><label>Lançar em qual unidade</label><select id='oTom' onchange='window.__ocoTom=this.value;ocoFormRefresh()'></select><div class='hint' id='oTomHint'></div></div>" +
     "<div id='wCargo'><label>Cargo</label><input id='oCargo' list='dlCargos' value='" + esc(o.Cargo || "") + "' oninput='ocoFormRefresh()'>" + cargoDatalist() + "</div>" +
     "<div><label>Profissional</label><input id='oProf' value='" + esc(o.Profissional || "") + "'></div>" +
     "<div id='wDias'><label>Dias</label><input id='oDias' inputmode='decimal' value='" + esc(o.Dias || "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 1'></div>" +
@@ -1807,14 +1823,14 @@ function openOcorrencia(id){
     "<div class='calc-box' id='oCalc'></div></div>" +
     "<div class='modal-actions'>" + (id ? "<button class='btn-o btn-danger' onclick=\"excluirOcorrencia('" + id + "')\">Excluir</button>" : "") + "<button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarOcorrencia('" + (id || "") + "')\">Salvar</button></div>";
   openModal(h, true);
-  window.__ocoItemSel = o.ItemId || ""; window.__ocoMulti = [];
+  window.__ocoItemSel = o.ItemId || ""; window.__ocoMulti = []; window.__ocoTom = o.Tomador || "";
   window.__manualOk = !!o.Manual; window.__calcKey = ""; window.__ocoEditId = id || "";
   ocoFormRefresh(true);
 }
 function ocoCompSync(){ var d = v("oData"); if (d) $("oComp").value = compOf(d); }
 function ocoForm(){
   return { ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId: v("oItem") === "__multi" ? [].slice.call(document.querySelectorAll(".oItemM:checked")).map(function(x){ return x.value; }).join(",") : v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias:parseNum(v("oDias")),
-    HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid") };
+    HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid"), Tomador: $("wTom") && !$("wTom").classList.contains("hidden") ? v("oTom") : "" };
 }
 function ocoFormRefresh(rebuildItems){
   var t = TIPOS[v("oTipo")] || {}, cid = v("oCli"), comp = v("oComp") || compOf(v("oData"));
@@ -1833,6 +1849,23 @@ function ocoFormRefresh(rebuildItems){
     var mesmos = sel ? itsH.filter(function(i){ return norm(i.Cargo) === norm(sel.Cargo); }).length : 0;
     hintEl.textContent = (t.grupo !== "variavel" && mesmos > 1) ? "Este cargo atende " + mesmos + " serviços neste cliente. Se não souber qual foi afetado, escolha \"Mais de um serviço (média)\"." : ""; }
   $("lItem").textContent = t.grupo === "variavel" ? "Serviço relacionado" : "Serviço afetado";
+  // servico dividido entre unidades (ex.: Gerdau Pinda 70% S.A / 30% Cilindros): escolher se divide ou se vai inteiro para uma
+  (function(){
+    var cliT = cid ? byId("clientes", cid) : null, ctT = cliT ? contratoVigente(cid, comp) : null, itsT = ctT ? itensDoContrato(ctT.id) : [];
+    var ids = $("oItem").value === "__multi" ? window.__ocoMulti : ($("oItem").value ? [$("oItem").value] : []);
+    var its = ids.map(function(i){ return byId("itens", i); }).filter(Boolean);
+    if (!its.length && t.grupo === "variavel" && v("oCargo")){ var ip = itemPorCargo(itsT, v("oCargo")); if (ip) its = [ip]; }
+    var divs = cliT ? its.map(function(it){ return divisaoDe(it, cliT); }) : [], tomsSet = {};
+    divs.forEach(function(d){ d.forEach(function(x){ tomsSet[x.t || ""] = 1; }); });
+    var tks = Object.keys(tomsSet).filter(function(k){ return k; }), on = tks.length > 1;
+    show("wTom", on);
+    if (on){
+      var pctTxt = divs[0].map(function(x){ var tm = tomadorDe(cliT, x.t); return num(Number(x.pct), Number(x.pct) % 1 ? 1 : 0) + "% " + (tm.nome || x.t); }).join(" / ");
+      var cur = window.__ocoTom || "";
+      $("oTom").innerHTML = opt("", "Dividir conforme o contrato (" + pctTxt + ")", cur) + tks.map(function(k){ var tm = tomadorDe(cliT, k); return opt(k, "Somente " + (tm.nome || k) + " (100%)", cur); }).join("");
+      $("oTomHint").textContent = $("oTom").value ? "O valor inteiro entra só no faturamento de " + (tomadorDe(cliT, $("oTom").value).nome || $("oTom").value) + "." : "Use \"Somente…\" quando a ocorrência é de uma unidade só (ex.: ajuste de pedido de uma unidade).";
+    }
+  })();
   var o0 = $("oItem").options[0]; if (o0 && o0.value === "" && $("oItem").options.length > 1) o0.textContent = t.grupo === "variavel" ? "Automático (pelo cargo)" : "Selecione...";
   show("wCargo", t.grupo === "variavel");
   show("wDias", t.modo === "dias");
@@ -2240,7 +2273,7 @@ function renderRenovacoes(){
 // ============================================================
 // ---------- TABELA DE PRECOS ----------
 var TIPO_ACR = { HE:"Hora extra", Cobertura:"Cobertura" };
-function precosVigentes(cid, dateISO){
+function precosTabelaCliente(cid, dateISO){
   // um preco por cargo/tipo/periodo: o mais recente vigente na data (os antigos ficam no historico)
   var by = {};
   S.variaveis.filter(function(x){ return String(x.ClienteId) === String(cid) && (!x.VigenciaInicio || x.VigenciaInicio <= dateISO); }).forEach(function(x){
@@ -2255,7 +2288,7 @@ function linhasPrecoCliente(c, comp){
     var regra = it.RegraDesconto || "DiasCorridos", d1 = descontoItem(it, comp, 1, 0), h1 = descontoItem(it, comp, 0, 1);
     return { it:it, regra:regra, dia: (regra === "HorasContratadas" || regra === "ValorHora") ? null : (d1.erro ? null : d1.valor), hora: h1.erro ? null : h1.valor, erro: d1.erro || h1.erro || "" };
   });
-  var acr = precosVigentes(c.id, iso);
+  var acr = precosTabelaCliente(c.id, iso);
   var cargos = uniqList(itens.map(function(it){ return it.Cargo; }).filter(Boolean));
   var semPreco = cargos.filter(function(cg){ return !acr.some(function(x){ return norm(x.Cargo) === norm(cg); }); });
   return { ct:ct, serv:serv, acr:acr, semPreco:semPreco, futuros: precosFuturos(c.id, iso), total: ct ? totalContrato(ct.id) : 0 };
