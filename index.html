@@ -202,7 +202,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <p class="tab-group-label">Contratos</p>
       <div class="tab" data-tab="clientes"><span class="tab-icon">&#127970;</span>Clientes e contratos</div>
       <div class="tab" data-tab="renovacoes"><span class="tab-icon">&#128197;</span>Renovações<span class="tab-badge hidden" id="renovBadge"></span></div>
-      <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Tabela de variáveis</div>
+      <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Tabela de preços</div>
       <p class="tab-group-label gestor-only">Gestão</p>
       <div class="tab gestor-only" data-tab="margem"><span class="tab-icon">&#128202;</span>Margem</div>
       <div class="tab gestor-only" data-tab="parametros"><span class="tab-icon">&#9881;</span>Parâmetros</div>
@@ -295,10 +295,11 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 
       <!-- VARIAVEIS -->
       <div class="panel" id="panel-variaveis">
-        <div class="page-head"><div><h1 class="page-title">Tabela de variáveis</h1><p class="page-sub">Preço de hora extra e cobertura por cliente, cargo e período. Usada no cálculo automático das ocorrências.</p></div>
-          <button class="btn" onclick="openVariavel()">+ Novo preço</button></div>
-        <div class="toolbar"><label>Cliente</label><select id="varCliente" onchange="renderVariaveis()"></select></div>
-        <div class="tbl-wrap"><table class="tbl" id="varTable"></table></div>
+        <div class="page-head"><div><h1 class="page-title">Tabela de preços</h1><p class="page-sub">Valores de cada cliente: mensalidade dos serviços, quanto vale 1 dia ou 1 hora de desconto e o preço por hora dos acréscimos (hora extra e cobertura).</p></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-o" onclick="baixarTabelaPrecos()">Baixar Excel</button><button class="btn" onclick="openVariavel()">+ Preço de acréscimo</button></div></div>
+        <div class="toolbar"><label>Cliente</label><select id="varCliente" onchange="renderVariaveis()"></select><label>Área</label><select id="varArea" onchange="renderVariaveis()"></select><label>Vigente em</label><input type="month" id="varComp" onchange="renderVariaveis()"><label>Buscar</label><input id="varBusca" placeholder="Cliente, serviço ou cargo" oninput="renderVariaveis()" style="max-width:220px"></div>
+        <div class="kpi-grid" id="varKpis"></div>
+        <div id="varBody"></div>
       </div>
 
       <!-- MARGEM -->
@@ -948,7 +949,7 @@ document.addEventListener("DOMContentLoaded", function(){
   $("modal").addEventListener("mousedown", function(e){ if (e.target.id === "modal") closeModal(); });
   document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeModal(); });
   var dc = curComp();
-  ["dashComp","medComp","fecComp"].forEach(function(id){ $(id).value = dc; });
+  ["dashComp","medComp","fecComp","varComp"].forEach(function(id){ $(id).value = dc; });
   ["ocoComp","marComp"].forEach(function(id){ $(id).value = curComp(); });
   if (/[?&]demo=1/.test(location.search)) { startDemo(); return; }
   initMsal().then(function(acc){ if (acc) afterLogin(acc); }).catch(function(e){ console.error(e); });
@@ -1039,7 +1040,7 @@ function opt(v, l, sel){ return '<option value="' + esc(v) + '"' + (String(v) ==
 function areaOptions(sel){ return opt("", "Todas as áreas", sel) + AREAS.map(function(a){ return opt(a, a, sel); }).join(""); }
 function clienteOptions(sel, allLabel){ return (allLabel ? opt("", allLabel, sel) : opt("", "Selecione...", sel)) + clientesAtivos().map(function(c){ return opt(c.id, c.Title, sel); }).join(""); }
 function fillSelects(){
-  ["dashArea","medArea","cliArea","renArea"].forEach(function(id){ var v = $(id).value; $(id).innerHTML = areaOptions(v); });
+  ["dashArea","medArea","cliArea","renArea","varArea"].forEach(function(id){ var v = $(id).value; $(id).innerHTML = areaOptions(v); });
   ["ocoCliente","varCliente"].forEach(function(id){ var v = $(id).value; $(id).innerHTML = clienteOptions(v, "Todos os clientes"); });
   var ms = $("medStatus").value; $("medStatus").innerHTML = opt("", "Todos", ms) + ["Não gerada"].concat(STATUS_MED).map(function(s){ return opt(s, s, ms); }).join("");
   var ot = $("ocoTipo").value; $("ocoTipo").innerHTML = opt("", "Todos", ot) + Object.keys(TIPOS).map(function(t){ return opt(t, t, ot); }).join("");
@@ -1785,7 +1786,7 @@ function renderOcorrencias(){
 }
 function openOcorrencia(id){
   var o = id ? byId("ocorrencias", id) : { Data: todayISO(), Tipo:"Hora extra", ClienteId: $("ocoCliente").value || "" };
-  var h = "<h3>" + (id ? "Editar ocorrência" : "Lançar ocorrência") + "</h3><p class='msub'>O valor é calculado automaticamente pelo contrato e pela Tabela de variáveis.</p><div class='form'>" +
+  var h = "<h3>" + (id ? "Editar ocorrência" : "Lançar ocorrência") + "</h3><p class='msub'>O valor é calculado automaticamente pelo contrato e pela Tabela de preços.</p><div class='form'>" +
     "<div><label>Cliente</label><select id='oCli' onchange='ocoFormRefresh(true)'>" + clienteOptions(o.ClienteId) + "</select></div>" +
     "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
     "<div><label>Data</label><input type='date' id='oData' value='" + esc(o.Data || "") + "' onchange='ocoCompSync();ocoFormRefresh(true)'></div>" +
@@ -1879,7 +1880,7 @@ function refsOcorrencia(o){
   var c = ocoCtx(o), out = []; if (!c.cli) return out;
   if (c.t.grupo === "variavel" || c.t.grupo === "manual"){
     precosVigentes(c.cli.id, c.t.grupo === "variavel" ? o.Cargo : "", c.t.grupo === "variavel" ? c.t.varTipo : "", o.Data).forEach(function(v){
-      out.push({ g:"Tabela de variáveis", l: v.Cargo + " · " + (v.Tipo === "HE" ? "Hora extra" : v.Tipo) + (v.Periodo !== "Unico" ? " · " + (PERIODOS[v.Periodo] || v.Periodo) : ""), v:Number(v.Valor), u:"h" });
+      out.push({ g:"Tabela de preços", l: v.Cargo + " · " + (v.Tipo === "HE" ? "Hora extra" : v.Tipo) + (v.Periodo !== "Unico" ? " · " + (PERIODOS[v.Periodo] || v.Periodo) : ""), v:Number(v.Valor), u:"h" });
     });
   }
   if (c.item){
@@ -2237,10 +2238,86 @@ function renderRenovacoes(){
 // ============================================================
 // TABELA DE VARIAVEIS
 // ============================================================
+// ---------- TABELA DE PRECOS ----------
+var TIPO_ACR = { HE:"Hora extra", Cobertura:"Cobertura" };
+function precosVigentes(cid, dateISO){
+  // um preco por cargo/tipo/periodo: o mais recente vigente na data (os antigos ficam no historico)
+  var by = {};
+  S.variaveis.filter(function(x){ return String(x.ClienteId) === String(cid) && (!x.VigenciaInicio || x.VigenciaInicio <= dateISO); }).forEach(function(x){
+    var k = norm(x.Cargo) + "|" + x.Tipo + "|" + x.Periodo; if (!by[k] || String(x.VigenciaInicio || "") > String(by[k].VigenciaInicio || "")) by[k] = x; });
+  var ordP = Object.keys(PERIODOS);
+  return Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return String(a.Cargo).localeCompare(String(b.Cargo), "pt-BR") || String(a.Tipo).localeCompare(String(b.Tipo)) || ordP.indexOf(a.Periodo) - ordP.indexOf(b.Periodo); });
+}
+function precosFuturos(cid, dateISO){ return S.variaveis.filter(function(x){ return String(x.ClienteId) === String(cid) && x.VigenciaInicio && x.VigenciaInicio > dateISO; }); }
+function linhasPrecoCliente(c, comp){
+  var ct = contratoVigente(c.id, comp), itens = ct ? itensDoContrato(ct.id) : [], iso = comp + "-" + pad(daysInMonth(comp));
+  var serv = itens.map(function(it){
+    var regra = it.RegraDesconto || "DiasCorridos", d1 = descontoItem(it, comp, 1, 0), h1 = descontoItem(it, comp, 0, 1);
+    return { it:it, regra:regra, dia: (regra === "HorasContratadas" || regra === "ValorHora") ? null : (d1.erro ? null : d1.valor), hora: h1.erro ? null : h1.valor, erro: d1.erro || h1.erro || "" };
+  });
+  var acr = precosVigentes(c.id, iso);
+  var cargos = uniqList(itens.map(function(it){ return it.Cargo; }).filter(Boolean));
+  var semPreco = cargos.filter(function(cg){ return !acr.some(function(x){ return norm(x.Cargo) === norm(cg); }); });
+  return { ct:ct, serv:serv, acr:acr, semPreco:semPreco, futuros: precosFuturos(c.id, iso), total: ct ? totalContrato(ct.id) : 0 };
+}
+function regraCurta(it){
+  var r = it.RegraDesconto || "DiasCorridos", d = Number(it.Divisor) || 0;
+  if (r === "DiasCorridos") return "÷ dias do mês";
+  if (r === "DiasFixos") return "÷ " + num(d, d % 1 ? 1 : 0) + " dias";
+  if (r === "HorasContratadas") return "÷ " + num(d, 0) + " h no mês";
+  if (r === "ValorHora") return "valor por hora";
+  return r;
+}
+function clientesTabelaPrecos(){
+  var cid = $("varCliente").value, area = $("varArea").value, q = norm($("varBusca").value || ""), comp = $("varComp").value || curComp();
+  return clientesAtivos(area).filter(function(c){ return !cid || String(c.id) === String(cid); }).map(function(c){ var L = linhasPrecoCliente(c, comp); L.c = c; return L; })
+    .filter(function(L){
+      if (!L.ct && !L.acr.length) return false;
+      if (!q) return true;
+      if (norm(L.c.Title + " " + (L.c.RazaoSocial || "")).indexOf(q) >= 0) return true;
+      return L.serv.some(function(s){ return norm(s.it.Title + " " + (s.it.Cargo || "")).indexOf(q) >= 0; }) || L.acr.some(function(x){ return norm(x.Cargo).indexOf(q) >= 0; });
+    });
+}
 function renderVariaveis(){
-  var cid = $("varCliente").value;
-  var rows = S.variaveis.filter(function(x){ return !cid || String(x.ClienteId) === String(cid); }).sort(function(a, b){ var ca = byId("clientes", a.ClienteId), cb = byId("clientes", b.ClienteId); return String(ca ? ca.Title : "").localeCompare(String(cb ? cb.Title : "")) || String(a.Cargo).localeCompare(String(b.Cargo)); });
-  $("varTable").innerHTML = rows.length ? "<thead><tr><th>Cliente</th><th>Cargo</th><th>Tipo</th><th>Período</th><th class='num'>Valor/hora</th><th>Vigente desde</th></tr></thead><tbody>" + rows.map(function(x){ var c = byId("clientes", x.ClienteId); return "<tr class='click' onclick=\"openVariavel('" + x.id + "')\"><td>" + esc(c ? c.Title : "?") + "</td><td>" + esc(x.Cargo) + "</td><td>" + esc(x.Tipo === "HE" ? "Hora extra" : x.Tipo) + "</td><td>" + esc(PERIODOS[x.Periodo] || x.Periodo) + "</td><td class='num'>" + brl(x.Valor) + "</td><td>" + (x.VigenciaInicio ? fmtDate(x.VigenciaInicio) : "<span class='muted'>sempre</span>") + "</td></tr>"; }).join("") + "</tbody>" : "<tr><td class='empty'>Nenhum preço cadastrado.</td></tr>";
+  var comp = $("varComp").value || curComp(), lista = clientesTabelaPrecos();
+  var nServ = lista.reduce(function(s, L){ return s + L.serv.length; }, 0), nAcr = lista.reduce(function(s, L){ return s + L.acr.length; }, 0), tot = lista.reduce(function(s, L){ return s + L.total; }, 0);
+  var semP = lista.filter(function(L){ return L.semPreco.length; }).length;
+  $("varKpis").innerHTML = kpi("Clientes", String(lista.length), "com contrato vigente em " + compLabel(comp)) + kpi("Valor mensal dos contratos", brl(tot), nServ + " serviço(s)") + kpi("Preços de acréscimo", String(nAcr), "hora extra e cobertura por cargo") + kpi("Sem preço de acréscimo", String(semP), semP ? "clientes com cargo sem preço de HE/cobertura" : "todos os cargos têm preço");
+  if (!lista.length){ $("varBody").innerHTML = "<div class='card'><p class='empty'>Nenhum cliente encontrado com esses filtros.</p></div>"; return; }
+  var pen = function(js, t){ return "<button class='btn-o btn-s' title='" + esc(t || "Alterar") + "' onclick=\"" + js + "\">Alterar</button>"; };
+  $("varBody").innerHTML = lista.map(function(L){
+    var c = L.c, ct = L.ct, h = "<div class='card' style='margin:0 0 16px'>";
+    h += "<div style='display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap'><div><p class='card-title' style='margin:0'>" + esc(c.Title) + "</p><p class='card-sub' style='margin:2px 0 0'>" + esc(c.Area || "") +
+      (ct ? " · Contrato " + esc(ct.Title || "") + " · versão " + esc(ct.Versao || 1) + (ct.Inicio ? " · desde " + fmtDate(ct.Inicio) : "") + (ct.Fim ? " até " + fmtDate(ct.Fim) : "") + (ct.IndiceReajuste ? " · reajuste " + esc(ct.IndiceReajuste) + (ct.MesReajuste ? " em " + esc(ct.MesReajuste) : "") : "") : " · sem contrato vigente") + "</p></div>" +
+      "<div style='display:flex;gap:6px;flex-wrap:wrap'>" + (ct ? "<button class='btn-o btn-s' onclick=\"openRenovar('" + ct.id + "')\">Reajustar / nova versão</button>" : "") + "<button class='btn-o btn-s' onclick=\"goCliente('" + c.id + "')\">Abrir cliente</button></div></div>";
+    if (ct){
+      h += "<p class='small muted' style='margin:14px 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.04em'>Faturamento mensal e descontos</p><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th>Cargo</th><th class='num'>Valor mensal</th><th>Regra de desconto</th><th class='num'>Desconto 1 dia</th><th class='num'>Desconto 1 hora</th><th></th></tr></thead><tbody>" +
+        L.serv.map(function(s){ var it = s.it; return "<tr><td><b>" + esc(it.Title) + "</b></td><td>" + esc(it.Cargo || "") + "</td><td class='num'>" + brl(it.ValorMensal) + "</td><td>" + esc(regraCurta(it)) + (it.JornadaDiaria && (s.regra === "DiasCorridos" || s.regra === "DiasFixos") ? " <span class='muted small'>· jornada " + num(it.JornadaDiaria, it.JornadaDiaria % 1 ? 1 : 0) + "h</span>" : "") + "</td><td class='num'>" + (s.dia != null ? brl(s.dia) : "<span class='muted'>–</span>") + "</td><td class='num'>" + (s.hora != null ? brl(s.hora) : (s.erro ? "<span class='badge b-red'>" + esc(s.erro) + "</span>" : "–")) + "</td><td style='text-align:right'>" + pen("openItem('" + ct.id + "','" + it.id + "')", "Alterar este serviço") + "</td></tr>"; }).join("") +
+        "<tr><td colspan='2'><b>Total mensal do contrato</b></td><td class='num'><b>" + brl(L.total) + "</b></td><td colspan='4'><span class='small muted'>" + "Valores de desconto calculados para " + compLabel(comp) + ".</span></td></tr></tbody></table></div>";
+    }
+    h += "<div style='display:flex;justify-content:space-between;align-items:center;margin:16px 0 6px;gap:8px'><p class='small muted' style='margin:0;font-weight:700;text-transform:uppercase;letter-spacing:.04em'>Acréscimos (preço por hora)</p><button class='btn-o btn-s' onclick=\"openVariavel(null,'" + c.id + "')\">+ Preço</button></div>";
+    if (L.acr.length){
+      h += "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Cargo</th><th>Tipo</th><th>Período</th><th class='num'>Valor/hora</th><th>Vigente desde</th><th></th></tr></thead><tbody>" +
+        L.acr.map(function(x){ return "<tr><td><b>" + esc(x.Cargo) + "</b></td><td>" + esc(TIPO_ACR[x.Tipo] || x.Tipo) + "</td><td>" + esc(PERIODOS[x.Periodo] || x.Periodo) + "</td><td class='num'>" + brl(x.Valor) + "</td><td>" + (x.VigenciaInicio ? fmtDate(x.VigenciaInicio) : "<span class='muted'>sempre</span>") + "</td><td style='text-align:right'>" + pen("openVariavel('" + x.id + "')", "Alterar este preço") + "</td></tr>"; }).join("") + "</tbody></table></div>";
+    } else h += "<p class='small muted' style='margin:0'>Nenhum preço de hora extra ou cobertura cadastrado.</p>";
+    if (L.semPreco.length) h += "<p class='small' style='margin:8px 0 0;color:#a15c00'>Sem preço de acréscimo para: " + L.semPreco.map(esc).join(", ") + ". Hora extra e cobertura desses cargos precisarão de valor manual.</p>";
+    if (L.futuros.length) h += "<p class='small muted' style='margin:8px 0 0'>Há " + L.futuros.length + " preço(s) com vigência futura (passam a valer depois de " + compLabel(comp) + ").</p>";
+    return h + "</div>";
+  }).join("") + "<p class='small muted'>Mudou o contrato a partir de uma data? Use <b>Reajustar / nova versão</b>: os meses anteriores continuam com os valores antigos. O botão <b>Alterar</b> corrige o valor da versão atual (vale para todos os meses dela que ainda não foram enviados). Em acréscimos, para manter o histórico, cadastre um <b>+ Preço</b> novo com a data de início em vez de alterar o antigo.</p>";
+}
+async function baixarTabelaPrecos(){
+  if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou. Recarregue a página.", true); return; }
+  var comp = $("varComp").value || curComp(), lista = clientesTabelaPrecos();
+  var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Serviços"), wa = wb.addWorksheet("Acréscimos");
+  var hd = function(w, cols){ w.columns = cols; w.getRow(1).font = { bold:true, color:{ argb:"FFFFFFFF" } }; w.getRow(1).fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FF7A1730" } }; w.views = [{ state:"frozen", ySplit:1 }]; };
+  hd(ws, [{ header:"Cliente", key:"c", width:34 }, { header:"Contrato", key:"k", width:18 }, { header:"Versão", key:"v", width:8 }, { header:"Serviço", key:"s", width:34 }, { header:"Cargo", key:"g", width:26 }, { header:"Valor mensal", key:"m", width:15, style:{ numFmt:'"R$" #,##0.00' } }, { header:"Regra de desconto", key:"r", width:20 }, { header:"Desconto 1 dia", key:"d", width:15, style:{ numFmt:'"R$" #,##0.00' } }, { header:"Desconto 1 hora", key:"h", width:15, style:{ numFmt:'"R$" #,##0.00' } }]);
+  hd(wa, [{ header:"Cliente", key:"c", width:34 }, { header:"Cargo", key:"g", width:28 }, { header:"Tipo", key:"t", width:14 }, { header:"Período", key:"p", width:28 }, { header:"Valor/hora", key:"v", width:13, style:{ numFmt:'"R$" #,##0.00' } }, { header:"Vigente desde", key:"i", width:14 }]);
+  lista.forEach(function(L){
+    L.serv.forEach(function(s){ ws.addRow({ c:L.c.Title, k:L.ct.Title || "", v:L.ct.Versao || 1, s:s.it.Title, g:s.it.Cargo || "", m:Number(s.it.ValorMensal) || 0, r:regraCurta(s.it), d:s.dia, h:s.hora }); });
+    L.acr.forEach(function(x){ wa.addRow({ c:L.c.Title, g:x.Cargo, t:TIPO_ACR[x.Tipo] || x.Tipo, p:PERIODOS[x.Periodo] || x.Periodo, v:Number(x.Valor) || 0, i:x.VigenciaInicio ? fmtDate(x.VigenciaInicio) : "sempre" }); });
+  });
+  var buf = await wb.xlsx.writeBuffer(), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); a.download = "Tabela de precos " + comp + ".xlsx"; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); }, 500);
 }
 function openVariavel(id, cid){
   var x = id ? byId("variaveis", id) : { ClienteId: cid || $("varCliente").value || "", Tipo:"HE", Periodo:"Unico" };
