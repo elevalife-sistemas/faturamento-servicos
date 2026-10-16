@@ -475,6 +475,8 @@ function compLabel(comp){ if (!comp) return ""; var m = ["jan","fev","mar","abr"
 function daysInMonth(comp){ var p = comp.split("-"); return new Date(+p[0], +p[1], 0).getDate(); }
 function lastDay(comp){ return comp + "-" + pad(daysInMonth(comp)); }
 function toMin(hhmm){ if (!hhmm) return null; var p = String(hhmm).split(":"); return (+p[0])*60 + (+p[1]||0); }
+function horasTexto(t){ t = String(t || "").trim(); var m = t.match(/^(\d{1,3}):(\d{1,2})$/); if (m) return r2(+m[1] + (+m[2]) / 60); m = t.match(/^(\d{1,3})h(\d{1,2})?$/i); if (m) return r2(+m[1] + (+(m[2] || 0)) / 60); return parseNum(t) || 0; }
+function hhmm(h){ h = Number(h) || 0; var hh = Math.floor(h), mm = Math.round((h - hh) * 60); if (mm === 60){ hh++; mm = 0; } return hh + ":" + (mm < 10 ? "0" : "") + mm; }
 function hFmt(h){ var tot = Math.round((Number(h)||0) * 60); var hh = Math.floor(tot/60), mm = tot % 60; return hh + "h" + (mm ? pad(mm) : ""); }
 function daysBetween(a, b){ return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
 function byId(key, id){ id = String(id); for (var i = 0; i < S[key].length; i++) if (String(S[key][i].id) === id) return S[key][i]; return null; }
@@ -774,7 +776,10 @@ function calcOcorrencia(o){
     if (!itens.length) return { erro:"Selecione o serviço afetado" };
     if (ids.length > 1 && itens.length < 2) return { erro:"Marque pelo menos dois serviços para a média" };
     var dias = t.modo === "dias" ? parseNum(o.Dias) : 0;
-    if (t.modo === "dias" && !dias) return { erro:"Informe a quantidade de dias" };
+    // falta medida em horas (ex.: faltou 4h do turno): usa o valor da hora do servico
+    var hQ = t.modo === "dias" && !dias ? (Number(o.HorasQtd) || (!o.HoraInicio ? Number(o.Horas) || 0 : 0)) : 0;
+    if (hQ) res.horas = r2(hQ);
+    if (t.modo === "dias" && !dias && !hQ) return { erro:"Informe a quantidade de dias ou de horas" };
     if (t.modo === "horario" && !res.horas) return { erro:"Informe o horário de início e fim" };
     if (itens.length === 1){ var d = descontoItem(itens[0], comp, dias, res.horas); if (d.erro) return d; res.valor = -d.valor; res.detalhe = d.detalhe; return res; }
     // mais de um servico: media dos descontos (o coordenador nao sabe qual dos servicos foi afetado)
@@ -910,7 +915,7 @@ function montarMedicao(cid, comp, uk){
   };
   ocorrenciasDe(cid, comp).forEach(function(o){
     var v = Number(o.Valor)||0, dw = o.Data ? parseISO(o.Data).getDay() : 1, fds = dw === 0 || dw === 6 || !!hol[o.Data];
-    var txt = fmtDate(o.Data) + " (" + DSEM[dw] + (hol[o.Data] ? ", feriado" : "") + ")" + (o.HoraInicio && o.HoraFim ? " · " + o.HoraInicio + "–" + o.HoraFim + (Number(o.Horas) ? " (" + hFmt(o.Horas) + ")" : "") : (Number(o.Dias) ? " · " + num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "")) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
+    var txt = fmtDate(o.Data) + " (" + DSEM[dw] + (hol[o.Data] ? ", feriado" : "") + ")" + (o.HoraInicio && o.HoraFim ? " · " + o.HoraInicio + "–" + o.HoraFim + (Number(o.Horas) ? " (" + hFmt(o.Horas) + ")" : "") : (Number(o.Dias) ? " · " + num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : (Number(o.Horas) ? " · " + hFmt(o.Horas) + " de ausência" : ""))) + " – " + o.Tipo + (o.Profissional ? " (" + o.Profissional + ")" : "") + (o.Justificativa ? ": " + o.Justificativa : "");
     var isVar = (TIPOS[o.Tipo] || {}).grupo === "variavel";
     var idsO = idsDaOco(o);
     if (!isVar && idsO.length > 1){
@@ -1859,7 +1864,7 @@ function renderOcorrencias(){
     var grp = (TIPOS[o.Tipo] || {}).grupo; var tb = grp === "desconto" ? "b-red" : grp === "variavel" ? "b-green" : "b-gray";
     var med = medicoesDoMes(o.ClienteId, o.Competencia).filter(function(m){ return m.Status !== "Rascunho" && (linhasDe(m).ocorrIds || []).indexOf(String(o.id)) >= 0; })[0]; var lock = !!med;
     return "<tr class='click' onclick=\"openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + (o.Competencia !== compOf(o.Data) ? "<div class='small muted'>fatura em " + compLabel(o.Competencia) + "</div>" : "") + "</td><td>" + esc(c ? c.Title : "?") + "</td><td><span class='badge " + tb + "'>" + esc(o.Tipo) + "</span></td><td>" + esc((itensOcoNome(o) || o.Cargo || "")) + "</td><td>" + esc(o.Profissional || "") + "</td>" +
-      "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "") + "</td>" + (semValor ? "" : "<td class='num " + (val < 0 ? "neg" : "pos") + "'>" + (simB(o.ValorPendente) ? "<span class='badge b-red'>valor pendente</span>" : brl(val)) + "</td>") + "<td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
+      "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : Number(o.Horas) ? hFmt(o.Horas) + " de ausência" : "") + "</td>" + (semValor ? "" : "<td class='num " + (val < 0 ? "neg" : "pos") + "'>" + (simB(o.ValorPendente) ? "<span class='badge b-red'>valor pendente</span>" : brl(val)) + "</td>") + "<td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
   }).join("");
   $("ocoTable").innerHTML = "<thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Serviço / cargo</th><th>Profissional</th><th>Horário</th>" + (semValor ? "" : "<th class='num'>Valor</th>") + "<th>Justificativa</th><th></th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='6'>" + rows.length + " ocorrência(s)</td>" + (semValor ? "" : "<td class='num'>" + brl(tv) + "</td>") + "<td colspan='2'></td></tr></tfoot>";
 }
@@ -1875,7 +1880,9 @@ function openOcorrencia(id){
     "<div id='wTom' class='hidden'><label>Lançar em qual unidade</label><select id='oTom' onchange='window.__ocoTom=this.value;ocoFormRefresh()'></select><div class='hint' id='oTomHint'></div></div>" +
     "<div id='wCargo'><label>Cargo</label><input id='oCargo' list='dlCargos' value='" + esc(o.Cargo || "") + "' oninput='ocoFormRefresh()'>" + cargoDatalist() + "</div>" +
     "<div><label>Profissional</label><input id='oProf' value='" + esc(o.Profissional || "") + "'></div>" +
+    "<div id='wUnid'><label>Medir em</label><select id='oUnid' onchange='ocoFormRefresh()'>" + opt("dias", "Dias", (!Number(o.Dias) && Number(o.Horas) && !o.HoraInicio) ? "horas" : "dias") + opt("horas", "Horas", (!Number(o.Dias) && Number(o.Horas) && !o.HoraInicio) ? "horas" : "dias") + "</select></div>" +
     "<div id='wDias'><label>Dias</label><input id='oDias' inputmode='decimal' value='" + esc(o.Dias || "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 1'></div>" +
+    "<div id='wHorasQ'><label>Horas de ausência</label><input id='oHorasQ' value='" + esc((!Number(o.Dias) && Number(o.Horas) && !o.HoraInicio) ? hhmm(o.Horas) : "") + "' oninput='ocoFormRefresh()' placeholder='ex.: 4 ou 3:30'><div class='hint'>Aceita 4, 4,5 ou 3:30.</div></div>" +
     "<div id='wIni'><label>Início</label><input type='time' id='oIni' value='" + esc(o.HoraInicio || "") + "' oninput='ocoFormRefresh()'></div>" +
     "<div id='wFim'><label>Fim</label><input type='time' id='oFim' value='" + esc(o.HoraFim || "") + "' oninput='ocoFormRefresh()'></div>" +
     "<div id='wManualChk' class='full'><label class='check'><input type='checkbox' id='oManual' " + (o.Manual ? "checked" : "") + " onchange='ocoManualToggle()'> Informar o valor manualmente</label></div>" +
@@ -1893,7 +1900,8 @@ function openOcorrencia(id){
 }
 function ocoCompSync(){ var d = v("oData"); if (d) $("oComp").value = compOf(d); }
 function ocoForm(){
-  return { ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId: v("oItem") === "__multi" ? [].slice.call(document.querySelectorAll(".oItemM:checked")).map(function(x){ return x.value; }).join(",") : v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias:parseNum(v("oDias")),
+  var porH = (TIPOS[v("oTipo")] || {}).modo === "dias" && v("oUnid") === "horas";
+  return { HorasQtd: porH ? horasTexto(v("oHorasQ")) : 0, ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId: v("oItem") === "__multi" ? [].slice.call(document.querySelectorAll(".oItemM:checked")).map(function(x){ return x.value; }).join(",") : v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias: porH ? 0 : parseNum(v("oDias")),
     HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid"), Tomador: $("wTom") && !$("wTom").classList.contains("hidden") ? v("oTom") : "" };
 }
 function ocoFormRefresh(rebuildItems){
@@ -1902,7 +1910,7 @@ function ocoFormRefresh(rebuildItems){
     var ct = cid ? contratoVigente(cid, comp) : null, cur = $("oItem").value || window.__ocoItemSel || "";
     var its = ct ? itensDoContrato(ct.id) : [], multiSel = cur.indexOf(",") >= 0 ? cur.split(",") : (window.__ocoMulti || []);
     if (cur.indexOf(",") >= 0) cur = "__multi";
-    $("oItem").innerHTML = opt("", its.length ? "Selecione..." : "Sem contrato vigente nesta competência", cur) + its.map(function(i){ return opt(i.id, nomeItemUnid(i, byId("clientes", cid)) + " (" + brl(i.ValorMensal) + ")", cur); }).join("") + (its.length > 1 ? opt("__multi", "Mais de um serviço (média)", cur) : "");
+    $("oItem").innerHTML = opt("", its.length ? "Selecione..." : "Sem contrato vigente nesta competência", cur) + its.map(function(i){ return opt(i.id, nomeItemUnid(i, byId("clientes", cid)) + (soOcorrencias() ? "" : " (" + brl(i.ValorMensal) + ")"), cur); }).join("") + (its.length > 1 ? opt("__multi", "Mais de um serviço (média)", cur) : "");
     $("wItemMulti").innerHTML = "<label>Marque os serviços (o desconto será a média entre eles)</label>" + its.map(function(i){ return "<label class='check' style='margin:2px 14px 2px 0;display:inline-flex'><input type='checkbox' class='oItemM' value='" + i.id + "'" + (multiSel.indexOf(String(i.id)) >= 0 ? " checked" : "") + " onchange='ocoFormRefresh()'> " + esc(nomeItemUnid(i, byId("clientes", cid))) + "</label>"; }).join("");
   }
   var show = function(id, on){ $(id).classList.toggle("hidden", !on); };
@@ -1932,7 +1940,8 @@ function ocoFormRefresh(rebuildItems){
   })();
   var o0 = $("oItem").options[0]; if (o0 && o0.value === "" && $("oItem").options.length > 1) o0.textContent = t.grupo === "variavel" ? "Automático (pelo cargo)" : "Selecione...";
   show("wCargo", t.grupo === "variavel");
-  show("wDias", t.modo === "dias");
+  var porHoras = t.modo === "dias" && v("oUnid") === "horas";
+  show("wUnid", t.modo === "dias"); show("wDias", t.modo === "dias" && !porHoras); show("wHorasQ", porHoras);
   show("wIni", t.modo === "horario"); show("wFim", t.modo === "horario");
   var semValorF = soOcorrencias();
   if (semValorF && $("oManual")) $("oManual").checked = false;
@@ -1945,7 +1954,7 @@ function ocoFormRefresh(rebuildItems){
   var med = cid ? medicoesDoMes(cid, o.Competencia).filter(function(m){ return m.Status !== "Rascunho"; })[0] : null;
   if (med) warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
   if (semValorF && t.grupo !== "manual"){
-    var durTxt = r.horas ? "Duração: " + hFmt(r.horas) : (o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "");
+    var durTxt = r.horas ? "Duração: " + hFmt(r.horas) : o.HorasQtd ? hFmt(o.HorasQtd) + " de ausência" : (o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "");
     if (r.erro && erroDePreco(r.erro)) box.innerHTML = "<div class='small muted'>" + esc(durTxt) + "</div><div class='d' style='color:#a15c00;font-weight:600'>Sem preço cadastrado para este cliente/cargo. Pode salvar: a ocorrência fica com valor pendente e o coordenador completa.</div>" + warn;
     else if (r.erro) box.innerHTML = "<div class='muted'>" + esc(r.erro) + "</div>" + warn;
     else box.innerHTML = "<div class='small muted'>Registro</div><div class='v' style='font-size:20px'>" + esc(durTxt || "Pronto para salvar") + "</div><div class='d'>O valor é calculado pelo sistema e conferido pelo coordenador.</div>" + warn;
