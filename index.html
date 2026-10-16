@@ -661,6 +661,12 @@ function ehMeuCliente(c, email){
 function unidadeVisivel(c, u){
   if (!soMeus()) return true;
   if (c.FaturarPorServico && u.itemId){ var it = byId("itens", u.itemId); return ehResponsavelItem(it, c, CURRENT_USER.email); }
+  // faturamento por tomador (ex.: Ultragaz – Ergonomia – Bahiana): visivel para quem responde por algum servico daquele tomador
+  if (u.key && u.key.indexOf("T:") === 0){
+    var ct = contratoVigente(c.id, curComp()) || contratoAtual(c.id), its = ct ? itensDoContrato(ct.id) : [];
+    var doTom = its.filter(function(x){ return divisaoDe(x, c).some(function(d){ return (d.t || "") === u.t; }); });
+    if (doTom.length) return doTom.some(function(x){ return ehResponsavelItem(x, c, CURRENT_USER.email); });
+  }
   return ehMeuCliente(c, CURRENT_USER.email);
 }
 function clientesAtivos(area){
@@ -806,7 +812,7 @@ function areaOco(o){ var c = byId("clientes", o.ClienteId), it = byId("itens", i
 function ocoVisivel(o){
   var c = byId("clientes", o.ClienteId); if (!c) return true; if (!visivel(c)) return false; if (!soMeus()) return true;
   var it = byId("itens", idsDaOco(o)[0] || "");
-  if (c.FaturarPorServico && it) return ehResponsavelItem(it, c, CURRENT_USER.email);
+  if (it && (c.FaturarPorServico || tomadoresDe(c).length > 1)) return ehResponsavelItem(it, c, CURRENT_USER.email);
   return true;
 }
 function areaUnidade(c, u){ var it = u && u.itemId ? byId("itens", u.itemId) : null; return it ? areaItem(it, c) : (c.Area || ""); }
