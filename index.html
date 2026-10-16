@@ -181,6 +181,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 .progress-track{height:7px;background:var(--gray-bg);border-radius:4px;margin-top:10px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:4px;background:var(--grena);}
 .tbl th.num{text-align:right;}
+.perfil-oculto{display:none !important;}
 
 </style>
 </head>
@@ -407,7 +408,7 @@ var SCHEMA = {
   itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"],["ResponsavelEmail","t"],["Area","t"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
   parametros: { list:"FAT_Parametros", label:"Parâmetros", cols:[["Tipo","t"],["Cargo","t"],["Valor","n"],["Data","t"],["Local","t"],["Texto","t"]] },
-  ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"],["Tomador","t"]] },
+  ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"],["Tomador","t"],["ValorPendente","b"]] },
   medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"],["Unidade","t"],["UnidadeNome","t"],["Tomador","t"]] }
 };
 var NUMERIC = {}; var BOOLS = {};
@@ -630,11 +631,17 @@ async function loadAll(){
 // Enquanto ninguem estiver cadastrado, todos veem tudo (base recem-criada).
 function usuariosCadastrados(){ return S.parametros.filter(function(p){ return p.Tipo === "Usuario" && p.Texto; }); }
 function usuarioDe(email){ var e = norm(email); return usuariosCadastrados().filter(function(p){ return norm(p.Texto) === e; })[0] || null; }
-function acessoTotal(){
-  if (DEMO && !window.__DEMO_RESTRITO) return true;
-  if (!usuariosCadastrados().length) return true;
-  var u = usuarioDe(CURRENT_USER.email); return !!u && Number(u.Valor) === 1;
+// perfis: "total" (Valor 1) ve tudo · "atribuidos" (Valor 0) so os faturamentos dele ·
+// "ocorrencias" (Valor 2, e quem nao esta cadastrado) so lanca ocorrencias, em qualquer cliente
+function perfilAcesso(){
+  if (DEMO && !window.__DEMO_PERFIL) return "total";
+  if (DEMO) return window.__DEMO_PERFIL;
+  if (!usuariosCadastrados().length) return "total";
+  var u = usuarioDe(CURRENT_USER.email); if (!u) return "ocorrencias";
+  var n = Number(u.Valor); return n === 1 ? "total" : n === 2 ? "ocorrencias" : "atribuidos";
 }
+function acessoTotal(){ return perfilAcesso() !== "atribuidos"; }
+function soOcorrencias(){ return perfilAcesso() === "ocorrencias"; }
 function isGestor(){
   if (DEMO) return true;
   var gest = S.parametros.filter(function(p){ return p.Tipo === "Gestor"; }).map(function(p){ return norm(p.Texto); });
@@ -647,7 +654,7 @@ function isGestor(){
 // ============================================================
 // "Meus clientes": quando ligado, as telas mostram so os clientes do coordenador logado
 var SO_MEUS = false;
-function soMeus(){ return SO_MEUS || !acessoTotal(); }
+function soMeus(){ var p = perfilAcesso(); return p === "ocorrencias" ? false : (SO_MEUS || p === "atribuidos"); }
 function visivel(c){ return !soMeus() || ehMeuCliente(c, CURRENT_USER.email); }
 // responsavel por um servico: o do proprio servico (ex.: Ergonomia -> Alexandre) ou, em branco, o coordenador do cliente
 function responsavelItem(it, cli){ return (it && String(it.ResponsavelEmail || "").trim()) || (cli && cli.CoordenadorEmail) || ""; }
@@ -968,6 +975,8 @@ function conferir(cid, comp, med, uk){
   else if (ct.Fim < todayISO()) out.push({ n:"red", t:"O contrato venceu em " + fmtDate(ct.Fim) + ". Verifique a renovação com o comercial." });
   itensDoContrato(ct.id).forEach(function(i){ if (i.RegraDesconto !== "DiasCorridos" && !Number(i.Divisor)) out.push({ n:"amber", t:"O item \"" + i.Title + "\" está sem divisor da regra de desconto." }); });
   var mm = montarMedicao(cid, comp, uk), rel = mm.ocorrIds || [];
+  var pend = S.ocorrencias.filter(function(o){ return rel.indexOf(String(o.id)) >= 0 && simB(o.ValorPendente); });
+  if (pend.length) out.push({ n:"red", t: pend.length + " ocorrência(s) com VALOR PENDENTE (lançadas sem preço cadastrado). Abra cada uma em Ocorrências, informe o valor e gere de novo." });
   var ocs = ocorrenciasDe(cid, comp).filter(function(o){ return rel.indexOf(String(o.id)) >= 0; });
   if (med){
     var inc = linhasDe(med).ocorrIds || [];
@@ -1012,6 +1021,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
 function showTab(name){
   if (!name) return;
+  if (soOcorrencias()) name = "ocorrencias";
   CURRENT_TAB = name;
   document.querySelectorAll("#nav .tab").forEach(function(t){ t.classList.toggle("active", t.getAttribute("data-tab") === name); });
   document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active", p.id === "panel-" + name); });
@@ -1061,15 +1071,24 @@ function meusQtd(){ return S.clientes.filter(function(c){ return c.Ativo !== fal
 function atualizarBotaoMeus(){
   var b = $("meusBtn"), n = meusQtd(); if (!b) return;
   var restrito = !acessoTotal();
+  if (soOcorrencias()){ b.classList.add("hidden"); return; }
   b.classList.toggle("hidden", !n && !restrito);
   b.textContent = soMeus() ? "Meus clientes (" + n + ")" : "Todos os clientes";
   if (restrito){ b.title = "Seu acesso mostra só os clientes atribuídos a você"; b.style.cursor = "default"; return; }
   b.title = SO_MEUS ? "Clique para ver todos os clientes" : "Clique para ver só os clientes em que você é o coordenador";
 }
+// perfil "so lanca ocorrencias": o menu mostra apenas Ocorrencias
+function aplicarPerfilMenu(){
+  var so = soOcorrencias();
+  document.querySelectorAll("#nav .tab").forEach(function(t){ if (t.getAttribute("data-tab") !== "ocorrencias") t.classList.toggle("perfil-oculto", so); });
+  document.querySelectorAll("#nav .tab-group-label").forEach(function(l){ l.classList.toggle("perfil-oculto", so && !/Faturamento/i.test(l.textContent)); });
+  if (so){ CURRENT_TAB = "ocorrencias"; var b = $("meusBtn"); if (b) b.classList.add("hidden"); }
+}
 function toggleMeus(){ if (!acessoTotal()){ showToast("Seu acesso mostra só os clientes atribuídos a você. Para ver outros, peça ao gestor.", true); return; } SO_MEUS = !SO_MEUS; atualizarBotaoMeus(); fillSelects(); SEL.cliente = null; renderCurrent(); }
 function enterApp(){
   if (!window.__meusInit){ window.__meusInit = true; SO_MEUS = meusQtd() > 0; }
   if (!acessoTotal()) SO_MEUS = true;
+  aplicarPerfilMenu();
   atualizarBotaoMeus();
   $("gate").classList.add("hidden"); $("mainArea").classList.remove("hidden");
   document.querySelectorAll(".gestor-only").forEach(function(el){ el.classList.toggle("hidden", !isGestor()); });
@@ -1801,7 +1820,9 @@ function exportOcorrencias(){
   var rows = ocorrenciasFiltradas(); var wb = new ExcelJS.Workbook(); var ws = wb.addWorksheet("Ocorrências");
   ws.columns = [{ width:12 }, { width:10 }, { width:28 }, { width:24 }, { width:30 }, { width:22 }, { width:9 }, { width:9 }, { width:9 }, { width:15 }, { width:15 }, { width:55 }, { width:30 }];
   var h = ws.getRow(1); h.values = ["Data", "Competência", "Cliente", "Tipo", "Serviço / cargo", "Profissional", "Início", "Fim", "Horas/dias", "Valor", "Custo MO", "Justificativa", "Evidência"]; styleHeader(h);
+  var semValor = soOcorrencias();
   rows.forEach(function(o, i){ var c = byId("clientes", o.ClienteId), it = o.ItemId ? byId("itens", o.ItemId) : null; var r = ws.getRow(i + 2); r.values = [fmtDate(o.Data), o.Competencia, c ? c.Title : "", o.Tipo, (itensOcoNome(o) || o.Cargo || ""), o.Profissional || "", o.HoraInicio || "", o.HoraFim || "", o.Horas || o.Dias || "", Number(o.Valor)||0, Number(o.Custo)||0, o.Justificativa || "", o.Evidencia || ""]; [10,11].forEach(function(cc){ r.getCell(cc).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; }); });
+  if (semValor) ws.spliceColumns(10, 2);
   saveWorkbook(wb, "Ocorrencias " + ($("ocoComp").value || "todas") + ".xlsx");
 }
 
@@ -1830,7 +1851,7 @@ function ocorrenciasFiltradas(){
     .sort(function(a, b){ var r = String(a.Data).localeCompare(String(b.Data)) || String(a.HoraInicio || "").localeCompare(String(b.HoraInicio || "")); return ordem === "asc" ? r : -r; });
 }
 function renderOcorrencias(){
-  var rows = ocorrenciasFiltradas();
+  var rows = ocorrenciasFiltradas(), semValor = soOcorrencias();
   if (!rows.length){ $("ocoTable").innerHTML = '<tr><td class="empty">Nenhuma ocorrência lançada com esses filtros. Use "+ Lançar ocorrência".</td></tr>'; return; }
   var tv = 0;
   var body = rows.map(function(o){
@@ -1838,15 +1859,15 @@ function renderOcorrencias(){
     var grp = (TIPOS[o.Tipo] || {}).grupo; var tb = grp === "desconto" ? "b-red" : grp === "variavel" ? "b-green" : "b-gray";
     var med = medicoesDoMes(o.ClienteId, o.Competencia).filter(function(m){ return m.Status !== "Rascunho" && (linhasDe(m).ocorrIds || []).indexOf(String(o.id)) >= 0; })[0]; var lock = !!med;
     return "<tr class='click' onclick=\"openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + (o.Competencia !== compOf(o.Data) ? "<div class='small muted'>fatura em " + compLabel(o.Competencia) + "</div>" : "") + "</td><td>" + esc(c ? c.Title : "?") + "</td><td><span class='badge " + tb + "'>" + esc(o.Tipo) + "</span></td><td>" + esc((itensOcoNome(o) || o.Cargo || "")) + "</td><td>" + esc(o.Profissional || "") + "</td>" +
-      "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "") + "</td><td class='num " + (val < 0 ? "neg" : "pos") + "'>" + brl(val) + "</td><td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
+      "<td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + "<br>" + hFmt(o.Horas) : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "") + "</td>" + (semValor ? "" : "<td class='num " + (val < 0 ? "neg" : "pos") + "'>" + (simB(o.ValorPendente) ? "<span class='badge b-red'>valor pendente</span>" : brl(val)) + "</td>") + "<td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + (o.Evidencia ? "<div class='muted'>Evidência: " + esc(o.Evidencia) + "</div>" : "") + "</td><td>" + (lock ? "<span class='badge b-gray' title='A medição desta competência já foi enviada'>medição " + esc(med.Status.toLowerCase()) + "</span>" : "") + "</td></tr>";
   }).join("");
-  $("ocoTable").innerHTML = "<thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Serviço / cargo</th><th>Profissional</th><th>Horário</th><th class='num'>Valor</th><th>Justificativa</th><th></th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='6'>" + rows.length + " ocorrência(s)</td><td class='num'>" + brl(tv) + "</td><td colspan='2'></td></tr></tfoot>";
+  $("ocoTable").innerHTML = "<thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Serviço / cargo</th><th>Profissional</th><th>Horário</th>" + (semValor ? "" : "<th class='num'>Valor</th>") + "<th>Justificativa</th><th></th></tr></thead><tbody>" + body + "</tbody><tfoot><tr><td colspan='6'>" + rows.length + " ocorrência(s)</td>" + (semValor ? "" : "<td class='num'>" + brl(tv) + "</td>") + "<td colspan='2'></td></tr></tfoot>";
 }
 function openOcorrencia(id){
   var o = id ? byId("ocorrencias", id) : { Data: todayISO(), Tipo:"Hora extra", ClienteId: $("ocoCliente").value || "" };
   var h = "<h3>" + (id ? "Editar ocorrência" : "Lançar ocorrência") + "</h3><p class='msub'>O valor é calculado automaticamente pelo contrato e pelos Valores dos Contratos.</p><div class='form'>" +
     "<div><label>Cliente</label><select id='oCli' onchange='ocoFormRefresh(true)'>" + clienteOptions(o.ClienteId) + "</select></div>" +
-    "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
+    "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).filter(function(t){ return !soOcorrencias() || !/^Ajuste/.test(t) || t === o.Tipo; }).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
     "<div><label>Data</label><input type='date' id='oData' value='" + esc(o.Data || "") + "' onchange='ocoCompSync();ocoFormRefresh(true)'></div>" +
     "<div><label>Faturar na competência</label><input type='month' id='oComp' value='" + esc(o.Competencia || compOf(o.Data)) + "' onchange='ocoFormRefresh(true)'><div class='hint'>Mude só para ajustes de meses anteriores.</div></div>" +
     "<div id='wItem'><label id='lItem'>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select><div id='oItemHint' class='hint'></div></div>" +
@@ -1913,14 +1934,23 @@ function ocoFormRefresh(rebuildItems){
   show("wCargo", t.grupo === "variavel");
   show("wDias", t.modo === "dias");
   show("wIni", t.modo === "horario"); show("wFim", t.modo === "horario");
-  show("wManualChk", t.grupo !== "manual");
-  show("wValor", t.grupo === "manual" || v("oManual"));
+  var semValorF = soOcorrencias();
+  if (semValorF && $("oManual")) $("oManual").checked = false;
+  show("wManualChk", t.grupo !== "manual" && !semValorF);
+  show("wValor", t.grupo === "manual" || (!semValorF && v("oManual")));
   show("wSolic", t.grupo === "variavel"); show("wEvid", true);
   atualizarCalculadora();
   if (t.grupo === "variavel" && !v("oCargo") && v("oItem")){ var it = byId("itens", v("oItem")); if (it) $("oCargo").value = it.Cargo || ""; }
   var o = ocoForm(), r = calcOcorrencia(o), box = $("oCalc"), warn = "";
   var med = cid ? medicoesDoMes(cid, o.Competencia).filter(function(m){ return m.Status !== "Rascunho"; })[0] : null;
   if (med) warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
+  if (semValorF && t.grupo !== "manual"){
+    var durTxt = r.horas ? "Duração: " + hFmt(r.horas) : (o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "");
+    if (r.erro && erroDePreco(r.erro)) box.innerHTML = "<div class='small muted'>" + esc(durTxt) + "</div><div class='d' style='color:#a15c00;font-weight:600'>Sem preço cadastrado para este cliente/cargo. Pode salvar: a ocorrência fica com valor pendente e o coordenador completa.</div>" + warn;
+    else if (r.erro) box.innerHTML = "<div class='muted'>" + esc(r.erro) + "</div>" + warn;
+    else box.innerHTML = "<div class='small muted'>Registro</div><div class='v' style='font-size:20px'>" + esc(durTxt || "Pronto para salvar") + "</div><div class='d'>O valor é calculado pelo sistema e conferido pelo coordenador.</div>" + warn;
+    return;
+  }
   if (r.erro) box.innerHTML = "<div class='muted'>" + esc(r.erro) + "</div>" + (r.detalhe ? "<div class='d'>" + esc(r.detalhe) + "</div>" : "") + warn;
   else box.innerHTML = "<div class='small muted'>Valor calculado</div><div class='v'>" + (r.valor < 0 ? "−" : "+") + brl(Math.abs(r.valor)) + "</div><div class='d'>" + esc(r.detalhe) + (r.horas ? "\nDuração: " + hFmt(r.horas) : "") + "</div>" + warn;
 }
@@ -2034,7 +2064,7 @@ function calcAplicar(){
   $("oValor").value = num(Math.abs(window.__calcRes)); ocoFormRefresh(); showToast("Valor aplicado no lançamento.");
 }
 // depois de salvar: valor manual de hora extra/cobertura vira preco de referencia (vale a partir da data do lancamento)
-function oferecerPrecoReferencia(f, r){
+function oferecerPrecoReferencia_(f, r){
   var t = TIPOS[f.Tipo] || {};
   if (t.grupo !== "variavel" || !f.Manual || !(r.horas > 0) || !f.Cargo) return;
   var taxa = r2(Math.abs(Number(f.Valor) || 0) / r.horas); if (!taxa) return;
@@ -2053,12 +2083,14 @@ async function salvarOcorrencia(id){
   var o = ocoForm(), r = calcOcorrencia(o);
   if (!o.ClienteId || !o.Data){ showToast("Informe cliente e data.", true); return; }
   if (v("oManual") && !window.__manualOk && window.__consMsg && (TIPOS[o.Tipo] || {}).grupo !== "manual"){ showToast("Responda o aviso de valor consolidado antes de salvar.", true); return; }
+  var pendente = false;
+  if (r.erro && soOcorrencias() && erroDePreco(r.erro)){ pendente = true; r = Object.assign({}, r, { erro:null, valor:0, custo:0, detalhe:"VALOR PENDENTE: " + r.erro + (r.detalhe ? "\n" + r.detalhe : "") }); var spH = o.HoraInicio && o.HoraFim ? splitHoras(o.Data, o.HoraInicio, o.HoraFim, feriados((byId("clientes", o.ClienteId) || {}).Local)) : null; r.horas = spH ? r2(spH.total) : 0; }
   if (r.erro){ showToast(r.erro, true); return; }
   var cliO = byId("clientes", o.ClienteId), ctO = contratoVigente(o.ClienteId, o.Competencia);
   if (cliO && cliO.FaturarPorServico && !o.ItemId && !(TIPOS[o.Tipo].grupo === "variavel" && ctO && itemPorCargo(itensDoContrato(ctO.id), o.Cargo))){
     showToast("Este cliente fatura por serviço: selecione o serviço, senão a ocorrência não entra em nenhum boletim.", true); return; }
   var it = byId("itens", idsDaOco(o)[0] || "");
-  var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email });
+  var f = Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email, ValorPendente: pendente });
   await safe(function(){ return id ? api.update("ocorrencias", id, f) : api.create("ocorrencias", f); }, id ? "Ocorrência atualizada." : "Ocorrência lançada.");
   closeModal(); renderCurrent();
   oferecerPrecoReferencia(f, r);
@@ -2506,6 +2538,8 @@ function renderConfig(){
   h += cardModelos();
   $("cfgBody").innerHTML = cardUsuarios() + h;
 }
+function erroDePreco(e){ return /pre[cç]o|divisor|horas contratadas/i.test(String(e || "")); }
+function oferecerPrecoReferencia(){ if (soOcorrencias()) return; return oferecerPrecoReferencia_.apply(null, arguments); }
 // ---------- Usuarios e acesso ----------
 function emailsConhecidos(){
   var out = {}, add = function(e, nome){ e = String(e || "").trim().toLowerCase(); if (!e || e.indexOf("@") < 0) return; if (!out[e]) out[e] = { email:e, nome:"" }; if (nome && !out[e].nome) out[e].nome = nome; };
@@ -2524,10 +2558,10 @@ function atribuidosDe(email){
 }
 function cardUsuarios(){
   var us = emailsConhecidos(), cad = usuariosCadastrados().length;
-  var h = "<div class='card' style='border-left:4px solid var(--grena)'><div style='display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start'><div><p class='card-title' style='margin:0'>Usuários e acesso aos clientes</p><p class='card-sub' style='margin:4px 0 0'>Quem tem <b>todos os clientes</b> vê tudo. Os demais veem só os faturamentos atribuídos a eles." + (cad ? "" : " <b>Ainda não há usuários cadastrados: por enquanto todos veem tudo.</b>") + "</p></div><button class='btn btn-s' onclick='openUsuario()'>+ Usuário</button></div>";
+  var h = "<div class='card' style='border-left:4px solid var(--grena)'><div style='display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start'><div><p class='card-title' style='margin:0'>Usuários e acesso aos clientes</p><p class='card-sub' style='margin:4px 0 0'>Quem tem <b>todos os clientes</b> vê tudo. <b>Só os atribuídos</b> vê os faturamentos dele. <b>Só lança ocorrências</b> vê apenas a tela de Ocorrências, em qualquer cliente (é o acesso de quem não está cadastrado)." + (cad ? "" : " <b>Ainda não há usuários cadastrados: por enquanto todos veem tudo.</b>") + "</p></div><button class='btn btn-s' onclick='openUsuario()'>+ Usuário</button></div>";
   h += "<div class='tbl-wrap' style='margin-top:12px'><table class='tbl'><thead><tr><th>Usuário</th><th>Acesso</th><th class='num'>Faturamentos atribuídos</th><th></th></tr></thead><tbody>" + us.map(function(u){
     var p = usuarioDe(u.email), tot = p && Number(p.Valor) === 1;
-    var ac = !cad ? "<span class='badge b-gray'>todos (sem regra ainda)</span>" : tot ? "<span class='badge b-green'>Todos os clientes</span>" : p ? "<span class='badge b-blue'>Só os atribuídos</span>" : "<span class='badge b-amber'>Só os atribuídos (não cadastrado)</span>";
+    var ac = !cad ? "<span class='badge b-gray'>todos (sem regra ainda)</span>" : tot ? "<span class='badge b-green'>Todos os clientes</span>" : p && Number(p.Valor) === 2 ? "<span class='badge b-purple'>Só lança ocorrências</span>" : p ? "<span class='badge b-blue'>Só os atribuídos</span>" : "<span class='badge b-amber'>Não cadastrado (só lança ocorrências)</span>";
     return "<tr><td><b>" + esc(u.nome || u.email.split("@")[0]) + "</b><div class='small muted'>" + esc(u.email) + "</div></td><td>" + ac + "</td><td class='num'>" + atribuidosDe(u.email) + "</td><td style='text-align:right;white-space:nowrap'><button class='btn-o btn-s' onclick=\"openUsuario('" + esc(u.email) + "')\">Acesso</button> <button class='btn-o btn-s' onclick=\"openAtribuir('" + esc(u.email) + "')\">Atribuir faturamentos</button></td></tr>"; }).join("") + "</tbody></table></div>";
   return h + "<p class='small muted' style='margin:10px 0 0'>Isto organiza o que cada pessoa vê no sistema. Quem tem acesso às listas do SharePoint ainda consegue abri-las por lá.</p></div>";
 }
@@ -2536,7 +2570,7 @@ function openUsuario(email){
   var h = "<h3>" + (email ? "Acesso de " + esc(email) : "Novo usuário") + "</h3><p class='msub'>Depois de salvar, use \"Atribuir faturamentos\" para escolher os clientes e serviços desta pessoa.</p><div class='form'>" +
     "<div><label>E-mail</label><input id='u_Email' type='email' value='" + esc(email || "") + "'" + (email ? " readonly" : "") + " placeholder='nome@elevalife.com.br'></div>" +
     "<div><label>Nome</label><input id='u_Nome' value='" + esc((p && p.Cargo) || "") + "'></div>" +
-    "<div class='full'><label>Acesso</label><select id='u_Acesso'>" + opt("0", "Só os faturamentos atribuídos a ele", p ? String(Number(p.Valor) || 0) : "0") + opt("1", "Todos os clientes", p ? String(Number(p.Valor) || 0) : "0") + "</select></div></div>" +
+    "<div class='full'><label>Acesso</label><select id='u_Acesso'>" + opt("0", "Só os faturamentos atribuídos a ele", p ? String(Number(p.Valor) || 0) : "0") + opt("1", "Todos os clientes", p ? String(Number(p.Valor) || 0) : "0") + opt("2", "Só lança ocorrências (qualquer cliente, sem faturamento)", p ? String(Number(p.Valor) || 0) : "0") + "</select><div class='hint'>Quem entra no sistema sem estar nesta lista fica com \"Só lança ocorrências\".</div></div></div>" +
     "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick='salvarUsuario()'>Salvar</button></div>";
   openModal(h);
 }
