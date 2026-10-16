@@ -202,7 +202,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <p class="tab-group-label">Contratos</p>
       <div class="tab" data-tab="clientes"><span class="tab-icon">&#127970;</span>Clientes e contratos</div>
       <div class="tab" data-tab="renovacoes"><span class="tab-icon">&#128197;</span>Renovações<span class="tab-badge hidden" id="renovBadge"></span></div>
-      <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Tabela de preços</div>
+      <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Valores dos Contratos</div>
       <p class="tab-group-label gestor-only">Gestão</p>
       <div class="tab gestor-only" data-tab="margem"><span class="tab-icon">&#128202;</span>Margem</div>
       <div class="tab gestor-only" data-tab="parametros"><span class="tab-icon">&#9881;</span>Parâmetros</div>
@@ -295,7 +295,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 
       <!-- VARIAVEIS -->
       <div class="panel" id="panel-variaveis">
-        <div class="page-head"><div><h1 class="page-title">Tabela de preços</h1><p class="page-sub">Valores de cada cliente: mensalidade dos serviços, quanto vale 1 dia ou 1 hora de desconto e o preço por hora dos acréscimos (hora extra e cobertura).</p></div>
+        <div class="page-head"><div><h1 class="page-title">Valores dos Contratos</h1><p class="page-sub">Valores de cada cliente: mensalidade dos serviços, quanto vale 1 dia ou 1 hora de desconto e o preço por hora dos acréscimos (hora extra e cobertura).</p></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-o" onclick="baixarTabelaPrecos()">Baixar Excel</button><button class="btn" onclick="openVariavel()">+ Preço de acréscimo</button></div></div>
         <div class="toolbar"><label>Cliente</label><select id="varCliente" onchange="renderVariaveis()"></select><label>Área</label><select id="varArea" onchange="renderVariaveis()"></select><label>Vigente em</label><input type="month" id="varComp" onchange="renderVariaveis()"><label>Buscar</label><input id="varBusca" placeholder="Cliente, serviço ou cargo" oninput="renderVariaveis()" style="max-width:220px"></div>
         <div class="kpi-grid" id="varKpis"></div>
@@ -626,6 +626,15 @@ async function loadAll(){
 // ============================================================
 // Permissoes
 // ============================================================
+// acesso: usuarios cadastrados (Parametros > Usuario). Valor 1 = ve todos os clientes; 0 = so os atribuidos a ele.
+// Enquanto ninguem estiver cadastrado, todos veem tudo (base recem-criada).
+function usuariosCadastrados(){ return S.parametros.filter(function(p){ return p.Tipo === "Usuario" && p.Texto; }); }
+function usuarioDe(email){ var e = norm(email); return usuariosCadastrados().filter(function(p){ return norm(p.Texto) === e; })[0] || null; }
+function acessoTotal(){
+  if (DEMO && !window.__DEMO_RESTRITO) return true;
+  if (!usuariosCadastrados().length) return true;
+  var u = usuarioDe(CURRENT_USER.email); return !!u && Number(u.Valor) === 1;
+}
 function isGestor(){
   if (DEMO) return true;
   var gest = S.parametros.filter(function(p){ return p.Tipo === "Gestor"; }).map(function(p){ return norm(p.Texto); });
@@ -638,7 +647,8 @@ function isGestor(){
 // ============================================================
 // "Meus clientes": quando ligado, as telas mostram so os clientes do coordenador logado
 var SO_MEUS = false;
-function visivel(c){ return !SO_MEUS || ehMeuCliente(c, CURRENT_USER.email); }
+function soMeus(){ return SO_MEUS || !acessoTotal(); }
+function visivel(c){ return !soMeus() || ehMeuCliente(c, CURRENT_USER.email); }
 // responsavel por um servico: o do proprio servico (ex.: Ergonomia -> Alexandre) ou, em branco, o coordenador do cliente
 function responsavelItem(it, cli){ return (it && String(it.ResponsavelEmail || "").trim()) || (cli && cli.CoordenadorEmail) || ""; }
 function ehResponsavelItem(it, cli, email){ email = String(email || "").toLowerCase(); return !!email && emailsLista(responsavelItem(it, cli)).indexOf(email) >= 0; }
@@ -649,7 +659,7 @@ function ehMeuCliente(c, email){
 }
 // linha de faturamento visivel em "Meus clientes": cliente que fatura por servico mostra so os servicos do usuario
 function unidadeVisivel(c, u){
-  if (!SO_MEUS) return true;
+  if (!soMeus()) return true;
   if (c.FaturarPorServico && u.itemId){ var it = byId("itens", u.itemId); return ehResponsavelItem(it, c, CURRENT_USER.email); }
   return ehMeuCliente(c, CURRENT_USER.email);
 }
@@ -791,6 +801,14 @@ function tomadoresDe(cli){
 // nome do servico com a unidade quando o cliente tem varias e o servico e de uma so (ex.: Ergonomia – Cilindros)
 // area de um servico: a do proprio servico (ex.: Ergonomia dentro da Gerdau Pinda) ou, em branco, a do cliente
 function areaItem(it, cli){ return (it && it.Area) || (cli && cli.Area) || ""; }
+function areaOco(o){ var c = byId("clientes", o.ClienteId), it = byId("itens", idsDaOco(o)[0] || ""); return it ? areaItem(it, c) : ((c && c.Area) || ""); }
+// ocorrencia visivel em "Meus clientes": num cliente que fatura por servico, so as dos servicos do usuario
+function ocoVisivel(o){
+  var c = byId("clientes", o.ClienteId); if (!c) return true; if (!visivel(c)) return false; if (!soMeus()) return true;
+  var it = byId("itens", idsDaOco(o)[0] || "");
+  if (c.FaturarPorServico && it) return ehResponsavelItem(it, c, CURRENT_USER.email);
+  return true;
+}
 function areaUnidade(c, u){ var it = u && u.itemId ? byId("itens", u.itemId) : null; return it ? areaItem(it, c) : (c.Area || ""); }
 function clienteNaArea(c, area){
   if (c.Area === area) return true;
@@ -1036,13 +1054,16 @@ function avisoPendencias(){
 function meusQtd(){ return S.clientes.filter(function(c){ return c.Ativo !== false && ehMeuCliente(c, CURRENT_USER.email); }).length; }
 function atualizarBotaoMeus(){
   var b = $("meusBtn"), n = meusQtd(); if (!b) return;
-  b.classList.toggle("hidden", !n);
-  b.textContent = SO_MEUS ? "Meus clientes (" + n + ")" : "Todos os clientes";
+  var restrito = !acessoTotal();
+  b.classList.toggle("hidden", !n && !restrito);
+  b.textContent = soMeus() ? "Meus clientes (" + n + ")" : "Todos os clientes";
+  if (restrito){ b.title = "Seu acesso mostra só os clientes atribuídos a você"; b.style.cursor = "default"; return; }
   b.title = SO_MEUS ? "Clique para ver todos os clientes" : "Clique para ver só os clientes em que você é o coordenador";
 }
-function toggleMeus(){ SO_MEUS = !SO_MEUS; atualizarBotaoMeus(); fillSelects(); SEL.cliente = null; renderCurrent(); }
+function toggleMeus(){ if (!acessoTotal()){ showToast("Seu acesso mostra só os clientes atribuídos a você. Para ver outros, peça ao gestor.", true); return; } SO_MEUS = !SO_MEUS; atualizarBotaoMeus(); fillSelects(); SEL.cliente = null; renderCurrent(); }
 function enterApp(){
   if (!window.__meusInit){ window.__meusInit = true; SO_MEUS = meusQtd() > 0; }
+  if (!acessoTotal()) SO_MEUS = true;
   atualizarBotaoMeus();
   $("gate").classList.add("hidden"); $("mainArea").classList.remove("hidden");
   document.querySelectorAll(".gestor-only").forEach(function(el){ el.classList.toggle("hidden", !isGestor()); });
@@ -1155,7 +1176,7 @@ function renderFechamento(){
   var rows = faturamentosDoMes("", comp).filter(function(r){ return !r.u.antiga || r.m; }).map(function(r){ r.e = etapaFechamento(r, comp); return r; });
   var ord = { eu:0, cliente:1, ok:2 }; rows.sort(function(a, b){ return ord[a.e.quem] - ord[b.e.quem] || String(a.c.Title).localeCompare(String(b.c.Title), "pt-BR"); });
   var n = function(q){ return rows.filter(function(r){ return r.e.quem === q; }).length; };
-  $("fecKpis").innerHTML = kpi("Faturamentos", String(rows.length), (SO_MEUS ? "seus clientes" : "todos os clientes") + " em " + compLabel(comp)) + kpi("Com você", String(n("eu")), "precisam de uma ação sua agora") + kpi("Com o cliente", String(n("cliente")), "boletim enviado, aguardando resposta") + kpi("Concluídos", String(n("ok")), "NF emitida");
+  $("fecKpis").innerHTML = kpi("Faturamentos", String(rows.length), (soMeus() ? "seus clientes" : "todos os clientes") + " em " + compLabel(comp)) + kpi("Com você", String(n("eu")), "precisam de uma ação sua agora") + kpi("Com o cliente", String(n("cliente")), "boletim enviado, aguardando resposta") + kpi("Concluídos", String(n("ok")), "NF emitida");
   if (!rows.length){ $("fecTable").innerHTML = '<tr><td class="empty">Nenhum faturamento com contrato vigente em ' + compLabel(comp) + ".</td></tr>"; return; }
   $("fecTable").innerHTML = "<thead><tr><th>Cliente / faturamento</th><th>Ocorrências</th><th>Rascunho</th><th>Enviado</th><th>Aprovado</th><th>OC</th><th>NF</th><th>Próximo passo</th></tr></thead><tbody>" + rows.map(function(r){
     return "<tr><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "</td><td>" + r.e.c.oco + "</td><td>" + r.e.c.ras + "</td><td>" + r.e.c.env + "</td><td>" + r.e.c.apr + "</td><td>" + r.e.c.oc + "</td><td>" + r.e.c.nf + "</td><td style='white-space:nowrap'>" + r.e.passo + "</td></tr>"; }).join("") + "</tbody>";
@@ -1186,7 +1207,7 @@ function renderDashboard(){
     '<div class="kpi"><p class="kpi-label">Reconhecido pelo coordenador</p><p class="kpi-value">' + brl(recV) + '</p><p class="kpi-sub">' + rec.length + " de " + fats.length + " faturamento(s) · " + pct + '%</p><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><p class="kpi-sub small" style="margin-top:8px">Falta reconhecer: <b>' + brl(faltaV) + "</b> (" + falta.length + " faturamento(s))</p></div>" +
     kpi("Descontos", brl(desc), "faltas, atrasos e serviços suspensos") +
     kpi("Acréscimos", brl(acr), "horas extras, coberturas e reembolsos");
-  renderOcorrenciasDash(comp, clis);
+  renderOcorrenciasDash(comp, clis, area);
   // graficos
   var counts = {}; ["Não gerada"].concat(STATUS_MED).forEach(function(s){ counts[s] = 0; });
   fats.forEach(function(r){ counts[r.m ? r.m.Status : "Não gerada"]++; });
@@ -1214,7 +1235,7 @@ function renderDashboard(){
   if (aprov.length - semOC.length) pend.push(["amber", (aprov.length - semOC.length) + " medição(ões) aprovadas aguardando emissão da NF pelo coordenador."]);
   var incompl = S.clientes.filter(function(c){ return c.Ativo !== false && visivel(c) && (!area || c.Area === area) && pendenciasCliente(c).length; });
   if (incompl.length && isGestor()) pend.push(["amber", incompl.length + " cliente(s) com cadastro incompleto (contrato, serviços ou e-mail do focal): " + incompl.map(function(c){ return c.Title; }).join(", ") + "."]);
-  var sj = S.ocorrencias.filter(function(o){ return o.Competencia === comp && !String(o.Justificativa||"").trim() && clis.some(function(c){ return String(c.id) === String(o.ClienteId); }); });
+  var sj = S.ocorrencias.filter(function(o){ return o.Competencia === comp && !String(o.Justificativa||"").trim() && clis.some(function(c){ return String(c.id) === String(o.ClienteId); }) && ocoVisivel(o) && (!area || areaOco(o) === area); });
   if (sj.length) pend.push(["amber", sj.length + " ocorrência(s) de " + compLabel(comp) + " sem justificativa."]);
   $("dashPend").innerHTML = pend.length ? pend.map(function(p){ return '<div class="alert alert-' + p[0] + '">' + esc(p[1]) + "</div>"; }).join("") : '<div class="alert alert-green">Nada pendente nesta competência.</div>';
   var ren = renovacoesRows(area).filter(function(r){ return r.dias != null && r.dias <= 90; }).sort(function(a, b){ return a.dias - b.dias; });
@@ -1228,9 +1249,9 @@ var OCO_GRUPOS = [
   { k:"Reembolsos e ajustes", tipos:["Reembolso","Consumo","Ajuste (acréscimo)","Ajuste (desconto)"], cor:"#eda100" }
 ];
 function grupoOco(tipo){ for (var i = 0; i < OCO_GRUPOS.length; i++) if (OCO_GRUPOS[i].tipos.indexOf(tipo) >= 0) return OCO_GRUPOS[i]; return OCO_GRUPOS[3]; }
-function renderOcorrenciasDash(comp, clis){
+function renderOcorrenciasDash(comp, clis, area){
   var ids = {}; clis.forEach(function(c){ ids[String(c.id)] = c; });
-  var ocs = S.ocorrencias.filter(function(o){ return o.Competencia === comp && ids[String(o.ClienteId)]; });
+  var ocs = S.ocorrencias.filter(function(o){ return o.Competencia === comp && ids[String(o.ClienteId)] && ocoVisivel(o) && (!area || areaOco(o) === area); });
   $("dashOcoSub").textContent = ocs.length + " ocorrência(s) lançada(s) em " + compLabel(comp) + ". Passe o mouse nas barras para ver os detalhes.";
   if (!ocs.length){
     ["chOcoTipo","chOcoCli"].forEach(function(id){ if (CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } });
@@ -1796,7 +1817,7 @@ function atualizarFiltrosOco(base){
 }
 function ocorrenciasFiltradas(){
   var comp = $("ocoComp").value, cid = $("ocoCliente").value, tipo = $("ocoTipo").value;
-  var base = S.ocorrencias.filter(function(o){ var c = byId("clientes", o.ClienteId); return (!c || visivel(c)) && (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); });
+  var base = S.ocorrencias.filter(function(o){ return ocoVisivel(o) && (!comp || o.Competencia === comp) && (!cid || String(o.ClienteId) === String(cid)) && (!tipo || o.Tipo === tipo); });
   atualizarFiltrosOco(base);
   var cargo = $("ocoCargo") ? $("ocoCargo").value : "", prof = $("ocoProf") ? $("ocoProf").value : "", ordem = $("ocoOrdem") ? $("ocoOrdem").value : "desc";
   return base.filter(function(o){ return (!cargo || cargoOco(o) === cargo) && (!prof || profOco(o) === prof); })
@@ -1817,7 +1838,7 @@ function renderOcorrencias(){
 }
 function openOcorrencia(id){
   var o = id ? byId("ocorrencias", id) : { Data: todayISO(), Tipo:"Hora extra", ClienteId: $("ocoCliente").value || "" };
-  var h = "<h3>" + (id ? "Editar ocorrência" : "Lançar ocorrência") + "</h3><p class='msub'>O valor é calculado automaticamente pelo contrato e pela Tabela de preços.</p><div class='form'>" +
+  var h = "<h3>" + (id ? "Editar ocorrência" : "Lançar ocorrência") + "</h3><p class='msub'>O valor é calculado automaticamente pelo contrato e pelos Valores dos Contratos.</p><div class='form'>" +
     "<div><label>Cliente</label><select id='oCli' onchange='ocoFormRefresh(true)'>" + clienteOptions(o.ClienteId) + "</select></div>" +
     "<div><label>Tipo</label><select id='oTipo' onchange='ocoFormRefresh()'>" + Object.keys(TIPOS).map(function(t){ return opt(t, t, o.Tipo); }).join("") + "</select></div>" +
     "<div><label>Data</label><input type='date' id='oData' value='" + esc(o.Data || "") + "' onchange='ocoCompSync();ocoFormRefresh(true)'></div>" +
@@ -1929,7 +1950,7 @@ function refsOcorrencia(o){
   var c = ocoCtx(o), out = []; if (!c.cli) return out;
   if (c.t.grupo === "variavel" || c.t.grupo === "manual"){
     precosVigentes(c.cli.id, c.t.grupo === "variavel" ? o.Cargo : "", c.t.grupo === "variavel" ? c.t.varTipo : "", o.Data).forEach(function(v){
-      out.push({ g:"Tabela de preços", l: v.Cargo + " · " + (v.Tipo === "HE" ? "Hora extra" : v.Tipo) + (v.Periodo !== "Unico" ? " · " + (PERIODOS[v.Periodo] || v.Periodo) : ""), v:Number(v.Valor), u:"h" });
+      out.push({ g:"Valores dos Contratos", l: v.Cargo + " · " + (v.Tipo === "HE" ? "Hora extra" : v.Tipo) + (v.Periodo !== "Unico" ? " · " + (PERIODOS[v.Periodo] || v.Periodo) : ""), v:Number(v.Valor), u:"h" });
     });
   }
   if (c.item){
@@ -2413,7 +2434,7 @@ function renderMargem(){
 // ============================================================
 // PARAMETROS
 // ============================================================
-var PAR_TIPOS = { CustoHora:"Custo/hora por cargo", Aliquota:"Alíquota da NF", Feriado:"Feriado", Gestor:"Gestor (acesso à margem e configuração)" };
+var PAR_TIPOS = { CustoHora:"Custo/hora por cargo", Aliquota:"Alíquota da NF", Feriado:"Feriado", Gestor:"Gestor (acesso à margem e configuração)", Usuario:"Usuário (acesso aos clientes)" };
 function renderParametros(){
   $("parChips").innerHTML = [["todos","Todos"]].concat(Object.keys(PAR_TIPOS).map(function(k){ return [k, PAR_TIPOS[k].split(" (")[0]]; })).map(function(c){ return "<button class='chip" + (PAR_FILTER === c[0] ? " active" : "") + "' onclick=\"PAR_FILTER='" + c[0] + "';renderParametros()\">" + c[1] + "</button>"; }).join("");
   var rows = S.parametros.filter(function(p){ return PAR_FILTER === "todos" || p.Tipo === PAR_FILTER; }).sort(function(a, b){ return String(a.Tipo).localeCompare(String(b.Tipo)) || String(a.Data || a.Cargo || "").localeCompare(String(b.Data || b.Cargo || "")); });
@@ -2455,7 +2476,7 @@ function excluirParametro(id){ askConfirm("Excluir este parâmetro?", async func
 // CONFIGURACAO (criar listas e carregar dados iniciais)
 // ============================================================
 function renderConfig(){
-  if (DEMO){ $("cfgBody").innerHTML = "<div class='card'><p class='card-title'>Modo demonstração</p><p class='card-sub'>Na versão real, esta tela cria as listas no SharePoint e carrega os dados iniciais dos contratos.</p></div>"; return; }
+  if (DEMO){ $("cfgBody").innerHTML = cardUsuarios() + "<div class='card'><p class='card-title'>Modo demonstração</p><p class='card-sub'>Na versão real, esta tela cria as listas no SharePoint e carrega os dados iniciais dos contratos.</p></div>"; return; }
   var h = "<div class='card'><p class='card-title'>1. Listas no SharePoint</p><p class='card-sub'>O sistema usa " + Object.keys(SCHEMA).length + " listas no site BPM. Elas são criadas automaticamente com todas as colunas.</p><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Lista</th><th>Nome no SharePoint</th><th>Situação</th><th class='num'>Registros</th></tr></thead><tbody>" +
     Object.keys(SCHEMA).map(function(k){ var ok = !!LIST_IDS[k]; return "<tr><td>" + esc(SCHEMA[k].label) + "</td><td class='small'>" + esc(SCHEMA[k].list) + "</td><td>" + (ok ? "<span class='badge b-green'>criada</span>" : "<span class='badge b-red'>falta criar</span>") + "</td><td class='num'>" + (ok ? S[k].length : "–") + "</td></tr>"; }).join("") + "</tbody></table></div>";
   if (MISSING_LISTS.length) h += "<div class='modal-actions' style='justify-content:flex-start'><button class='btn' onclick='criarListas()'>Criar as " + MISSING_LISTS.length + " lista(s) que faltam</button></div><p class='small muted'>Na primeira vez, a Microsoft vai pedir para você autorizar a permissão \"Sites.Manage.All\" (criar listas). Como administrador, aceite em nome da organização.</p>";
@@ -2477,7 +2498,93 @@ function renderConfig(){
   }
   h += "<div class='card'><p class='card-title'>3. Quem vê a Margem e a Configuração</p><p class='card-sub'>Cadastre os gestores em Parâmetros › Gestor. Enquanto não houver nenhum, todos veem.</p></div>";
   h += cardModelos();
-  $("cfgBody").innerHTML = h;
+  $("cfgBody").innerHTML = cardUsuarios() + h;
+}
+// ---------- Usuarios e acesso ----------
+function emailsConhecidos(){
+  var out = {}, add = function(e, nome){ e = String(e || "").trim().toLowerCase(); if (!e || e.indexOf("@") < 0) return; if (!out[e]) out[e] = { email:e, nome:"" }; if (nome && !out[e].nome) out[e].nome = nome; };
+  usuariosCadastrados().forEach(function(p){ add(p.Texto, p.Cargo); });
+  S.parametros.filter(function(p){ return p.Tipo === "Gestor"; }).forEach(function(p){ add(p.Texto); });
+  S.clientes.filter(function(c){ return c.Ativo !== false; }).forEach(function(c){ emailsLista(c.CoordenadorEmail).forEach(function(e){ add(e); }); });
+  S.itens.forEach(function(it){ emailsLista(it.ResponsavelEmail).forEach(function(e){ add(e); }); });
+  return Object.keys(out).sort().map(function(k){ return out[k]; });
+}
+function atribuidosDe(email){
+  var n = 0; S.clientes.filter(function(c){ return c.Ativo !== false; }).forEach(function(c){
+    var ct = contratoVigente(c.id, curComp()) || contratoAtual(c.id), its = ct ? itensDoContrato(ct.id) : [];
+    if (c.FaturarPorServico && its.length) n += its.filter(function(it){ return ehResponsavelItem(it, c, email); }).length;
+    else if (ehMeuCliente(c, email)) n++;
+  }); return n;
+}
+function cardUsuarios(){
+  var us = emailsConhecidos(), cad = usuariosCadastrados().length;
+  var h = "<div class='card' style='border-left:4px solid var(--grena)'><div style='display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start'><div><p class='card-title' style='margin:0'>Usuários e acesso aos clientes</p><p class='card-sub' style='margin:4px 0 0'>Quem tem <b>todos os clientes</b> vê tudo. Os demais veem só os faturamentos atribuídos a eles." + (cad ? "" : " <b>Ainda não há usuários cadastrados: por enquanto todos veem tudo.</b>") + "</p></div><button class='btn btn-s' onclick='openUsuario()'>+ Usuário</button></div>";
+  h += "<div class='tbl-wrap' style='margin-top:12px'><table class='tbl'><thead><tr><th>Usuário</th><th>Acesso</th><th class='num'>Faturamentos atribuídos</th><th></th></tr></thead><tbody>" + us.map(function(u){
+    var p = usuarioDe(u.email), tot = p && Number(p.Valor) === 1;
+    var ac = !cad ? "<span class='badge b-gray'>todos (sem regra ainda)</span>" : tot ? "<span class='badge b-green'>Todos os clientes</span>" : p ? "<span class='badge b-blue'>Só os atribuídos</span>" : "<span class='badge b-amber'>Só os atribuídos (não cadastrado)</span>";
+    return "<tr><td><b>" + esc(u.nome || u.email.split("@")[0]) + "</b><div class='small muted'>" + esc(u.email) + "</div></td><td>" + ac + "</td><td class='num'>" + atribuidosDe(u.email) + "</td><td style='text-align:right;white-space:nowrap'><button class='btn-o btn-s' onclick=\"openUsuario('" + esc(u.email) + "')\">Acesso</button> <button class='btn-o btn-s' onclick=\"openAtribuir('" + esc(u.email) + "')\">Atribuir faturamentos</button></td></tr>"; }).join("") + "</tbody></table></div>";
+  return h + "<p class='small muted' style='margin:10px 0 0'>Isto organiza o que cada pessoa vê no sistema. Quem tem acesso às listas do SharePoint ainda consegue abri-las por lá.</p></div>";
+}
+function openUsuario(email){
+  var p = email ? usuarioDe(email) : null;
+  var h = "<h3>" + (email ? "Acesso de " + esc(email) : "Novo usuário") + "</h3><p class='msub'>Depois de salvar, use \"Atribuir faturamentos\" para escolher os clientes e serviços desta pessoa.</p><div class='form'>" +
+    "<div><label>E-mail</label><input id='u_Email' type='email' value='" + esc(email || "") + "'" + (email ? " readonly" : "") + " placeholder='nome@elevalife.com.br'></div>" +
+    "<div><label>Nome</label><input id='u_Nome' value='" + esc((p && p.Cargo) || "") + "'></div>" +
+    "<div class='full'><label>Acesso</label><select id='u_Acesso'>" + opt("0", "Só os faturamentos atribuídos a ele", p ? String(Number(p.Valor) || 0) : "0") + opt("1", "Todos os clientes", p ? String(Number(p.Valor) || 0) : "0") + "</select></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick='salvarUsuario()'>Salvar</button></div>";
+  openModal(h);
+}
+async function salvarUsuario(){
+  var email = v("u_Email").trim().toLowerCase(); if (!emailValido(email)){ showToast("Informe um e-mail válido.", true); return; }
+  var p = usuarioDe(email), f = { Title: "Usuário – " + (v("u_Nome") || email), Tipo:"Usuario", Texto: email, Cargo: v("u_Nome"), Valor: Number(v("u_Acesso")) };
+  if (!p && !usuariosCadastrados().length && f.Valor !== 1 && norm(email) !== norm(CURRENT_USER.email) && !usuarioDe(CURRENT_USER.email)){
+    // primeiro cadastro: garante que quem esta configurando nao perca o acesso
+    await safe(function(){ return api.create("parametros", { Title:"Usuário – " + (CURRENT_USER.name || CURRENT_USER.email), Tipo:"Usuario", Texto: String(CURRENT_USER.email).toLowerCase(), Cargo: CURRENT_USER.name || "", Valor:1 }); });
+  }
+  await safe(function(){ return p ? api.update("parametros", p.id, f) : api.create("parametros", f); }, "Acesso salvo.");
+  closeModal(); atualizarBotaoMeus(); renderCurrent();
+}
+function openAtribuir(email){
+  var lista = S.clientes.filter(function(c){ return c.Ativo !== false; }).sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
+  var h = "<h3>Faturamentos de " + esc(email) + "</h3><p class='msub'>Marque o cliente para ele coordenar o cliente inteiro. Em clientes com vários serviços, dá para marcar só alguns (ex.: só a Ergonomia).</p>" +
+    "<input id='atBusca' placeholder='Buscar cliente' oninput='filtrarAtribuir()' style='margin:0 0 10px;max-width:280px'><div id='atLista' style='max-height:55vh;overflow:auto'>" +
+    lista.map(function(c){
+      var ct = contratoVigente(c.id, curComp()) || contratoAtual(c.id), its = ct ? itensDoContrato(ct.id) : [], coord = ehCoordenador(c, email);
+      var sub = (c.FaturarPorServico || its.some(function(it){ return String(it.ResponsavelEmail || "").trim(); })) && its.length > 1 ? "<div style='margin:4px 0 0 26px'>" + its.map(function(it){ return "<label class='check' style='display:inline-flex;margin:2px 14px 2px 0'><input type='checkbox' class='atIt' data-c='" + c.id + "' value='" + it.id + "'" + (ehResponsavelItem(it, c, email) ? " checked" : "") + "> " + esc(nomeItemUnid(it, c)) + "</label>"; }).join("") + "</div>" : "";
+      return "<div class='atRow' data-n='" + esc(norm(c.Title)) + "' style='padding:8px 0;border-bottom:1px solid var(--border)'><label class='check'><input type='checkbox' class='atCli' value='" + c.id + "'" + (coord ? " checked" : "") + " onchange='atCliToggle(this)'> <b>" + esc(c.Title) + "</b> <span class='small muted'>" + esc(c.Area || "") + (c.CoordenadorEmail ? " · hoje: " + esc(c.CoordenadorEmail) : " · sem coordenador") + "</span></label>" + sub + "</div>";
+    }).join("") + "</div><div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarAtribuir('" + esc(email) + "')\">Salvar</button></div>";
+  openModal(h, true);
+}
+function filtrarAtribuir(){ var q = norm(v("atBusca")); document.querySelectorAll(".atRow").forEach(function(r){ r.style.display = !q || r.getAttribute("data-n").indexOf(q) >= 0 ? "" : "none"; }); }
+function atCliToggle(el){ document.querySelectorAll(".atIt[data-c='" + el.value + "']").forEach(function(x){ x.checked = el.checked; }); }
+async function salvarAtribuir(email){
+  var e = email.toLowerCase(), mudCli = [], mudIt = [];
+  var semE = function(lista){ return lista.filter(function(x){ return x.toLowerCase() !== e; }); };
+  document.querySelectorAll(".atCli").forEach(function(el){
+    var c = byId("clientes", el.value), cur = emailsLista(c.CoordenadorEmail), tem = ehCoordenador(c, e);
+    var itsEl = [].slice.call(document.querySelectorAll(".atIt[data-c='" + c.id + "']"));
+    var parcial = itsEl.length && itsEl.some(function(x){ return x.checked; }) && itsEl.some(function(x){ return !x.checked; });
+    var querCli = el.checked && !parcial;
+    if (querCli !== tem) mudCli.push({ c:c, val: (querCli ? cur.concat([e]) : semE(cur)).join("; ") });
+    var coordFinal = querCli ? cur.concat([e]) : semE(cur);
+    itsEl.forEach(function(x){
+      var it = byId("itens", x.value), efetivo = emailsLista(responsavelItem(it, c)), tinha = efetivo.map(function(y){ return y.toLowerCase(); }).indexOf(e) >= 0;
+      var explicito = emailsLista(it.ResponsavelEmail);
+      var quer = x.checked;
+      var herdaria = coordFinal.map(function(y){ return y.toLowerCase(); }).indexOf(e) >= 0;
+      var novo;
+      if (quer){ novo = explicito.length ? (explicito.map(function(y){ return y.toLowerCase(); }).indexOf(e) >= 0 ? explicito : explicito.concat([e])) : (herdaria ? [] : [e]); }
+      else { novo = explicito.length ? semE(explicito) : (herdaria ? semE(coordFinal) : []); if (!novo.length && herdaria) novo = ["sem-responsavel"]; }
+      var antes = explicito.join("; "), depois = novo.join("; ");
+      if (antes !== depois) mudIt.push({ it:it, val: depois });
+    });
+  });
+  if (!mudCli.length && !mudIt.length){ closeModal(); showToast("Nada mudou."); return; }
+  await safe(async function(){
+    for (var i = 0; i < mudCli.length; i++) await api.update("clientes", mudCli[i].c.id, { CoordenadorEmail: mudCli[i].val });
+    for (var j = 0; j < mudIt.length; j++) await api.update("itens", mudIt[j].it.id, { ResponsavelEmail: mudIt[j].val });
+  }, "Faturamentos atribuídos.");
+  closeModal(); atualizarBotaoMeus(); renderCurrent();
 }
 async function atualizarColunas(){
   var ks = Object.keys(MISSING_COLS);
