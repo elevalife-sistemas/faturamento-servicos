@@ -216,6 +216,38 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 .rel-sec{font-size:12.5px;font-weight:700;color:var(--grena);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 6px;}
 @media (max-width:1100px){ .grid3{grid-template-columns:1fr 1fr;} .grid-wide{grid-template-columns:1fr;} }
 @media (max-width:760px){ .grid3{grid-template-columns:1fr;} .rel-kpis{grid-template-columns:1fr 1fr;} }
+/* ---------- ajuda ---------- */
+.ajuda-wrap{max-width:1000px;margin:0 auto;}
+.ajuda-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px;}
+.ajuda-tab{background:#fff;border:1px solid var(--border);color:var(--text);font-size:14px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer;}
+.ajuda-tab:hover{border-color:var(--grena);color:var(--grena);}
+.ajuda-tab.active{background:var(--grena);border-color:var(--grena);color:#fff;}
+.ajuda-secao{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin:0 0 10px;}
+.ajuda-secao summary{font-weight:600;font-size:15px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;}
+.ajuda-secao summary::-webkit-details-marker{display:none;}
+.ajuda-secao summary::before{content:"\25B6";font-size:10px;color:var(--text);transition:transform .15s;}
+.ajuda-secao[open] summary::before{transform:rotate(90deg);}
+.ajuda-objetivo{font-size:13.5px;color:var(--text2);margin:10px 0 8px;line-height:1.5;}
+.ajuda-objetivo strong{color:var(--text);}
+.ajuda-passos{margin:0;padding-left:22px;font-size:13.5px;line-height:1.6;color:var(--text);}
+.ajuda-passos li{margin:0 0 6px;}
+.ajuda-txt{font-size:13.5px;line-height:1.6;margin:10px 0 2px;color:var(--text);}
+.ajuda-grupo{font-size:13px;font-weight:800;color:var(--grena);text-transform:uppercase;letter-spacing:.04em;margin:18px 2px 8px;}
+.ajuda-grupo:first-child{margin-top:4px;}
+.ajuda-fluxo{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:0 0 14px;}
+.ajuda-fluxo-t{font-size:16px;font-weight:700;color:var(--grena);margin:0;}
+.ajuda-fluxo-d{font-size:13.5px;color:var(--text2);margin:4px 0 12px;}
+.ajuda-svg{overflow-x:auto;padding-bottom:4px;}
+.ajuda-svg svg{display:block;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
+.sw-lane{font-size:12.5px;font-weight:700;fill:#6e1423;}
+.sw-task{font-size:11.5px;fill:#1f2124;}
+.sw-ev{font-size:11px;fill:#1f2124;font-weight:600;}
+.sw-nao{font-size:10.5px;fill:#a15c00;font-style:italic;}
+.sw-sim{font-size:10.5px;fill:#1e7d38;font-weight:700;}
+.sw-q{font-size:16px;font-weight:800;fill:#a15c00;}
+.ajuda-versao{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin:0 0 10px;}
+.ajuda-v{margin:0 0 6px;font-size:14.5px;}
+.ajuda-versao ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.6;}
 
 </style>
 </head>
@@ -242,6 +274,8 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="tab gestor-only" data-tab="margem"><span class="tab-icon">&#128202;</span>Margem</div>
       <div class="tab gestor-only" data-tab="parametros"><span class="tab-icon">&#9881;</span>Parâmetros</div>
       <div class="tab gestor-only" data-tab="config"><span class="tab-icon">&#128295;</span>Configuração</div>
+      <p class="tab-group-label tab-ajuda-label">Suporte</p>
+      <div class="tab" data-tab="ajuda"><span class="tab-icon">&#10067;</span>Ajuda</div>
     </nav>
   </aside>
 
@@ -361,6 +395,14 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="panel" id="panel-config">
         <div class="page-head"><div><h1 class="page-title">Configuração</h1><p class="page-sub">Base de dados do sistema no SharePoint (site BPM).</p></div></div>
         <div id="cfgBody"></div>
+      </div>
+
+      <!-- AJUDA -->
+      <div class="panel" id="panel-ajuda">
+        <div class="ajuda-wrap">
+          <div class="ajuda-tabs" id="ajudaTabs"></div>
+          <div id="ajudaBody"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1064,7 +1106,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
 function showTab(name){
   if (!name) return;
-  if (soOcorrencias()) name = "ocorrencias";
+  if (soOcorrencias() && name !== "ajuda") name = "ocorrencias";
   CURRENT_TAB = name;
   document.querySelectorAll("#nav .tab").forEach(function(t){ t.classList.toggle("active", t.getAttribute("data-tab") === name); });
   document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active", p.id === "panel-" + name); });
@@ -1072,7 +1114,7 @@ function showTab(name){
   window.scrollTo(0, 0);
 }
 function renderCurrent(){
-  var f = { dashboard:renderDashboard, fechamento:renderFechamento, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig }[CURRENT_TAB];
+  var f = { dashboard:renderDashboard, fechamento:renderFechamento, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig, ajuda:renderAjuda }[CURRENT_TAB];
   if (f) f();
   renderRenovBadge();
 }
@@ -1123,8 +1165,8 @@ function atualizarBotaoMeus(){
 // perfil "so lanca ocorrencias": o menu mostra apenas Ocorrencias
 function aplicarPerfilMenu(){
   var so = soOcorrencias();
-  document.querySelectorAll("#nav .tab").forEach(function(t){ if (t.getAttribute("data-tab") !== "ocorrencias") t.classList.toggle("perfil-oculto", so); });
-  document.querySelectorAll("#nav .tab-group-label").forEach(function(l){ l.classList.toggle("perfil-oculto", so && !/Faturamento/i.test(l.textContent)); });
+  document.querySelectorAll("#nav .tab").forEach(function(t){ var dt = t.getAttribute("data-tab"); if (dt !== "ocorrencias" && dt !== "ajuda") t.classList.toggle("perfil-oculto", so); });
+  document.querySelectorAll("#nav .tab-group-label").forEach(function(l){ l.classList.toggle("perfil-oculto", so && !/Faturamento|Suporte/i.test(l.textContent)); });
   if (so){ CURRENT_TAB = "ocorrencias"; var b = $("meusBtn"); if (b) b.classList.add("hidden"); }
 }
 function toggleMeus(){ if (!acessoTotal()){ showToast("Seu acesso mostra só os clientes atribuídos a você. Para ver outros, peça ao gestor.", true); return; } SO_MEUS = !SO_MEUS; atualizarBotaoMeus(); fillSelects(); SEL.cliente = null; renderCurrent(); }
@@ -3455,6 +3497,200 @@ async function copiarCard(id){
     if (navigator.clipboard && window.ClipboardItem){ await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); showToast("Quadro copiado. Cole (Ctrl+V) no e-mail, Teams ou PowerPoint."); }
     else { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = id + ".png"; document.body.appendChild(a); a.click(); a.remove(); showToast("Imagem baixada."); }
   } catch (e){ showToast("Não foi possível copiar: " + e.message, true); }
+}
+
+// ============================================================
+// AJUDA: Como usar · Fluxos (BPMN) · Indicadores · Versão
+// ============================================================
+var AJUDA_TAB = "uso";
+var PERFIS_TXT = { todos:"Todos os perfis", coord:"Coordenadores e gestores (todos os clientes ou só os atribuídos)", gestor:"Gestores (acesso à Configuração e à Margem)", lanc:"Todos os perfis, inclusive quem só lança ocorrências" };
+var AJUDA_USO = [
+  { t:"Acesso e navegação", obj:"Orientar o primeiro acesso, o login e a navegação entre as telas.", perfis:"todos", passos:[
+    "Abra o sistema pelo link elevalife-sistemas.github.io/faturamento-servicos e clique em <b>Entrar com Microsoft</b>. O login é a mesma conta do Outlook e do Teams; não existe senha própria do sistema.",
+    "Os dados ficam nas listas do SharePoint do site BPM. Você vê e altera apenas o que a sua conta pode acessar lá.",
+    "O menu lateral segue a ordem: Dashboard, Fechamento do mês, Medições do mês, Ocorrências, Clientes e contratos, Renovações, Valores dos Contratos, Margem, Parâmetros, Configuração e Ajuda. Margem, Parâmetros e Configuração aparecem só para gestores.",
+    "No topo ficam o botão <b>Meus clientes / Todos os clientes</b>, o nome de quem está logado, <b>Atualizar</b> (recarrega os dados do SharePoint) e <b>Sair</b>.",
+    "Depois que uma versão nova é publicada, pressione <b>Ctrl+F5</b>, clique em <b>Sair</b> e entre de novo para carregar a versão mais recente."
+  ]},
+  { t:"Perfis de acesso e atribuição de faturamentos", obj:"Explicar o que cada perfil vê e como atribuir clientes e serviços a cada pessoa.", perfis:"gestor", passos:[
+    "Há três perfis: <b>Todos os clientes</b> (vê tudo), <b>Só os atribuídos</b> (vê os faturamentos dele, sem poder trocar para todos) e <b>Só lança ocorrências</b> (vê apenas a tela de Ocorrências, em qualquer cliente, sem valores em R$).",
+    "Quem entra no sistema sem estar cadastrado fica automaticamente com o perfil <b>Só lança ocorrências</b>.",
+    "Para cadastrar ou mudar o perfil: <b>Configuração › Usuários e acesso › + Usuário</b> (ou <b>Acesso</b> na linha da pessoa).",
+    "Para atribuir faturamentos: <b>Atribuir faturamentos</b> na linha da pessoa. Marque o cliente para ela coordenar o cliente inteiro; em clientes com vários serviços, marque só os serviços dela (ex.: só a Ergonomia da Gerdau Pinda).",
+    "O responsável também pode ser definido no cadastro: <b>E-mail do coordenador</b> no cliente e <b>Responsável por este serviço</b> no serviço. Em branco, o serviço segue o coordenador do cliente.",
+    "Os perfis organizam o que cada pessoa vê no sistema. Quem tem acesso às listas do SharePoint ainda consegue abri-las por lá."
+  ]},
+  { t:"Lançar ocorrências", obj:"Registrar faltas, atrasos, horas extras, coberturas, reembolsos e ajustes que alteram o valor do mês.", perfis:"lanc", passos:[
+    "Em <b>Ocorrências</b>, clique em <b>+ Lançar ocorrência</b> e escolha o cliente, o tipo e a data. A competência é preenchida pela data; mude só para ajustar um mês anterior.",
+    "Escolha o <b>serviço afetado</b>. Se não souber qual de dois serviços foi afetado, use <b>Mais de um serviço (média)</b>.",
+    "<b>Falta</b> e <b>Serviço suspenso</b>: em <b>Medir em</b>, escolha <b>Dias</b> ou <b>Horas</b> (aceita 4, 4,5 ou 3:30). <b>Atraso / saída antecipada</b>, <b>Hora extra</b> e <b>Cobertura</b>: informe o horário de início e fim. O sistema separa dia útil, noturno e fim de semana/feriado.",
+    "Em serviços divididos entre unidades (ex.: Fisio da Gerdau Pinda 70% S.A / 30% Cilindros), escolha em <b>Lançar em qual unidade</b> se a ocorrência divide pelo contrato ou vai 100% para uma unidade.",
+    "Preencha a <b>justificativa</b> (aparece no boletim do cliente) e, se houver, a <b>evidência</b> (e-mail ou link).",
+    "O valor é calculado pelo contrato e pelos Valores dos Contratos. Coordenadores podem marcar <b>Informar o valor manualmente</b> e usar a calculadora; se o valor equivaler a um novo preço por hora, o sistema oferece atualizar o preço de referência.",
+    "Quem só lança ocorrências não vê valores. Se faltar preço cadastrado, a ocorrência é salva com <b>valor pendente</b> e o coordenador completa antes de gerar o boletim."
+  ]},
+  { t:"Medição do mês e boletim", obj:"Gerar o boletim de cada faturamento a partir do contrato vigente e das ocorrências.", perfis:"coord", passos:[
+    "Em <b>Medições do mês</b>, escolha a competência. Cada linha é um faturamento (cliente, unidade ou serviço).",
+    "Clique na linha e em <b>Gerar rascunho</b>, ou use <b>Gerar rascunhos da competência</b> para todos. O rascunho não é enviado a ninguém e pode ser gerado de novo.",
+    "Leia a <b>conferência automática</b>: contrato vencido, serviço sem divisor, ocorrências sem justificativa, valor pendente e OC faltando aparecem como alertas.",
+    "O selo <b>Desatualizado</b> indica ocorrências lançadas ou alteradas depois do rascunho. Clique em <b>Gerar novamente</b> antes de enviar.",
+    "Clientes com <b>OC nova todo mês</b> pedem o número da OC na própria medição, depois da aprovação do cliente.",
+    "Clientes com layout próprio (BASF Guaratinguetá, Sherwin/Suvinil) mostram a caixa <b>Boletim no modelo</b>: informe o <b>Nº da folha de serviço</b> e salve. <b>Baixar boletim (Excel)</b> já sai no layout do cliente.",
+    "Na Gerdau Pinda, o botão <b>Relatório mensal (PDF)</b> monta o relatório de cada serviço com escala, pacientes e horas previstas × realizadas, lendo as planilhas do SharePoint."
+  ]},
+  { t:"Envio ao cliente pelo Outlook", obj:"Criar o rascunho do e-mail do boletim no Outlook de quem está logado.", perfis:"coord", passos:[
+    "Na medição, clique em <b>Preparar e-mail no Outlook</b>. Confira <b>Para</b>, <b>Cc</b>, assunto e texto; os e-mails vêm do cadastro do cliente/tomador.",
+    "Marque os anexos desejados: boletim em Excel e, quando houver, o relatório mensal em PDF.",
+    "Clique em <b>Criar rascunho no Outlook</b>. O rascunho fica na pasta Rascunhos; o sistema nunca envia e-mail sozinho.",
+    "Revise no Outlook e clique em <b>Enviar</b>. Depois volte ao sistema e clique em <b>Já enviei</b> para marcar a medição como enviada.",
+    "Use <b>Ver prévia</b> para conferir o corpo do e-mail antes de criar o rascunho, e <b>Cobrar cliente</b> para criar um lembrete quando o cliente demora a responder."
+  ]},
+  { t:"Fechamento do mês", obj:"Acompanhar o roteiro de cada faturamento até a NF.", perfis:"coord", passos:[
+    "Em <b>Fechamento do mês</b>, cada linha mostra as etapas: ocorrências, rascunho, enviado, aprovado, OC e NF.",
+    "Os faturamentos que dependem de você aparecem primeiro, com o <b>próximo passo</b> em um botão (gerar, enviar, cobrar, emitir NF).",
+    "Os indicadores no topo mostram quantos estão com você, com o cliente e concluídos."
+  ]},
+  { t:"Aprovação, OC e emissão da NF", obj:"Registrar a aprovação do cliente e emitir a nota fiscal.", perfis:"coord", passos:[
+    "Quando o cliente aprovar, abra a medição e marque <b>Aprovada</b>. Se o cliente contestar, marque <b>Contestada</b>, ajuste as ocorrências e gere de novo.",
+    "Informe o <b>número da OC</b> quando o cliente exigir. Sem OC, a medição fica com o selo <b>Falta OC</b>.",
+    "Clique em <b>Conferir e emitir a NF</b>. O botão <b>Abrir site da Prefeitura (NFS-e)</b> abre o portal de Mogi das Cruzes; o login e a emissão são feitos por você.",
+    "Depois de emitir, informe o número e a data da NF e marque <b>NF emitida</b>. Nunca emita notas de teste: toda nota emitida no portal é real."
+  ]},
+  { t:"Clientes, contratos e serviços", obj:"Manter o cadastro que o sistema usa para calcular cada boletim.", perfis:"coord", passos:[
+    "Em <b>Clientes e contratos</b>, cadastre o cliente: razão social, CNPJ, área, cidade (para feriados), coordenador, aprovador, e-mails em cópia e condição de pagamento.",
+    "<b>Tomadores</b>: quando o cliente fatura em mais de um CNPJ ou unidade, cadastre cada tomador com seus e-mails e, se houver, o modelo de boletim.",
+    "<b>Faturar cada serviço separado</b> cria um faturamento por serviço (ex.: Gerdau Pinda). <b>OC nova todo mês</b> exige a OC em cada medição.",
+    "No contrato, informe número, vigência, índice e mês de reajuste. Em cada serviço: valor mensal, regra de desconto (dias corridos, dias fixos, horas contratadas ou valor por hora), jornada, divisão % entre tomadores, área do serviço e responsável.",
+    "Ao entrar, cada coordenador vê as <b>pendências de cadastro</b> dos clientes dele (contrato, serviços, e-mails)."
+  ]},
+  { t:"Valores dos Contratos", obj:"Consultar e atualizar mensalidades, valor do desconto e preços de acréscimo.", perfis:"coord", passos:[
+    "Em <b>Valores dos Contratos</b>, cada cliente mostra os serviços com valor mensal, regra de desconto e quanto vale <b>1 dia</b> e <b>1 hora</b> de desconto, além do total mensal.",
+    "A seção <b>Acréscimos</b> mostra o preço por hora de hora extra e cobertura por cargo e período. O aviso laranja indica cargo sem preço.",
+    "Reajuste ou contrato novo a partir de uma data: <b>Reajustar / nova versão</b>. Os meses anteriores continuam com os valores antigos.",
+    "Corrigir um valor errado: <b>Alterar</b> na linha. Preço novo de acréscimo: <b>+ Preço</b> com a data de início, para manter o histórico.",
+    "<b>Baixar Excel</b> exporta a tabela com os filtros aplicados."
+  ]},
+  { t:"Dashboard e relatórios", obj:"Ler os indicadores do mês e abrir os detalhes.", perfis:"coord", passos:[
+    "Escolha a <b>competência</b> e a <b>área</b> no topo. Com <b>Meus clientes</b> ligado, os números consideram só os seus faturamentos.",
+    "Passe o mouse no <b>ⓘ</b> de cada quadro para ver o que ele mede. Use <b>Copiar</b> para colar o quadro como imagem no e-mail, Teams ou PowerPoint.",
+    "Clique numa fatia de <b>Status dos faturamentos</b> para abrir Medições do mês filtrada naquele status.",
+    "Clique numa fatia de <b>Ocorrências por tipo</b> ou numa linha de <b>Ocorrências da competência</b> para abrir o relatório: resumo, tabela por cliente e por profissional e a lista de lançamentos, com exportação para Excel.",
+    "A aba <b>Indicadores</b> desta Ajuda explica o cálculo de cada número."
+  ]},
+  { t:"Renovações", obj:"Antecipar o vencimento dos contratos.", perfis:"coord", passos:[
+    "Em <b>Renovações</b>, os contratos aparecem com o prazo até o término; o número no menu indica quantos vencem em até 60 dias.",
+    "Use <b>Reajustar / nova versão</b> para registrar a renovação com o novo valor e a nova vigência."
+  ]},
+  { t:"Configuração (gestores)", obj:"Manter usuários, modelos de boletim e a estrutura do sistema.", perfis:"gestor", passos:[
+    "<b>Usuários e acesso</b>: perfis e atribuição de faturamentos (veja a seção de perfis).",
+    "<b>Modelos de boletim</b>: envie o Excel do cliente com os marcadores {{...}}; o nome do modelo precisa ser igual ao escolhido no cadastro do cliente ou tomador.",
+    "<b>Listas no SharePoint</b>: quando uma versão nova pede colunas novas, o sistema avisa e cria pela própria tela.",
+    "<b>Parâmetros</b>: feriados, alíquotas da NF, custo/hora por cargo e gestores."
+  ]}
+];
+var AJUDA_FLUXOS = [
+  { t:"Ciclo mensal do faturamento", d:"Da ocorrência lançada à NF emitida, com o rascunho sempre revisado por uma pessoa antes do envio.",
+    lanes:["Lançador / Coordenador", "Coordenador", "Cliente", "Sistema"],
+    steps:[ { l:0, k:"ini", x:"Início do mês" }, { l:0, x:"Lança faltas, horas extras e coberturas" }, { l:3, x:"Calcula pelo contrato e pelos preços" },
+      { l:3, k:"gate", x:"Tem preço?", nao:"Não: fica com valor pendente" }, { l:1, x:"Gera o rascunho em Medição do mês" }, { l:3, x:"Confere OC, pendências e desatualizados" },
+      { l:1, x:"Cria o rascunho do e-mail no Outlook" }, { l:1, x:"Revisa e envia ao cliente" }, { l:2, x:"Aprova o boletim e envia a OC" },
+      { l:1, k:"gate", x:"OC recebida?", nao:"Não: Cobrar cliente" }, { l:1, x:"Emite a NF no portal da Prefeitura" }, { l:1, k:"fim", x:"NF emitida" } ] },
+  { t:"Ocorrência lançada por quem não fatura", d:"O lançador registra o fato; o valor é calculado pelo sistema e completado pelo coordenador quando faltar preço.",
+    lanes:["Lançador", "Sistema", "Coordenador"],
+    steps:[ { l:0, k:"ini", x:"Ocorrência no cliente" }, { l:0, x:"Escolhe cliente, serviço e tipo" }, { l:0, x:"Informa dias, horas ou horário e justificativa" },
+      { l:1, k:"gate", x:"Serviço dividido?", nao:"Não: segue direto" }, { l:0, x:"Escolhe a unidade ou divide pelo contrato" }, { l:1, k:"gate", x:"Tem preço?", nao:"Não: salva com valor pendente" },
+      { l:1, x:"Calcula o valor (oculto para o lançador)" }, { l:2, x:"Completa valores pendentes" }, { l:2, x:"Gera o rascunho de novo" }, { l:2, k:"fim", x:"Entra no boletim" } ] },
+  { t:"Implantação de um cliente novo", d:"Do cadastro do cliente ao primeiro boletim pronto para gerar.",
+    lanes:["Gestor", "Coordenador", "Sistema"],
+    steps:[ { l:0, k:"ini", x:"Contrato assinado" }, { l:0, x:"Cadastra o cliente, tomadores e área" }, { l:0, x:"Cadastra o contrato e a vigência" },
+      { l:0, x:"Cadastra os serviços, regra e divisão %" }, { l:0, x:"Cadastra os preços de acréscimo" }, { l:0, x:"Atribui o coordenador e os responsáveis" },
+      { l:2, x:"Mostra as pendências no login do coordenador" }, { l:1, x:"Completa e-mails e dados faltantes" }, { l:2, k:"gate", x:"Cadastro completo?", nao:"Não: segue nas pendências" }, { l:1, k:"fim", x:"Pronto para a 1ª medição" } ] },
+  { t:"Renovação e reajuste de contrato", d:"A versão nova vale a partir do novo início; os meses anteriores ficam com os valores antigos.",
+    lanes:["Gestor / Comercial", "Sistema"],
+    steps:[ { l:1, k:"ini", x:"Contrato a 90 dias do fim" }, { l:1, x:"Avisa em Renovações e no Dashboard" }, { l:0, x:"Negocia com o cliente" },
+      { l:0, k:"gate", x:"Renovado?", nao:"Não: encerra no término" }, { l:0, x:"Reajustar / nova versão (novo início e %)" }, { l:1, x:"Copia os serviços com o novo valor" },
+      { l:1, x:"Usa a versão certa em cada competência" }, { l:0, k:"fim", x:"Contrato renovado" } ] }
+];
+var AJUDA_IND = [
+  { g:"Dashboard", itens:[
+    ["Valor a faturar", "Soma do valor previsto de todos os faturamentos da competência e área escolhidas. Usa a medição já enviada quando existe; senão, a prévia calculada agora pelo contrato vigente e pelas ocorrências."],
+    ["Reconhecido pelo coordenador", "Valor dos faturamentos já enviados ao cliente (Enviada, Aprovada ou NF emitida), com a % sobre o total e o quanto falta reconhecer."],
+    ["Descontos", "Soma das faltas, atrasos e serviços suspensos da competência, já calculados pelas regras de desconto de cada serviço."],
+    ["Acréscimos", "Soma das horas extras, coberturas, reembolsos, consumos e ajustes de acréscimo."],
+    ["Reconhecimento do mês (rosca)", "Divide o valor a faturar entre reconhecido e falta reconhecer; o centro mostra a % reconhecida."],
+    ["Status dos faturamentos (rosca)", "Quantos faturamentos estão em cada etapa: Não gerada, Rascunho, Enviada, Contestada, Aprovada e NF emitida. Clique numa fatia para abrir Medições do mês."],
+    ["Ocorrências por tipo (rosca)", "Quantidade de lançamentos por grupo: faltas e atrasos, horas extras, coberturas e reembolsos/ajustes. A área é a do serviço da ocorrência (a Ergonomia da Gerdau Pinda conta em Ergonomia)."],
+    ["Valor a faturar por mês", "Últimos 6 meses até a competência escolhida: barra grená = reconhecido, rosa = falta reconhecer; acima, o total e a % reconhecida."],
+    ["Descontos e acréscimos por mês", "Evolução dos últimos 6 meses da soma de descontos e de acréscimos."],
+    ["Ocorrências da competência (tabela)", "Por tipo: quantidade, horas ou dias, valor e clientes. Cada linha abre o relatório detalhado."],
+    ["Valor a faturar por faturamento", "Os 15 maiores faturamentos da competência, coloridos por reconhecido ou não."],
+    ["Pendências", "Faturamentos sem medição, rascunhos (e desatualizados), enviados sem resposta há mais de 2 dias, aprovados sem OC ou sem NF, cadastros incompletos e ocorrências sem justificativa."]
+  ]},
+  { g:"Relatório de ocorrências", itens:[
+    ["Resumo", "Quantidade, horas e dias, valor e número de clientes do tipo ou grupo escolhido, com aviso de valores pendentes e lançamentos sem justificativa."],
+    ["Por cliente / por profissional", "Agrupa os lançamentos para mostrar onde e com quem as ocorrências se concentram."],
+    ["Lançamentos", "Lista completa com data, serviço, horário, valor, justificativa e quem lançou; clique para abrir a ocorrência."]
+  ]},
+  { g:"Medição e conferência", itens:[
+    ["Valor padrão", "Soma dos valores mensais dos serviços do faturamento (ou a parte % do tomador)."],
+    ["Valor a faturar", "Valor padrão − descontos + acréscimos."],
+    ["Desconto de 1 dia / 1 hora", "Dias corridos: valor ÷ dias do mês. Dias fixos: valor ÷ nº de dias. Horas contratadas: valor ÷ horas. 1 hora = valor do dia ÷ jornada."],
+    ["Hora extra e cobertura", "Horas × preço por hora do cargo, separando dia útil diurno, noturno (22h–6h) e domingo/feriado quando o cliente tem preços diferentes."],
+    ["Desatualizado", "Há ocorrência lançada ou alterada depois que o rascunho foi gerado."]
+  ]},
+  { g:"Margem (gestão)", itens:[
+    ["Faturado em variáveis", "Valor das horas extras e coberturas por cliente e cargo."],
+    ["Custo de mão de obra", "Horas × custo/hora do cargo (Parâmetros)."],
+    ["Imposto da NF", "Faturado × alíquota da NF (Parâmetros)."],
+    ["Margem", "Faturado − custo − imposto, em R$ e em %."]
+  ]}
+];
+var AJUDA_VERSOES = [
+  ["V 1.12", "19/10/2026", ["Dashboard redesenhado: roscas com % e total no centro, valor e ajustes por mês, botão Copiar e ⓘ em cada quadro.", "Relatório de ocorrências ao clicar nas linhas e nas fatias, com exportação para Excel.", "Nova tela Ajuda: Como usar, Fluxos, Indicadores e Versão."]],
+  ["V 1.11", "16/10/2026", ["Falta e serviço suspenso podem ser medidos em horas.", "Perfil Só lança ocorrências: só a tela de Ocorrências, sem valores; ocorrência sem preço fica com valor pendente.", "Perfis de acesso e tela Usuários e acesso, com atribuição manual de faturamentos.", "Menu Tabela de preços renomeado para Valores dos Contratos."]],
+  ["V 1.10", "09/10/2026", ["Área por serviço (ex.: Ergonomia dentro da Gerdau Pinda).", "Nome da unidade junto ao serviço (Ergonomia – S.A / – Cilindros)."]],
+  ["V 1.9", "08/10/2026", ["Ocorrência pode ir 100% para uma unidade em serviços divididos.", "Tabela de preços por cliente com exportação para Excel."]],
+  ["V 1.8", "06/10/2026", ["Responsável por serviço; Meus clientes considera os serviços de cada pessoa."]],
+  ["V 1.7", "05/10/2026", ["Boletim no layout do cliente (BASF Guaratinguetá e Sherwin/Suvinil) no Excel e no e-mail.", "Relatório mensal em PDF da Gerdau Pinda com escala, pacientes e horas."]],
+  ["V 1.6", "24/09/2026", ["Fechamento do mês, Meus clientes e Cobrar cliente.", "Calculadora de valor manual e preços de referência.", "Hora extra separada em dia útil e fim de semana/feriado; botão do portal da Prefeitura."]],
+  ["V 1.5", "23/09/2026", ["Rascunho do e-mail do boletim no Outlook, com Excel anexo.", "OC mensal por medição e selo Desatualizado."]]
+];
+function renderAjuda(){
+  var tabs = [["uso", "Como usar"], ["fluxos", "Fluxos (BPMN)"], ["ind", "Indicadores"], ["versao", "Versão"]];
+  $("ajudaTabs").innerHTML = tabs.map(function(t){ return "<button class='ajuda-tab" + (AJUDA_TAB === t[0] ? " active" : "") + "' onclick=\"AJUDA_TAB='" + t[0] + "';renderAjuda()\">" + t[1] + "</button>"; }).join("");
+  var h = "";
+  if (AJUDA_TAB === "uso"){
+    var lista = AJUDA_USO.filter(function(s){ return !soOcorrencias() || s.perfis === "lanc" || s.perfis === "todos"; });
+    h = lista.map(function(s, i){ return "<details class='ajuda-secao'" + (i === 0 ? " open" : "") + "><summary>" + esc(s.t) + "</summary><p class='ajuda-objetivo'><strong>Objetivo: </strong>" + esc(s.obj) + "<br><strong>Perfis: </strong>" + esc(PERFIS_TXT[s.perfis]) + "</p><ol class='ajuda-passos'>" + s.passos.map(function(p){ return "<li>" + p + "</li>"; }).join("") + "</ol></details>"; }).join("");
+  } else if (AJUDA_TAB === "fluxos"){
+    h = AJUDA_FLUXOS.map(function(f){ return "<div class='ajuda-fluxo'><p class='ajuda-fluxo-t'>" + esc(f.t) + "</p><p class='ajuda-fluxo-d'>" + esc(f.d) + "</p><div class='ajuda-svg'>" + svgRaias(f) + "</div></div>"; }).join("");
+  } else if (AJUDA_TAB === "ind"){
+    h = AJUDA_IND.map(function(g, gi){ return "<p class='ajuda-grupo'>" + esc(g.g) + "</p>" + g.itens.map(function(it, i){ return "<details class='ajuda-secao ajuda-ind'" + (gi === 0 && i === 0 ? " open" : "") + "><summary>" + esc(it[0]) + "</summary><p class='ajuda-txt'>" + esc(it[1]) + "</p></details>"; }).join(""); }).join("");
+  } else {
+    h = AJUDA_VERSOES.map(function(v, i){ return "<div class='ajuda-versao'><p class='ajuda-v'><b>" + v[0] + "</b> · " + v[1] + (i === 0 ? " <span class='badge b-green'>atual</span>" : "") + "</p><ul>" + v[2].map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("");
+  }
+  $("ajudaBody").innerHTML = h;
+}
+// fluxograma em raias (swimlane) desenhado em SVG
+function svgRaias(f){
+  var LW = 132, CW = 158, LH = 96, TW = 134, TH = 56, n = f.steps.length, W = LW + n * CW + 20, H = f.lanes.length * LH + 32;
+  var cx = function(i){ return LW + i * CW + CW / 2; }, cy = function(l){ l = l || 0; return l * LH + LH / 2 + 1; };
+  var quebra = function(t, max){ var w = String(t).split(" "), ls = [], cur = ""; w.forEach(function(p){ if ((cur + " " + p).trim().length > max){ if (cur) ls.push(cur); cur = p; } else cur = (cur + " " + p).trim(); }); if (cur) ls.push(cur); return ls; };
+  var txt = function(x, y, linhas, cls){ var y0 = y - (linhas.length - 1) * 7.5; return "<text class='" + cls + "' x='" + x + "' y='" + y0 + "' text-anchor='middle'>" + linhas.map(function(l, i){ return "<tspan x='" + x + "' dy='" + (i ? 15 : 4) + "'>" + esc(l) + "</tspan>"; }).join("") + "</text>"; };
+  var s = "<svg viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' xmlns='http://www.w3.org/2000/svg' role='img' aria-label='" + esc(f.t) + "'><defs><marker id='seta' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#6b6f76'/></marker></defs>";
+  f.lanes.forEach(function(nm, l){ s += "<rect x='0.5' y='" + (l * LH + 0.5) + "' width='" + (W - 1) + "' height='" + LH + "' fill='" + (l % 2 ? "#fbf7f8" : "#ffffff") + "' stroke='#e5e6e9'/><rect x='0.5' y='" + (l * LH + 0.5) + "' width='" + LW + "' height='" + LH + "' fill='#f6ecee' stroke='#e5e6e9'/>" + txt(LW / 2, l * LH + LH / 2, quebra(nm, 15), "sw-lane"); });
+  var borda = function(st, lado){ var x = cx(st.i), y = cy(st.l), k = st.k, half = k === "gate" ? 30 : (k === "ini" || k === "fim") ? 17 : TW / 2; return lado === "d" ? [x + half, y] : [x - half, y]; };
+  var steps = f.steps.map(function(st, i){ return Object.assign({ i:i }, st); });
+  steps.forEach(function(st, i){ if (!i) return; var a = borda(steps[i - 1], "d"), b = borda(st, "e"), mx = (a[0] + b[0]) / 2;
+    var d = a[1] === b[1] ? "M" + a[0] + "," + a[1] + " L" + b[0] + "," + b[1] : "M" + a[0] + "," + a[1] + " L" + mx + "," + a[1] + " L" + mx + "," + b[1] + " L" + b[0] + "," + b[1];
+    s += "<path d='" + d + "' fill='none' stroke='#6b6f76' stroke-width='1.5' marker-end='url(#seta)'/>";
+    if (steps[i - 1].k === "gate") s += "<text class='sw-sim' x='" + (a[0] + 6) + "' y='" + (a[1] - 6) + "'>Sim</text>"; });
+  steps.forEach(function(st){ var x = cx(st.i), y = cy(st.l);
+    if (st.k === "ini" || st.k === "fim") s += "<circle cx='" + x + "' cy='" + y + "' r='16' fill='" + (st.k === "ini" ? "#e9f6ef" : "#fbeef0") + "' stroke='" + (st.k === "ini" ? "#1e7d38" : "#6e1423") + "' stroke-width='" + (st.k === "fim" ? 3.5 : 2) + "'/>" + txt(x, y + 34, quebra(st.x, 18), "sw-ev");
+    else if (st.k === "gate"){ s += "<path d='M" + x + "," + (y - 30) + " L" + (x + 30) + "," + y + " L" + x + "," + (y + 30) + " L" + (x - 30) + "," + y + " z' fill='#fef6e6' stroke='#c98500' stroke-width='1.6'/><text class='sw-q' x='" + x + "' y='" + (y + 5) + "' text-anchor='middle'>?</text>" + txt(x, y - 40, quebra(st.x, 20), "sw-ev");
+      if (st.nao) s += txt(x, y + 44, quebra(st.nao, 20), "sw-nao"); }
+    else s += "<rect x='" + (x - TW / 2) + "' y='" + (y - TH / 2) + "' width='" + TW + "' height='" + TH + "' rx='9' fill='#ffffff' stroke='#6e1423' stroke-width='1.5'/>" + txt(x, y, quebra(st.x, 19), "sw-task"); });
+  return s + "</svg>";
 }
 
 </script>
