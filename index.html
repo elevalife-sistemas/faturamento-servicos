@@ -182,6 +182,40 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 .progress-fill{height:100%;border-radius:4px;background:var(--grena);}
 .tbl th.num{text-align:right;}
 .perfil-oculto{display:none !important;}
+/* ---------- dashboard visual ---------- */
+.dash-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:4px 2px 12px;flex-wrap:wrap;}
+.dash-mes{font-size:24px;font-weight:800;color:var(--grena);margin:0;}
+.dash-escopo{font-size:13px;color:var(--text2);}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}
+.grid-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);}
+.viz-card{border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 2px 10px rgba(16,24,40,.04);padding:18px 20px 16px;}
+.viz-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px;}
+.viz-title{font-size:15.5px;font-weight:700;color:var(--grena);margin:0;display:flex;align-items:center;gap:6px;}
+.viz-info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1.4px solid #9aa0a6;color:#7a7f87;border-radius:50%;font-size:10.5px;font-weight:700;font-style:italic;font-family:Georgia,serif;cursor:help;}
+.viz-copy{background:#fff;border:1px solid var(--border);color:#8a8f97;font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+.viz-copy:hover{color:var(--grena);border-color:var(--grena);}
+.viz-chart{position:relative;height:240px;}
+.viz-donut{height:230px;}
+.viz-tall{height:270px;}
+.viz-legend{display:flex;flex-wrap:wrap;gap:6px 18px;border-top:1px solid var(--border);margin-top:12px;padding-top:12px;font-size:13px;color:var(--text);}
+.viz-leg{display:flex;align-items:center;gap:7px;}
+.viz-leg.click{cursor:pointer;}
+.viz-leg.click:hover{color:var(--grena);text-decoration:underline;}
+.viz-sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px;flex-shrink:0;}
+.viz-leg .viz-sw{margin-right:0;}
+.viz-sub{font-size:13px;color:var(--text2);margin:0 0 10px;}
+.viz-vazio{color:var(--text2);font-size:14px;padding:40px 10px;text-align:center;}
+.tbl-viz tbody tr.click:hover{background:var(--grena-bg);}
+.viz-seta{color:#b6b9be;font-size:20px;text-align:right;width:20px;}
+.modal.xl{width:1100px;}
+.rel-head{padding:2px 0 2px 12px;margin:0 0 14px;}
+.rel-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px;}
+.rel-kpi{background:var(--bg);border-radius:10px;padding:10px 12px;}
+.rel-kpi p{margin:0;font-size:11.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;}
+.rel-kpi b{font-size:19px;display:block;margin-top:4px;}
+.rel-sec{font-size:12.5px;font-weight:700;color:var(--grena);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 6px;}
+@media (max-width:1100px){ .grid3{grid-template-columns:1fr 1fr;} .grid-wide{grid-template-columns:1fr;} }
+@media (max-width:760px){ .grid3{grid-template-columns:1fr;} .rel-kpis{grid-template-columns:1fr 1fr;} }
 
 </style>
 </head>
@@ -238,15 +272,19 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="panel active" id="panel-dashboard">
         <div class="page-head"><div><h1 class="page-title">Dashboard</h1><p class="page-sub">Visão consolidada do faturamento da competência selecionada.</p></div></div>
         <div class="toolbar"><label>Competência</label><input type="month" id="dashComp" onchange="renderDashboard()"><label>Área</label><select id="dashArea" onchange="renderDashboard()"></select></div>
+        <div class="dash-head"><h2 class="dash-mes" id="dashMes"></h2><span class="dash-escopo" id="dashEscopo"></span></div>
         <div class="kpi-grid" id="dashKpis"></div>
-        <div class="grid2">
-          <div class="card"><p class="card-title">Medições por status</p><p class="card-sub">Clientes ativos na competência.</p><div class="chart-wrap"><canvas id="chStatus"></canvas></div></div>
-          <div class="card"><p class="card-title">Valor a faturar por cliente</p><p class="card-sub">Previsão por cliente. Grená: já reconhecido pelo coordenador · rosa: falta reconhecer.</p><div class="chart-wrap"><canvas id="chClientes"></canvas></div></div>
+        <div class="grid3">
+          <div class="card viz-card" id="cardRec"></div>
+          <div class="card viz-card" id="cardStatus"></div>
+          <div class="card viz-card" id="cardOcoTipo"></div>
         </div>
-        <div class="card"><p class="card-title">Ocorrências da competência</p><p class="card-sub" id="dashOcoSub"></p>
-          <div id="dashOcoEmpty" class="empty hidden">Nenhuma ocorrência lançada nesta competência.</div>
-          <div id="dashOcoBody"><div class="grid2"><div><p class="small muted" style="margin:0 0 6px;font-weight:700">Quantas e quais</p><div class="chart-wrap"><canvas id="chOcoTipo"></canvas></div></div><div><p class="small muted" style="margin:0 0 6px;font-weight:700">Onde (por cliente)</p><div class="chart-wrap"><canvas id="chOcoCli"></canvas></div></div></div><div id="dashOcoTbl" style="margin-top:14px"></div></div>
+        <div class="grid2 grid-wide">
+          <div class="card viz-card" id="cardMesValor"></div>
+          <div class="card viz-card" id="cardMesAjustes"></div>
         </div>
+        <div class="card viz-card" id="cardOco"></div>
+        <div class="card viz-card" id="cardClientes"></div>
         <div class="grid2">
           <div class="card"><p class="card-title">Pendências</p><p class="card-sub">O que precisa de ação agora.</p><div id="dashPend"></div></div>
           <div class="card"><p class="card-title">Contratos vencendo em até 90 dias</p><p class="card-sub">Apoio ao comercial na renovação.</p><div id="dashRenov"></div></div>
@@ -1237,16 +1275,7 @@ function renderDashboard(){
     '<div class="kpi"><p class="kpi-label">Reconhecido pelo coordenador</p><p class="kpi-value">' + brl(recV) + '</p><p class="kpi-sub">' + rec.length + " de " + fats.length + " faturamento(s) · " + pct + '%</p><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><p class="kpi-sub small" style="margin-top:8px">Falta reconhecer: <b>' + brl(faltaV) + "</b> (" + falta.length + " faturamento(s))</p></div>" +
     kpi("Descontos", brl(desc), "faltas, atrasos e serviços suspensos") +
     kpi("Acréscimos", brl(acr), "horas extras, coberturas e reembolsos");
-  renderOcorrenciasDash(comp, clis, area);
-  // graficos
-  var counts = {}; ["Não gerada"].concat(STATUS_MED).forEach(function(s){ counts[s] = 0; });
-  fats.forEach(function(r){ counts[r.m ? r.m.Status : "Não gerada"]++; });
-  var colors = { "Não gerada":"#9aa0a6", "Rascunho":"#1a56c4", "Enviada":"#a8620a", "Contestada":"#b02a2a", "Aprovada":"#5b3cc4", "NF emitida":"#1e7d38" };
-  drawChart("chStatus", { type:"bar", data:{ labels:Object.keys(counts), datasets:[{ data:Object.values(counts), backgroundColor:Object.keys(counts).map(function(k){ return colors[k]; }), borderRadius:6 }] },
-    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ precision:0 }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
-  var rows = prev.map(function(r){ return { n: r.c.Title + (r.u.nome ? " · " + r.u.nome : ""), v: r.v, ok: r.ok }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 14);
-  drawChart("chClientes", { type:"bar", data:{ labels: rows.map(function(r){ return r.n; }), datasets:[{ data: rows.map(function(r){ return r.v; }), backgroundColor: rows.map(function(r){ return r.ok ? "#6e1423" : "#d9a3ad"; }), borderRadius:4, maxBarThickness:22 }] },
-    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ return brl(ctx.raw); } } } }, scales:{ x:{ ticks:{ callback:function(v){ return "R$ " + (v/1000).toLocaleString("pt-BR") + " mil"; } }, grid:{ color:"#eee" } }, y:{ grid:{ display:false } } } } });
+  renderDashVisual(comp, area, fats, prev, clis);
   // pendencias
   var pend = [];
   var semMed = fats.filter(function(r){ return !r.m; });
@@ -1279,37 +1308,6 @@ var OCO_GRUPOS = [
   { k:"Reembolsos e ajustes", tipos:["Reembolso","Consumo","Ajuste (acréscimo)","Ajuste (desconto)"], cor:"#eda100" }
 ];
 function grupoOco(tipo){ for (var i = 0; i < OCO_GRUPOS.length; i++) if (OCO_GRUPOS[i].tipos.indexOf(tipo) >= 0) return OCO_GRUPOS[i]; return OCO_GRUPOS[3]; }
-function renderOcorrenciasDash(comp, clis, area){
-  var ids = {}; clis.forEach(function(c){ ids[String(c.id)] = c; });
-  var ocs = S.ocorrencias.filter(function(o){ return o.Competencia === comp && ids[String(o.ClienteId)] && ocoVisivel(o) && (!area || areaOco(o) === area); });
-  $("dashOcoSub").textContent = ocs.length + " ocorrência(s) lançada(s) em " + compLabel(comp) + ". Passe o mouse nas barras para ver os detalhes.";
-  if (!ocs.length){
-    ["chOcoTipo","chOcoCli"].forEach(function(id){ if (CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } });
-    $("dashOcoBody").classList.add("hidden"); $("dashOcoEmpty").classList.remove("hidden"); $("dashOcoTbl").innerHTML = ""; return;
-  }
-  $("dashOcoBody").classList.remove("hidden"); $("dashOcoEmpty").classList.add("hidden");
-  // por tipo
-  var porTipo = {};
-  ocs.forEach(function(o){ var t = porTipo[o.Tipo] || (porTipo[o.Tipo] = { n:0, h:0, d:0, v:0, cli:{} }); t.n++; t.h += Number(o.Horas)||0; t.d += Number(o.Dias)||0; t.v += Number(o.Valor)||0; t.cli[o.ClienteId] = 1; });
-  var tipos = Object.keys(porTipo).sort(function(a, b){ return porTipo[b].n - porTipo[a].n; });
-  drawChart("chOcoTipo", { type:"bar", data:{ labels: tipos, datasets:[{ label:"Ocorrências", data: tipos.map(function(t){ return porTipo[t].n; }), backgroundColor: tipos.map(function(t){ return grupoOco(t).cor; }), borderRadius:4, maxBarThickness:22 }] },
-    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ var t = porTipo[ctx.label]; return [t.n + " ocorrência(s)", (t.h ? hFmt(t.h) : t.d ? num(t.d, t.d % 1 ? 1 : 0) + " dia(s)" : ""), "Valor: " + brl(t.v), Object.keys(t.cli).length + " cliente(s)"].filter(Boolean); } } } },
-      scales:{ x:{ ticks:{ precision:0, color:"#6b6f76" }, grid:{ color:"#eee" }, title:{ display:true, text:"quantidade", color:"#6b6f76" } }, y:{ grid:{ display:false }, ticks:{ color:"#1f2124" } } } } });
-  // por cliente (empilhado por grupo)
-  var porCli = {};
-  ocs.forEach(function(o){ var c = porCli[o.ClienteId] || (porCli[o.ClienteId] = { tot:0 }); var g = grupoOco(o.Tipo).k; c[g] = (c[g] || 0) + 1; c.tot++; });
-  var cids = Object.keys(porCli).sort(function(a, b){ return porCli[b].tot - porCli[a].tot; }).slice(0, 12);
-  var gruposUsados = OCO_GRUPOS.filter(function(g){ return cids.some(function(c){ return porCli[c][g.k]; }); });
-  drawChart("chOcoCli", { type:"bar", data:{ labels: cids.map(function(c){ return ids[c].Title; }), datasets: gruposUsados.map(function(g){ return { label:g.k, data: cids.map(function(c){ return porCli[c][g.k] || 0; }), backgroundColor:g.cor, borderColor:"#ffffff", borderWidth:{ left:2, right:0, top:0, bottom:0 }, borderRadius:4, borderSkipped:false, maxBarThickness:22 }; }) },
-    options:{ indexAxis:"y", maintainAspectRatio:false, plugins:{ legend:{ position:"bottom", labels:{ boxWidth:12, boxHeight:12, color:"#1f2124" } }, tooltip:{ callbacks:{ label:function(ctx){ return ctx.dataset.label + ": " + ctx.raw; } } } },
-      scales:{ x:{ stacked:true, ticks:{ precision:0, color:"#6b6f76" }, grid:{ color:"#eee" }, title:{ display:true, text:"quantidade", color:"#6b6f76" } }, y:{ stacked:true, grid:{ display:false }, ticks:{ color:"#1f2124" } } } } });
-  // tabela resumo
-  var T = { n:0, v:0 };
-  $("dashOcoTbl").innerHTML = "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Tipo</th><th class='num'>Quantidade</th><th class='num'>Horas / dias</th><th class='num'>Valor</th><th>Onde (clientes)</th></tr></thead><tbody>" + tipos.map(function(t){
-    var x = porTipo[t]; T.n += x.n; T.v += x.v; var g = grupoOco(t);
-    return "<tr><td><span style='display:inline-block;width:10px;height:10px;border-radius:3px;background:" + g.cor + ";margin-right:8px'></span>" + esc(t) + "</td><td class='num'>" + x.n + "</td><td class='num'>" + (x.h ? hFmt(x.h) : x.d ? num(x.d, x.d % 1 ? 1 : 0) + " dia(s)" : "–") + "</td><td class='num " + (x.v < 0 ? "neg" : "pos") + "'>" + brl(x.v) + "</td><td class='small'>" + Object.keys(x.cli).map(function(c){ return esc(ids[c].Title); }).join(", ") + "</td></tr>";
-  }).join("") + "</tbody><tfoot><tr><td>Total</td><td class='num'>" + T.n + "</td><td></td><td class='num'>" + brl(T.v) + "</td><td></td></tr></tfoot></table></div>";
-}
 function kpi(l, val, sub){ return '<div class="kpi"><p class="kpi-label">' + esc(l) + '</p><p class="kpi-value">' + esc(val) + '</p><p class="kpi-sub">' + esc(sub || "") + "</p></div>"; }
 function drawChart(id, cfg){ if (typeof Chart === "undefined") return; if (CHARTS[id]) CHARTS[id].destroy(); CHARTS[id] = new Chart($(id), cfg); }
 function goCliente(cid){ closeModal(); SEL.cliente = String(cid); SEL.contrato = null; showTab("clientes"); }
@@ -3288,6 +3286,175 @@ function instalarDemoPersonalizacoes(){
   var delta = S.clientes.filter(function(c){ return c.Title === "Metalúrgica Delta"; })[0];
   if (delta){ delta.ModeloBoletim = "MODELO EXEMPLO"; S.itens.filter(function(i){ return String(i.ClienteId) === String(delta.id); }).forEach(function(i){ i.Requisitante = "Marta (SESMT)"; i.CentroCusto = "CC-4410"; }); }
   S.modelos = Object.keys(window.__DEMO_MODELOS);
+}
+
+// ============================================================
+// DASHBOARD VISUAL (cards com rosca, series mensais, relatorio de ocorrencias)
+// ============================================================
+var VIZ = {
+  grena:"#6e1423", rosa:"#e3b3bd", teal:"#2e6470", acr:"#1baf7a", desc:"#e34948",
+  status:{ "Não gerada":"#a7abb2", "Rascunho":"#2a78d6", "Enviada":"#eda100", "Contestada":"#e34948", "Aprovada":"#6250d6", "NF emitida":"#1baf7a" },
+  ink:"#1f2124", ink2:"#6b6f76", grid:"#ececef"
+};
+function compAdd(comp, k){ var p = comp.split("-"), d = new Date(+p[0], +p[1] - 1 + k, 1); return d.getFullYear() + "-" + pad(d.getMonth() + 1); }
+function mesCurto(comp){ return MESES_ABR[+comp.split("-")[1] - 1].toLowerCase(); }
+function brlCurto(v){ var a = Math.abs(v), s = v < 0 ? "−" : ""; return a >= 1e6 ? s + "R$ " + num(a / 1e6, 1) + " mi" : a >= 1e3 ? s + "R$ " + num(a / 1e3, a >= 1e5 ? 0 : 1) + " mil" : s + brl(a); }
+function vizHead(id, titulo, info){
+  return "<div class='viz-head'><p class='viz-title'>" + esc(titulo) + (info ? " <span class='viz-info' tabindex='0' title='" + esc(info) + "'>i</span>" : "") + "</p><button class='viz-copy' onclick=\"copiarCard('" + id + "')\" title='Copiar este quadro como imagem'>&#10697; Copiar</button></div>";
+}
+function vizLegend(itens){
+  return "<div class='viz-legend'>" + itens.map(function(i){ return "<div class='viz-leg" + (i.click ? " click" : "") + "'" + (i.click ? " onclick=\"" + i.click + "\"" : "") + "><span class='viz-sw' style='background:" + i.cor + "'></span>" + esc(i.txt) + "</div>"; }).join("") + "</div>";
+}
+// --- plugins de desenho (rotulos diretos) ---
+var PL_CENTRO = { id:"centro", afterDraw:function(ch, a, o){ if (!o || !o.txt) return; var c = ch.ctx, m = ch.chartArea, x = (m.left + m.right) / 2, y = (m.top + m.bottom) / 2;
+  c.save(); c.textAlign = "center"; c.fillStyle = VIZ.ink; c.font = "700 " + (o.size || 30) + "px -apple-system,Segoe UI,Roboto,Arial"; c.fillText(o.txt, x, y + 4);
+  c.fillStyle = VIZ.ink2; c.font = "500 12.5px -apple-system,Segoe UI,Roboto,Arial"; c.fillText(o.sub || "", x, y + 24); c.restore(); } };
+var PL_FATIAS = { id:"fatias", afterDatasetsDraw:function(ch){ var ds = ch.data.datasets[0], meta = ch.getDatasetMeta(0), tot = ds.data.reduce(function(s, v){ return s + (Number(v) || 0); }, 0); if (!tot) return;
+  var c = ch.ctx; c.save(); c.textAlign = "center"; c.textBaseline = "middle"; c.font = "700 12.5px -apple-system,Segoe UI,Roboto,Arial";
+  meta.data.forEach(function(arc, i){ var p = (Number(ds.data[i]) || 0) / tot; if (p < 0.06) return; var ang = (arc.startAngle + arc.endAngle) / 2, r = (arc.innerRadius + arc.outerRadius) / 2;
+    var x = arc.x + Math.cos(ang) * r, y = arc.y + Math.sin(ang) * r; c.fillStyle = "#fff"; c.fillText(Math.round(p * 100) + "%", x, y); }); c.restore(); } };
+var PL_TOPO = { id:"topo", afterDatasetsDraw:function(ch, a, o){ if (!o || !o.valores) return; var c = ch.ctx; c.save(); c.textAlign = "center"; c.fillStyle = VIZ.ink; c.font = "700 12px -apple-system,Segoe UI,Roboto,Arial";
+  var metaTop = ch.getDatasetMeta(ch.data.datasets.length - 1);
+  metaTop.data.forEach(function(bar, i){ var v = o.valores[i]; if (!v) return; c.fillText(o.fmt ? o.fmt(v) : String(v), bar.x, bar.y - 7); });
+  if (o.cabecalho){ c.fillStyle = VIZ.grena; c.font = "700 12px -apple-system,Segoe UI,Roboto,Arial"; metaTop.data.forEach(function(bar, i){ if (o.cabecalho[i]) c.fillText(o.cabecalho[i], bar.x, 13); }); }
+  c.restore(); } };
+var PL_PONTOS = { id:"pontos", afterDatasetsDraw:function(ch, a, o){ var c = ch.ctx; c.save(); c.textAlign = "center"; c.font = "700 11.5px -apple-system,Segoe UI,Roboto,Arial"; c.fillStyle = VIZ.ink;
+  ch.data.datasets.forEach(function(ds, di){ var meta = ch.getDatasetMeta(di); if (meta.hidden) return; meta.data.forEach(function(pt, i){ var v = ds.data[i]; if (!v) return; c.fillText(brlCurto(v), pt.x, pt.y + (di === 0 ? -10 : 18)); }); });
+  c.restore(); } };
+var PL_FIM = { id:"fim", afterDatasetsDraw:function(ch){ var c = ch.ctx; c.save(); c.textAlign = "left"; c.textBaseline = "middle"; c.font = "600 11.5px -apple-system,Segoe UI,Roboto,Arial"; c.fillStyle = VIZ.ink;
+  var n = ch.data.datasets.length, meta = ch.getDatasetMeta(n - 1); meta.data.forEach(function(bar, i){ var tot = 0; ch.data.datasets.forEach(function(ds){ tot += Number(ds.data[i]) || 0; }); c.fillText(brlCurto(tot), bar.x + 6, bar.y); }); c.restore(); } };
+
+function donut(id, labels, valores, cores, centro, onClick){
+  drawChart(id, { type:"doughnut", data:{ labels:labels, datasets:[{ data:valores, backgroundColor:cores, borderColor:"#fff", borderWidth:2, hoverOffset:4 }] },
+    options:{ cutout:"62%", maintainAspectRatio:false, layout:{ padding:6 }, onClick: onClick ? function(e, els){ if (els.length) onClick(els[0].index); } : undefined,
+      onHover:function(e, els){ e.native.target.style.cursor = (onClick && els.length) ? "pointer" : "default"; },
+      plugins:{ legend:{ display:false }, centro:centro, tooltip:{ callbacks:{ label:function(ctx){ var t = ctx.dataset.data.reduce(function(s, v){ return s + (Number(v) || 0); }, 0); return " " + ctx.label + ": " + (centro.fmt ? centro.fmt(ctx.raw) : ctx.raw) + (t ? " (" + Math.round(ctx.raw / t * 100) + "%)" : ""); } } } } },
+    plugins:[PL_CENTRO, PL_FATIAS] });
+}
+// valor de um mes: medicao reconhecida quando existe; senao previa pelo contrato + ocorrencias
+var RECON = { "Enviada":1, "Aprovada":1, "NF emitida":1 };
+function previaMes(area, comp){
+  return faturamentosDoMes(area, comp).map(function(r){
+    var m = r.m, src = (m && m.Status !== "Rascunho") ? m : montarMedicao(r.c.id, comp, r.u.key);
+    if (src.erro && m) src = m; if (src.erro) src = { ValorFaturar:0, Descontos:0, Acrescimos:0 };
+    return { c:r.c, u:r.u, m:m, v:Number(src.ValorFaturar) || 0, d:Number(src.Descontos) || 0, a:Number(src.Acrescimos) || 0, ok: !!(m && RECON[m.Status]) };
+  });
+}
+
+function renderDashVisual(comp, area, fats, prev, clis){
+  $("dashMes").textContent = compLabel(comp).replace(/^./, function(x){ return x.toUpperCase(); });
+  $("dashEscopo").textContent = "Indicadores · " + (area || "todas as áreas") + (soMeus() ? " · meus clientes" : "");
+  // 1) reconhecimento
+  var recV = prev.filter(function(r){ return r.ok; }).reduce(function(s, r){ return s + r.v; }, 0), tot = prev.reduce(function(s, r){ return s + r.v; }, 0), falta = Math.max(0, tot - recV);
+  var nRec = prev.filter(function(r){ return r.ok; }).length, pct = tot ? Math.round(recV / tot * 100) : 0;
+  $("cardRec").innerHTML = vizHead("cardRec", "Reconhecimento do mês", "Parte do valor a faturar já enviada ao cliente (enviada, aprovada ou com NF), contra o que ainda está em rascunho ou não foi gerado.") + "<div class='viz-chart viz-donut'><canvas id='chRec'></canvas></div>" +
+    vizLegend([{ cor:VIZ.grena, txt:"Reconhecido (" + brl(recV) + " · " + nRec + " fat.)" }, { cor:VIZ.teal, txt:"Falta reconhecer (" + brl(falta) + " · " + (prev.length - nRec) + " fat.)" }]);
+  donut("chRec", ["Reconhecido", "Falta reconhecer"], [r2(recV), r2(falta)], [VIZ.grena, VIZ.teal], { txt: pct + "%", sub:"reconhecido", fmt:brl });
+  // 2) status
+  var counts = {}; ["Não gerada"].concat(STATUS_MED).forEach(function(s){ counts[s] = 0; }); fats.forEach(function(r){ counts[r.m ? r.m.Status : "Não gerada"]++; });
+  var sts = Object.keys(counts).filter(function(k){ return counts[k]; }), nF = fats.length;
+  $("cardStatus").innerHTML = vizHead("cardStatus", "Status dos faturamentos", "Em que etapa está cada faturamento da competência. Clique numa fatia para abrir Medições do mês.") + "<div class='viz-chart viz-donut'><canvas id='chStatus'></canvas></div>" +
+    vizLegend(sts.map(function(k){ return { cor:VIZ.status[k], txt:k + " (" + counts[k] + ", " + Math.round(counts[k] / (nF || 1) * 100) + "%)", click:"irMedicoes('" + k + "')" }; }));
+  donut("chStatus", sts, sts.map(function(k){ return counts[k]; }), sts.map(function(k){ return VIZ.status[k]; }), { txt:String(nF), sub:"faturamentos" }, function(i){ irMedicoes(sts[i]); });
+  // 3) ocorrencias por grupo
+  var ids = {}; clis.forEach(function(c){ ids[String(c.id)] = c; });
+  var ocs = S.ocorrencias.filter(function(o){ return o.Competencia === comp && ids[String(o.ClienteId)] && ocoVisivel(o) && (!area || areaOco(o) === area); });
+  window.__dashOcs = ocs; window.__dashComp = comp;
+  var gs = OCO_GRUPOS.map(function(g){ return { g:g, n: ocs.filter(function(o){ return grupoOco(o.Tipo) === g; }).length }; }).filter(function(x){ return x.n; });
+  $("cardOcoTipo").innerHTML = vizHead("cardOcoTipo", "Ocorrências por tipo", "Lançamentos da competência agrupados. Clique numa fatia ou na legenda para ver o relatório.") +
+    (ocs.length ? "<div class='viz-chart viz-donut'><canvas id='chOcoTipo'></canvas></div>" + vizLegend(gs.map(function(x){ return { cor:x.g.cor, txt:x.g.k + " (" + x.n + ", " + Math.round(x.n / ocs.length * 100) + "%)", click:"abrirRelOco({grupo:'" + x.g.k + "'})" }; }))
+      : "<div class='viz-vazio'>Nenhuma ocorrência lançada em " + esc(compLabel(comp)) + ".</div>");
+  if (ocs.length) donut("chOcoTipo", gs.map(function(x){ return x.g.k; }), gs.map(function(x){ return x.n; }), gs.map(function(x){ return x.g.cor; }), { txt:String(ocs.length), sub:"ocorrências" }, function(i){ abrirRelOco({ grupo: gs[i].g.k }); });
+  else if (CHARTS.chOcoTipo){ CHARTS.chOcoTipo.destroy(); delete CHARTS.chOcoTipo; }
+  // 4) e 5) series mensais (6 meses)
+  var meses = []; for (var k = -5; k <= 0; k++) meses.push(compAdd(comp, k));
+  var serie = meses.map(function(m){ var p = m === comp ? prev : previaMes(area, m); var t = 0, rc = 0, d = 0, a = 0; p.forEach(function(r){ t += r.v; if (r.ok) rc += r.v; d += r.d; a += r.a; }); return { m:m, t:r2(t), rc:r2(rc), f:r2(Math.max(0, t - rc)), d:r2(d), a:r2(a) }; });
+  $("cardMesValor").innerHTML = vizHead("cardMesValor", "Valor a faturar por mês", "Total de cada competência: a parte reconhecida (enviada ao cliente) e a que ainda falta reconhecer. Acima de cada barra, o % reconhecido.") + "<div class='viz-chart viz-tall'><canvas id='chMesValor'></canvas></div>" +
+    vizLegend([{ cor:VIZ.grena, txt:"Reconhecido" }, { cor:VIZ.rosa, txt:"Falta reconhecer" }]);
+  drawChart("chMesValor", { type:"bar", data:{ labels: meses.map(mesCurto), datasets:[
+      { label:"Reconhecido", data: serie.map(function(x){ return x.rc; }), backgroundColor:VIZ.grena, borderRadius:{ bottomLeft:4, bottomRight:4 }, borderSkipped:false, maxBarThickness:46, stack:"s" },
+      { label:"Falta reconhecer", data: serie.map(function(x){ return x.f; }), backgroundColor:VIZ.rosa, borderRadius:{ topLeft:4, topRight:4 }, borderSkipped:false, maxBarThickness:46, stack:"s" }] },
+    options:{ maintainAspectRatio:false, layout:{ padding:{ top:44 } }, plugins:{ legend:{ display:false }, topo:{ valores: serie.map(function(x){ return x.t; }), fmt:brlCurto, cabecalho: serie.map(function(x){ return x.t ? Math.round(x.rc / x.t * 100) + "% rec." : ""; }) },
+      tooltip:{ mode:"index", intersect:false, callbacks:{ title:function(it){ return compLabel(meses[it[0].dataIndex]); }, label:function(ctx){ return " " + ctx.dataset.label + ": " + brl(ctx.raw); }, footer:function(it){ return "Total: " + brl(serie[it[0].dataIndex].t); } } } },
+      scales:{ x:{ stacked:true, grid:{ display:false }, ticks:{ color:VIZ.ink2 } }, y:{ stacked:true, beginAtZero:true, grace:"10%", grid:{ color:VIZ.grid }, border:{ display:false }, ticks:{ color:VIZ.ink2, callback:function(v){ return brlCurto(v); } } } } },
+    plugins:[PL_TOPO] });
+  $("cardMesAjustes").innerHTML = vizHead("cardMesAjustes", "Descontos e acréscimos por mês", "Soma dos descontos (faltas, atrasos, suspensões) e dos acréscimos (horas extras, coberturas, reembolsos) de cada competência.") + "<div class='viz-chart viz-tall'><canvas id='chMesAjustes'></canvas></div>" +
+    vizLegend([{ cor:VIZ.acr, txt:"Acréscimos" }, { cor:VIZ.desc, txt:"Descontos" }]);
+  drawChart("chMesAjustes", { type:"line", data:{ labels: meses.map(mesCurto), datasets:[
+      { label:"Acréscimos", data: serie.map(function(x){ return x.a; }), borderColor:VIZ.acr, backgroundColor:VIZ.acr, borderWidth:2, tension:0.35, pointRadius:4, pointHoverRadius:6, pointBackgroundColor:"#fff", pointBorderWidth:2 },
+      { label:"Descontos", data: serie.map(function(x){ return x.d; }), borderColor:VIZ.desc, backgroundColor:VIZ.desc, borderWidth:2, tension:0.35, pointRadius:4, pointHoverRadius:6, pointBackgroundColor:"#fff", pointBorderWidth:2 }] },
+    options:{ maintainAspectRatio:false, layout:{ padding:{ top:22, left:16, right:34, bottom:4 } }, interaction:{ mode:"index", intersect:false }, plugins:{ legend:{ display:false },
+      tooltip:{ callbacks:{ title:function(it){ return compLabel(meses[it[0].dataIndex]); }, label:function(ctx){ return " " + ctx.dataset.label + ": " + brl(ctx.raw); } } } },
+      scales:{ x:{ grid:{ display:false }, ticks:{ color:VIZ.ink2 } }, y:{ beginAtZero:true, grace:"12%", grid:{ color:VIZ.grid }, border:{ display:false }, ticks:{ color:VIZ.ink2, callback:function(v){ return brlCurto(v); } } } } },
+    plugins:[PL_PONTOS] });
+  // 6) tabela de ocorrencias (clicavel)
+  var porTipo = {};
+  ocs.forEach(function(o){ var t = porTipo[o.Tipo] || (porTipo[o.Tipo] = { n:0, h:0, d:0, v:0, cli:{} }); t.n++; if (o.Dias) t.d += Number(o.Dias) || 0; else t.h += Number(o.Horas) || 0; t.v += Number(o.Valor) || 0; t.cli[o.ClienteId] = 1; });
+  var tipos = Object.keys(porTipo).sort(function(a, b){ return porTipo[b].n - porTipo[a].n; }), T = { n:0, v:0 };
+  $("cardOco").innerHTML = vizHead("cardOco", "Ocorrências da competência", "Clique em uma linha para abrir o relatório com os lançamentos, clientes e profissionais.") +
+    (tipos.length ? "<p class='viz-sub'>" + ocs.length + " ocorrência(s) em " + esc(compLabel(comp)) + ". Clique em uma linha para ver o relatório.</p><div class='tbl-wrap'><table class='tbl tbl-viz'><thead><tr><th>Tipo</th><th class='num'>Quantidade</th><th class='num'>Horas / dias</th><th class='num'>Valor</th><th>Onde (clientes)</th><th></th></tr></thead><tbody>" + tipos.map(function(t){
+      var x = porTipo[t]; T.n += x.n; T.v += x.v;
+      return "<tr class='click' onclick=\"abrirRelOco({tipo:'" + esc(t).replace(/'/g, "\\'") + "'})\"><td><span class='viz-sw' style='background:" + grupoOco(t).cor + "'></span>" + esc(t) + "</td><td class='num'>" + x.n + "</td><td class='num'>" + horasDiasTxt(x.h, x.d) + "</td><td class='num " + (x.v < 0 ? "neg" : "pos") + "'>" + brl(x.v) + "</td><td class='small'>" + Object.keys(x.cli).map(function(c){ return esc(ids[c].Title); }).join(", ") + "</td><td class='viz-seta'>&rsaquo;</td></tr>";
+    }).join("") + "</tbody><tfoot><tr><td>Total</td><td class='num'>" + T.n + "</td><td></td><td class='num'>" + brl(T.v) + "</td><td colspan='2'></td></tr></tfoot></table></div>" : "<div class='viz-vazio'>Nenhuma ocorrência lançada em " + esc(compLabel(comp)) + ".</div>");
+  // 7) valor por cliente
+  var rows = prev.map(function(r){ return { n: r.c.Title + (r.u.nome ? " · " + r.u.nome : ""), v: r.v, ok: r.ok }; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 15);
+  $("cardClientes").innerHTML = vizHead("cardClientes", "Valor a faturar por faturamento", "Previsão de cada faturamento da competência. Grená: já reconhecido · rosa: falta reconhecer.") + "<div class='viz-chart' style='height:" + Math.max(220, rows.length * 30 + 40) + "px'><canvas id='chClientes'></canvas></div>" +
+    vizLegend([{ cor:VIZ.grena, txt:"Reconhecido" }, { cor:VIZ.rosa, txt:"Falta reconhecer" }]);
+  drawChart("chClientes", { type:"bar", data:{ labels: rows.map(function(r){ return r.n; }), datasets:[{ data: rows.map(function(r){ return r.v; }), backgroundColor: rows.map(function(r){ return r.ok ? VIZ.grena : VIZ.rosa; }), borderRadius:4, maxBarThickness:20 }] },
+    options:{ indexAxis:"y", maintainAspectRatio:false, layout:{ padding:{ right:70 } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ return " " + brl(ctx.raw); } } } },
+      scales:{ x:{ display:false, beginAtZero:true }, y:{ grid:{ display:false }, border:{ display:false }, ticks:{ color:VIZ.ink, font:{ size:12 } } } } },
+    plugins:[PL_FIM] });
+}
+function horasDiasTxt(h, d){ var p = []; if (h) p.push(hFmt(h)); if (d) p.push(num(d, d % 1 ? 1 : 0) + " dia(s)"); return p.join(" + ") || "–"; }
+function irMedicoes(status){ showTab("medicoes"); var s = $("medStatus"); if (s && [].some.call(s.options, function(o){ return o.value === status; })){ s.value = status; renderMedicoes(); } }
+
+// ---------- relatorio de ocorrencias ----------
+function abrirRelOco(f){
+  var comp = window.__dashComp || curComp(), base = window.__dashOcs || [];
+  var g = f.grupo ? OCO_GRUPOS.filter(function(x){ return x.k === f.grupo; })[0] : null;
+  var lista = base.filter(function(o){ return f.tipo ? o.Tipo === f.tipo : grupoOco(o.Tipo) === g; }).sort(function(a, b){ return String(a.Data).localeCompare(String(b.Data)); });
+  window.__relOco = { f:f, lista:lista };
+  var titulo = f.tipo || g.k, cor = f.tipo ? grupoOco(f.tipo).cor : g.cor;
+  var H = 0, D = 0, V = 0, pend = 0, cli = {}, prof = {};
+  lista.forEach(function(o){ var h = o.Dias ? 0 : Number(o.Horas) || 0, d = Number(o.Dias) || 0, v = Number(o.Valor) || 0; H += h; D += d; V += v; if (simB(o.ValorPendente)) pend++;
+    var c = byId("clientes", o.ClienteId), kc = c ? c.Title : "?"; var x = cli[kc] || (cli[kc] = { n:0, h:0, d:0, v:0 }); x.n++; x.h += h; x.d += d; x.v += v;
+    var kp = String(o.Profissional || "").trim() || "(não informado)"; var y = prof[kp] || (prof[kp] = { n:0, h:0, d:0, v:0, cli:{} }); y.n++; y.h += h; y.d += d; y.v += v; y.cli[kc] = 1; });
+  var semJ = lista.filter(function(o){ return !String(o.Justificativa || "").trim(); }).length;
+  var tab = function(obj, cols, extra){ var ks = Object.keys(obj).sort(function(a, b){ return obj[b].n - obj[a].n || Math.abs(obj[b].v) - Math.abs(obj[a].v); });
+    return "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>" + cols + "</th><th class='num'>Qtd.</th><th class='num'>Horas / dias</th><th class='num'>Valor</th>" + (extra ? "<th>Clientes</th>" : "") + "</tr></thead><tbody>" +
+      ks.map(function(k){ var x = obj[k]; return "<tr><td>" + esc(k) + "</td><td class='num'>" + x.n + "</td><td class='num'>" + horasDiasTxt(x.h, x.d) + "</td><td class='num " + (x.v < 0 ? "neg" : "pos") + "'>" + brl(x.v) + "</td>" + (extra ? "<td class='small'>" + esc(Object.keys(x.cli).join(", ")) + "</td>" : "") + "</tr>"; }).join("") + "</tbody></table></div>"; };
+  var h = "<div class='rel-head' style='border-left:5px solid " + cor + "'><h3 style='margin:0'>" + esc(titulo) + "</h3><p class='msub' style='margin:2px 0 0'>Relatório de " + esc(compLabel(comp)) + (window.__dashCompArea ? "" : "") + " · " + lista.length + " lançamento(s)</p></div>" +
+    "<div class='rel-kpis'>" + relKpi("Ocorrências", String(lista.length)) + relKpi("Horas / dias", horasDiasTxt(H, D)) + relKpi("Valor", brl(V), V < 0 ? "neg" : "pos") + relKpi("Clientes", String(Object.keys(cli).length)) + "</div>" +
+    (pend || semJ ? "<div class='alert alert-amber' style='margin:0 0 12px'>" + [pend ? pend + " com valor pendente" : "", semJ ? semJ + " sem justificativa" : ""].filter(Boolean).join(" · ") + ".</div>" : "") +
+    "<div class='grid2' style='gap:14px;margin:0 0 6px'><div><p class='rel-sec'>Por cliente</p>" + tab(cli, "Cliente") + "</div><div><p class='rel-sec'>Por profissional</p>" + tab(prof, "Profissional", true) + "</div></div>" +
+    "<p class='rel-sec'>Lançamentos</p><div class='tbl-wrap' style='max-height:42vh;overflow:auto'><table class='tbl'><thead><tr><th>Data</th><th>Cliente</th>" + (f.tipo ? "" : "<th>Tipo</th>") + "<th>Serviço / cargo</th><th>Profissional</th><th>Horário / qtd.</th><th class='num'>Valor</th><th>Justificativa</th><th>Lançado por</th></tr></thead><tbody>" +
+    lista.map(function(o){ var c = byId("clientes", o.ClienteId), v = Number(o.Valor) || 0;
+      return "<tr class='click' onclick=\"closeModal();openOcorrencia('" + o.id + "')\"><td>" + fmtDate(o.Data) + "</td><td>" + esc(c ? c.Title : "?") + "</td>" + (f.tipo ? "" : "<td>" + esc(o.Tipo) + "</td>") + "<td>" + esc(itensOcoNome(o) || o.Cargo || "") + "</td><td>" + esc(o.Profissional || "") + "</td><td class='small'>" + (o.HoraInicio ? esc(o.HoraInicio + "–" + o.HoraFim) + " (" + hFmt(o.Horas) + ")" : o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : Number(o.Horas) ? hFmt(o.Horas) : "") + "</td><td class='num " + (v < 0 ? "neg" : "pos") + "'>" + (simB(o.ValorPendente) ? "<span class='badge b-red'>pendente</span>" : brl(v)) + "</td><td class='small'>" + (o.Justificativa ? esc(o.Justificativa) : "<span class='badge b-amber'>sem justificativa</span>") + "</td><td class='small muted'>" + esc(String(o.LancadoPor || "").split("@")[0]) + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='exportRelOco()'>Exportar Excel</button><button class='btn-o' onclick=\"verRelEmOcorrencias()\">Abrir em Ocorrências</button><button class='btn' onclick='closeModal()'>Fechar</button></div>";
+  openModal(h, true);
+  $("modalBox").classList.add("xl");
+}
+function relKpi(l, v, cls){ return "<div class='rel-kpi'><p>" + esc(l) + "</p><b class='" + (cls || "") + "'>" + esc(v) + "</b></div>"; }
+function verRelEmOcorrencias(){ var r = window.__relOco || {}; closeModal(); showTab("ocorrencias"); $("ocoComp").value = window.__dashComp || curComp(); if (r.f && r.f.tipo && $("ocoTipo")) $("ocoTipo").value = r.f.tipo; renderOcorrencias(); }
+function exportRelOco(){
+  if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou.", true); return; }
+  var r = window.__relOco || { lista:[], f:{} }, wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Relatório");
+  ws.columns = [{ width:12 }, { width:30 }, { width:22 }, { width:28 }, { width:22 }, { width:16 }, { width:14 }, { width:50 }, { width:22 }];
+  var hd = ws.getRow(1); hd.values = ["Data", "Cliente", "Tipo", "Serviço / cargo", "Profissional", "Horário / qtd.", "Valor", "Justificativa", "Lançado por"]; styleHeader(hd);
+  r.lista.forEach(function(o, i){ var c = byId("clientes", o.ClienteId), row = ws.getRow(i + 2);
+    row.values = [fmtDate(o.Data), c ? c.Title : "", o.Tipo, itensOcoNome(o) || o.Cargo || "", o.Profissional || "", o.HoraInicio ? o.HoraInicio + "–" + o.HoraFim : o.Dias ? o.Dias + " dia(s)" : (Number(o.Horas) ? hFmt(o.Horas) : ""), Number(o.Valor) || 0, o.Justificativa || "", o.LancadoPor || ""];
+    row.getCell(7).numFmt = '"R$" #,##0.00;[Red]-"R$" #,##0.00'; row.getCell(8).alignment = { wrapText:true, vertical:"top" }; });
+  saveWorkbook(wb, "Relatorio " + (r.f.tipo || r.f.grupo || "ocorrencias") + " " + (window.__dashComp || "") + ".xlsx");
+}
+// ---------- copiar quadro como imagem ----------
+async function copiarCard(id){
+  var el = $(id); if (!el || typeof html2canvas === "undefined"){ showToast("Não foi possível copiar agora.", true); return; }
+  try {
+    var cv = await html2canvas(el, { scale:2, backgroundColor:"#ffffff", ignoreElements:function(n){ return n.classList && n.classList.contains("viz-copy"); } });
+    var blob = await new Promise(function(res){ cv.toBlob(res, "image/png"); });
+    if (navigator.clipboard && window.ClipboardItem){ await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); showToast("Quadro copiado. Cole (Ctrl+V) no e-mail, Teams ou PowerPoint."); }
+    else { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = id + ".png"; document.body.appendChild(a); a.click(); a.remove(); showToast("Imagem baixada."); }
+  } catch (e){ showToast("Não foi possível copiar: " + e.message, true); }
 }
 
 </script>
