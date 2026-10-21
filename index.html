@@ -248,6 +248,34 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 .ajuda-versao{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin:0 0 10px;}
 .ajuda-v{margin:0 0 6px;font-size:14.5px;}
 .ajuda-versao ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.6;}
+/* ---------- faturamento x prestador ---------- */
+.fat-box{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:10px 0 12px;background:#fcfcfd;}
+.fat-limite{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;border-radius:10px;padding:10px 14px;margin:0 0 10px;}
+.fat-limite span{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.fat-limite b{font-size:22px;}
+.fat-limite em{font-style:normal;font-size:13px;}
+.fat-limite.b-blue{background:var(--blue-bg);color:var(--blue-tx);} .fat-limite.b-amber{background:var(--amber-bg);color:var(--amber-tx);} .fat-limite.b-red{background:var(--red-bg);color:var(--red-tx);} .fat-limite.b-green{background:var(--green-bg);color:var(--green-tx);} .fat-limite.b-gray{background:var(--gray-bg);color:var(--gray-tx);}
+.fat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.fat-cel p{margin:0 0 3px;font-size:11.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;}
+.fat-cel div{font-size:14px;}
+.fat-acoes{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.chat{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px;}
+.chat-msg{background:var(--bg);border-radius:10px;padding:8px 11px;font-size:13.5px;max-width:85%;align-self:flex-start;}
+.chat-msg.eu{background:var(--grena-bg);align-self:flex-end;}
+.chat-msg.crit{border-left:3px solid #e34948;}
+.chat-msg.sis{background:#f2f4f7;color:var(--text2);font-size:12.5px;}
+.chat-meta{font-size:11.5px;color:var(--text2);margin-bottom:2px;}
+.dash-sec{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:10px 2px 12px;}
+.dash-sec h3{margin:0;font-size:18px;font-weight:800;color:var(--grena);}
+.dash-sec span{font-size:13px;color:var(--text2);}
+.mini-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;}
+.mini-kpi{background:var(--bg);border-radius:10px;padding:10px 12px;position:relative;}
+.mini-kpi .badge{position:absolute;top:12px;right:12px;width:8px;height:8px;padding:0;border-radius:50%;}
+.mini-kpi p{margin:0;font-size:12px;color:var(--text2);font-weight:600;}
+.mini-kpi b{display:block;font-size:20px;margin-top:4px;}
+@media (max-width:900px){ .fat-grid{grid-template-columns:1fr 1fr;} }
+.mini-kpi p{padding-right:14px;}
+.mini-kpi .b-red{background:#e34948;} .mini-kpi .b-amber{background:#eda100;} .mini-kpi .b-green{background:#1baf7a;} .mini-kpi .b-blue{background:#2a78d6;} .mini-kpi .b-purple{background:#6250d6;}
 
 </style>
 </head>
@@ -270,6 +298,8 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="tab" data-tab="clientes"><span class="tab-icon">&#127970;</span>Clientes e contratos</div>
       <div class="tab" data-tab="renovacoes"><span class="tab-icon">&#128197;</span>Renovações<span class="tab-badge hidden" id="renovBadge"></span></div>
       <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Valores dos Contratos</div>
+      <div class="tab" data-tab="codigos"><span class="tab-icon">&#127991;</span>Códigos de serviço</div>
+      <div class="tab" data-tab="recebimentos"><span class="tab-icon">&#128176;</span>Recebimentos</div>
       <p class="tab-group-label gestor-only">Gestão</p>
       <div class="tab gestor-only" data-tab="margem"><span class="tab-icon">&#128202;</span>Margem</div>
       <div class="tab gestor-only" data-tab="parametros"><span class="tab-icon">&#9881;</span>Parâmetros</div>
@@ -305,7 +335,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <!-- DASHBOARD -->
       <div class="panel active" id="panel-dashboard">
         <div class="page-head"><div><h1 class="page-title">Dashboard</h1><p class="page-sub">Visão consolidada do faturamento da competência selecionada.</p></div></div>
-        <div class="toolbar"><label>Competência</label><input type="month" id="dashComp" onchange="renderDashboard()"><label>Área</label><select id="dashArea" onchange="renderDashboard()"></select></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="dashComp" onchange="renderDashboard()"><label>Área</label><select id="dashArea" onchange="renderDashboard()"></select><label>Ver por</label><select id="dashBase" onchange="renderDashboard()"><option value="comp">Mês de competência</option><option value="fat">Mês de faturamento</option></select></div>
         <div class="dash-head"><h2 class="dash-mes" id="dashMes"></h2><span class="dash-escopo" id="dashEscopo"></span></div>
         <div class="kpi-grid" id="dashKpis"></div>
         <div class="grid3">
@@ -317,6 +347,16 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
           <div class="card viz-card" id="cardMesValor"></div>
           <div class="card viz-card" id="cardMesAjustes"></div>
         </div>
+        <div class="dash-sec"><h3>Faturamento e recebimento</h3><span>prazos, liberação ao prestador, pedidos, criticidades e inadimplência</span></div>
+        <div class="grid2">
+          <div class="card viz-card" id="cardFatPrazos"></div>
+          <div class="card viz-card" id="cardFatPend"></div>
+        </div>
+        <div class="grid2">
+          <div class="card viz-card" id="cardFatEtapas"></div>
+          <div class="card viz-card" id="cardFatCod"></div>
+        </div>
+        <div class="card viz-card" id="cardFatInad"></div>
         <div class="card viz-card" id="cardOco"></div>
         <div class="card viz-card" id="cardClientes"></div>
         <div class="grid2">
@@ -395,6 +435,22 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="panel" id="panel-config">
         <div class="page-head"><div><h1 class="page-title">Configuração</h1><p class="page-sub">Base de dados do sistema no SharePoint (site BPM).</p></div></div>
         <div id="cfgBody"></div>
+      </div>
+
+      <!-- CODIGOS -->
+      <div class="panel" id="panel-codigos">
+        <div class="page-head"><div><h1 class="page-title">Códigos de serviço</h1><p class="page-sub">Banco de códigos usados nas NFs. Recorrentes ficam fixos no serviço do contrato; pontuais são escolhidos na hora.</p></div>
+          <button class="btn" id="codNovo" onclick="openCodigo()">+ Novo código</button></div>
+        <div class="toolbar"><label>Tipo</label><select id="codTipo" onchange="renderCodigos()"><option value="">Todos</option><option>Recorrente</option><option>Pontual</option></select><label>Buscar</label><input id="codBusca" placeholder="Código ou descrição" oninput="renderCodigos()" style="max-width:240px"></div>
+        <div class="tbl-wrap"><table class="tbl" id="codTable"></table></div>
+      </div>
+
+      <!-- RECEBIMENTOS -->
+      <div class="panel" id="panel-recebimentos">
+        <div class="page-head"><div><h1 class="page-title">Recebimentos</h1><p class="page-sub">NFs emitidas: vencimento, pagamento e inadimplência. O prestador marca pago ou não pago e informa a previsão de recebimento.</p></div></div>
+        <div class="toolbar"><label>Mostrar</label><select id="recFiltro" onchange="renderRecebimentos()"><option value="pendentes">Em aberto (a vencer e vencidos)</option><option value="vencidos">Vencidos / não pagos</option><option value="pagos">Pagos</option><option value="todos">Todos</option></select><label>Buscar</label><input id="recBusca" placeholder="Cliente ou nº da NF" oninput="renderRecebimentos()" style="max-width:240px"></div>
+        <div class="kpi-grid" id="recKpis"></div>
+        <div class="tbl-wrap"><table class="tbl" id="recTable"></table></div>
       </div>
 
       <!-- AJUDA -->
@@ -483,13 +539,15 @@ var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + S
 // ---- Estrutura das listas no SharePoint ----
 // tipos: t = texto, ml = texto longo, n = numero, b = sim/nao
 var SCHEMA = {
-  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"],["CoordenadorEmail","t"],["Pendencias","ml"],["OCMensal","b"]] },
-  contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"]] },
-  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"],["ResponsavelEmail","t"],["Area","t"]] },
+  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"],["CoordenadorEmail","t"],["Pendencias","ml"],["OCMensal","b"],["DiaLimiteNF","n"],["PedidoNF","t"]] },
+  contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"],["DiaLimiteNF","n"]] },
+  itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"],["ResponsavelEmail","t"],["Area","t"],["PrazoFaturamento","n"],["CodigoId","t"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
   parametros: { list:"FAT_Parametros", label:"Parâmetros", cols:[["Tipo","t"],["Cargo","t"],["Valor","n"],["Data","t"],["Local","t"],["Texto","t"]] },
   ocorrencias:{ list:"FAT_Ocorrencias",label:"Ocorrências", cols:[["ClienteId","t"],["ItemId","t"],["Competencia","t"],["Data","t"],["HoraInicio","t"],["HoraFim","t"],["Tipo","t"],["Cargo","t"],["Profissional","t"],["Horas","n"],["Dias","n"],["Valor","n"],["Custo","n"],["Manual","b"],["Detalhe","ml"],["Justificativa","ml"],["SolicitadoCliente","b"],["Evidencia","t"],["LancadoPor","t"],["Tomador","t"],["ValorPendente","b"]] },
-  medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"],["Unidade","t"],["UnidadeNome","t"],["Tomador","t"]] }
+  codigos:    { list:"FAT_Codigos",    label:"Códigos de serviço", cols:[["Codigo","t"],["Descricao","t"],["AliquotaISS","n"],["Retencoes","t"],["Tipo","t"],["Ativo","b"]] },
+  comunicacoes:{ list:"FAT_Comunicacoes", label:"Comunicações", cols:[["MedicaoId","t"],["ClienteId","t"],["Competencia","t"],["Unidade","t"],["Autor","t"],["AutorEmail","t"],["Texto","ml"],["Tipo","t"]] },
+  medicoes:   { list:"FAT_Medicoes",   label:"Medições", cols:[["ClienteId","t"],["Competencia","t"],["ContratoId","t"],["ValorPadrao","n"],["Descontos","n"],["Acrescimos","n"],["ValorFaturar","n"],["Status","t"],["DataEnvio","t"],["DataAprovacao","t"],["AprovadoPor","t"],["ObsNF","ml"],["NumNF","t"],["DataNF","t"],["Linhas","ml"],["Historico","ml"],["GeradoEm","t"],["Unidade","t"],["UnidadeNome","t"],["Tomador","t"],["DataLiberacao","t"],["Critico","b"],["CriticoMotivo","t"],["PagStatus","t"],["DataVencimento","t"],["DataPrevista","t"],["DataPagamento","t"]] }
 };
 var NUMERIC = {}; var BOOLS = {};
 Object.keys(SCHEMA).forEach(function(k){ SCHEMA[k].cols.forEach(function(c){ if (c[1]==="n") NUMERIC[c[0]] = 1; if (c[1]==="b") BOOLS[c[0]] = 1; }); });
@@ -519,7 +577,7 @@ var STATUS_MED = ["Rascunho","Enviada","Contestada","Aprovada","NF emitida"];
 var STATUS_BADGE = { "Não gerada":"b-gray", "Rascunho":"b-blue", "Enviada":"b-amber", "Contestada":"b-red", "Aprovada":"b-purple", "NF emitida":"b-green" };
 
 // ---- Estado ----
-var S = { clientes:[], contratos:[], itens:[], variaveis:[], parametros:[], ocorrencias:[], medicoes:[] };
+var S = { clientes:[], contratos:[], itens:[], variaveis:[], parametros:[], ocorrencias:[], medicoes:[], codigos:[], comunicacoes:[] };
 var LIST_IDS = {};          // chave -> id da lista no SharePoint
 var MISSING_LISTS = [];     // chaves das listas que ainda nao existem
 var MISSING_COLS = {};      // chave -> colunas que faltam em listas existentes
@@ -720,8 +778,9 @@ function perfilAcesso(){
   if (DEMO) return window.__DEMO_PERFIL;
   if (!usuariosCadastrados().length) return "total";
   var u = usuarioDe(CURRENT_USER.email); if (!u) return "ocorrencias";
-  var n = Number(u.Valor); return n === 1 ? "total" : n === 2 ? "ocorrencias" : "atribuidos";
+  var n = Number(u.Valor); return n === 1 ? "total" : n === 2 ? "ocorrencias" : n === 3 ? "prestador" : "atribuidos";
 }
+function soPrestador(){ return perfilAcesso() === "prestador"; }
 function acessoTotal(){ return perfilAcesso() !== "atribuidos"; }
 function soOcorrencias(){ return perfilAcesso() === "ocorrencias"; }
 function isGestor(){
@@ -1107,6 +1166,7 @@ document.addEventListener("DOMContentLoaded", function(){
 function showTab(name){
   if (!name) return;
   if (soOcorrencias() && name !== "ajuda") name = "ocorrencias";
+  if (soPrestador() && TABS_PRESTADOR.indexOf(name) < 0) name = "medicoes";
   CURRENT_TAB = name;
   document.querySelectorAll("#nav .tab").forEach(function(t){ t.classList.toggle("active", t.getAttribute("data-tab") === name); });
   document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active", p.id === "panel-" + name); });
@@ -1114,7 +1174,7 @@ function showTab(name){
   window.scrollTo(0, 0);
 }
 function renderCurrent(){
-  var f = { dashboard:renderDashboard, fechamento:renderFechamento, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig, ajuda:renderAjuda }[CURRENT_TAB];
+  var f = { dashboard:renderDashboard, fechamento:renderFechamento, medicoes:renderMedicoes, ocorrencias:renderOcorrencias, clientes:renderClientes, renovacoes:renderRenovacoes, variaveis:renderVariaveis, margem:renderMargem, parametros:renderParametros, config:renderConfig, ajuda:renderAjuda, codigos:renderCodigos, recebimentos:renderRecebimentos }[CURRENT_TAB];
   if (f) f();
   renderRenovBadge();
 }
@@ -1165,8 +1225,9 @@ function atualizarBotaoMeus(){
 // perfil "so lanca ocorrencias": o menu mostra apenas Ocorrencias
 function aplicarPerfilMenu(){
   var so = soOcorrencias();
-  document.querySelectorAll("#nav .tab").forEach(function(t){ var dt = t.getAttribute("data-tab"); if (dt !== "ocorrencias" && dt !== "ajuda") t.classList.toggle("perfil-oculto", so); });
-  document.querySelectorAll("#nav .tab-group-label").forEach(function(l){ l.classList.toggle("perfil-oculto", so && !/Faturamento|Suporte/i.test(l.textContent)); });
+  document.querySelectorAll("#nav .tab").forEach(function(t){ var dt = t.getAttribute("data-tab"); t.classList.toggle("perfil-oculto", (so && dt !== "ocorrencias" && dt !== "ajuda") || (soPrestador() && TABS_PRESTADOR.indexOf(dt) < 0) || (dt === "recebimentos" && !podeVerRecebimentos())); });
+  document.querySelectorAll("#nav .tab-group-label").forEach(function(l){ l.classList.toggle("perfil-oculto", (so && !/Faturamento|Suporte/i.test(l.textContent)) || (soPrestador() && /Gest/i.test(l.textContent))); });
+  if (soPrestador()){ CURRENT_TAB = TABS_PRESTADOR.indexOf(CURRENT_TAB) >= 0 ? CURRENT_TAB : "medicoes"; var bm = $("meusBtn"); if (bm) bm.classList.add("hidden"); }
   if (so){ CURRENT_TAB = "ocorrencias"; var b = $("meusBtn"); if (b) b.classList.add("hidden"); }
 }
 function toggleMeus(){ if (!acessoTotal()){ showToast("Seu acesso mostra só os clientes atribuídos a você. Para ver outros, peça ao gestor.", true); return; } SO_MEUS = !SO_MEUS; atualizarBotaoMeus(); fillSelects(); SEL.cliente = null; renderCurrent(); }
@@ -1192,7 +1253,7 @@ function startDemo(){
   $("userChip").textContent = CURRENT_USER.name; $("userChip").classList.remove("hidden");
   $("logoutBtn").classList.remove("hidden"); $("logoutBtn").textContent = "Sair";
   $("demoBanner").classList.remove("hidden");
-  buildDemoData(); instalarDemoPersonalizacoes(); stampHeader(); enterApp(); setTimeout(avisoPendencias, 300);
+  buildDemoData(); instalarDemoPersonalizacoes(); demoFaturamento(); stampHeader(); enterApp(); setTimeout(avisoPendencias, 300);
 }
 
 // ------------------------------------------------------------
@@ -1293,15 +1354,15 @@ function renderFechamento(){
 }
 function statusDe(cid, comp, uk){ var m = medicaoDe(cid, comp, uk); return m ? m.Status : "Não gerada"; }
 function renderDashboard(){
-  var comp = $("dashComp").value || curComp(), area = $("dashArea").value;
-  var fats = faturamentosDoMes(area, comp);
+  var comp = $("dashComp").value || curComp(), area = $("dashArea").value, baseFat = $("dashBase") && $("dashBase").value === "fat";
+  var fats = baseFat ? faturamentosPorMesFat(area, comp) : faturamentosDoMes(area, comp);
   var clis = []; fats.forEach(function(r){ if (clis.indexOf(r.c) < 0) clis.push(r.c); });
   var meds = fats.map(function(r){ return r.m; }).filter(Boolean);
   // previsao: medicao salva quando existe; senao, previa calculada pelo contrato vigente + ocorrencias
   var RECONHECIDO = { "Enviada":1, "Aprovada":1, "NF emitida":1 };
   var prev = fats.map(function(r){
     // rascunho ainda nao foi reconhecido: recalcula ao vivo para pegar ocorrencias lancadas depois
-    var m = r.m, src = (m && m.Status !== "Rascunho") ? m : montarMedicao(r.c.id, comp, r.u.key);
+    var m = r.m, src = (m && m.Status !== "Rascunho") ? m : montarMedicao(r.c.id, r.comp || comp, r.u.key);
     if (src.erro && m) src = m;
     if (src.erro) src = { ValorFaturar:0, Descontos:0, Acrescimos:0 };
     return { c:r.c, u:r.u, m:m, v:Number(src.ValorFaturar)||0, d:Number(src.Descontos)||0, a:Number(src.Acrescimos)||0, ok: !!(m && RECONHECIDO[m.Status]) };
@@ -1318,6 +1379,7 @@ function renderDashboard(){
     kpi("Descontos", brl(desc), "faltas, atrasos e serviços suspensos") +
     kpi("Acréscimos", brl(acr), "horas extras, coberturas e reembolsos");
   renderDashVisual(comp, area, fats, prev, clis);
+  renderDashFaturamento(comp, area, fats);
   // pendencias
   var pend = [];
   var semMed = fats.filter(function(r){ return !r.m; });
@@ -1371,7 +1433,9 @@ function faturamentosDoMes(area, comp){
 function ocFixaDe(med){ var u = unidadeDe(med.ClienteId, med.Competencia, med.Unidade || ""); return (u && u.pedido) || ""; }
 function ocDe(med){ var L = linhasDe(med); return L.oc || L.pedido || ocFixaDe(med) || ""; }
 function simB(x){ return x === true || x === "true" || x === 1; }
-function ocObrigatoria(med){ var cli = byId("clientes", med.ClienteId); return !!(cli && (simB(cli.OCMensal) || simB(cli.FaturarPorServico))) && !ocFixaDe(med); }
+function ocObrigatoria(med){ var cli = byId("clientes", med.ClienteId); if (!cli) return false; var rp = cli.PedidoNF;
+  if (rp === "nao") return false; if (rp === "mensal" || rp === "fixo") return true;
+  return !!(simB(cli.OCMensal) || simB(cli.FaturarPorServico)) && !ocFixaDe(med); }
 function faltaOC(med){ return med && (med.Status === "Aprovada") && ocObrigatoria(med) && !ocDe(med); }
 async function salvarOC(id, valor, silent){
   var med = byId("medicoes", id), L = linhasDe(med); L.oc = String(valor || "").trim();
@@ -1398,7 +1462,7 @@ function renderMedicoes(){
     var nRed = r.conf.filter(function(x){ return x.n === "red"; }).length, nAmb = r.conf.filter(function(x){ return x.n === "amber"; }).length;
     var confB = nRed ? '<span class="badge b-red">' + nRed + " crítica(s)</span>" : nAmb ? '<span class="badge b-amber">' + nAmb + " alerta(s)</span>" : '<span class="badge b-green">OK</span>';
     var call = "openMedicao('" + r.c.id + "','" + comp + "','" + ukArg(r.u.key) + "')";
-    return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "<div class='small muted'>" + esc(areaUnidade(r.c, r.u)) + ((r.m ? ocDe(r.m) : r.u.pedido) ? " · OC " + esc(r.m ? ocDe(r.m) : r.u.pedido) : "") + "</div></td>" +
+    return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b>" + (r.u.nome ? "<div style='font-weight:600;color:var(--grena)'>" + esc(r.u.nome) + "</div>" : "") + "<div class='small muted'>" + esc(areaUnidade(r.c, r.u)) + ((r.m ? ocDe(r.m) : r.u.pedido) ? " · OC " + esc(r.m ? ocDe(r.m) : r.u.pedido) : "") + "</div>" + linhaFatLista(r, comp) + "</td>" +
       "<td><span class='badge " + STATUS_BADGE[r.status] + "'>" + esc(r.status) + "</span>" + (r.m ? (faltaOC(r.m) ? "<div><span class='badge b-amber'>Falta OC</span></div>" : "") + (r.desat ? "<div><span class='badge b-red' title='Há ocorrências novas ou alteradas depois que o rascunho foi gerado'>Desatualizado</span></div><div class='small muted'>atual: " + brl(r.desat.ValorFaturar) + "</div>" : "") : "<div class='small muted'>prévia</div>") + "</td>" +
       "<td class='num'>" + brl(p) + "</td><td class='num " + (d ? "neg" : "muted") + "'>" + (d ? "−" + brl(d) : "–") + "</td><td class='num " + (a ? "pos" : "muted") + "'>" + (a ? "+" + brl(a) : "–") + "</td><td class='num'><b>" + brl(f) + "</b></td><td>" + confB + "</td>" +
       "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();" + call + "\">Abrir</button></td></tr>";
@@ -1447,6 +1511,7 @@ function openMedicao(cid, comp, uk){
   var h = "<h3>" + esc(nomeUnidade(cli, u)) + " · " + compLabel(comp) + "</h3><p class='msub'>" + esc(tm.razao || cli.RazaoSocial || "") + ((tm.cnpj || cli.CNPJ) ? " · CNPJ " + esc(tm.cnpj || cli.CNPJ) : "") + ((med ? ocDe(med) : u.pedido) ? " · OC " + esc(med ? ocDe(med) : u.pedido) : "") + "</p>";
   h += stepsHtml(med ? med.Status : "Rascunho");
   h += conf.map(function(x){ return '<div class="alert alert-' + x.n + '">' + esc(x.t) + "</div>"; }).join("");
+  h += painelFaturamento(cid, comp, uk, med);
   if (!med){
     var pv = montarMedicao(cid, comp, uk);
     if (pv.erro){ h += '<div class="alert alert-red">' + esc(pv.erro) + '</div><div class="modal-actions"><button class="btn-o" onclick="goCliente(\'' + cid + '\')">Abrir cadastro do cliente</button></div>'; openModal(h, true); return; }
@@ -1474,9 +1539,12 @@ function openMedicao(cid, comp, uk){
   if (st === "Rascunho"){ a.push('<button class="btn-o" onclick="acaoGerar(\'' + cid + "','" + comp + "','" + ukArg(uk) + '\')">Gerar novamente</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Enviada\')">Marcar como enviada ao cliente</button>'); }
   if (st === "Enviada"){ a.push('<button class="btn-o" onclick="prepararEmail(\'' + id + '\',\'um\',true)">&#128276; Cobrar cliente</button>'); a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho</button>'); a.push('<button class="btn btn-danger" onclick="formStatus(\'' + id + '\',\'Contestada\')">Cliente contestou</button>'); a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Aprovada\')">Cliente aprovou</button>'); }
   if (st === "Contestada") a.push('<button class="btn" onclick="formStatus(\'' + id + '\',\'Rascunho\')">Voltar para rascunho e corrigir</button>');
-  if (st === "Aprovada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Enviada\')">Desfazer aprovação</button>'); a.push('<button class="btn" onclick="dadosNF(\'' + id + '\')">Conferir e emitir a NF</button>'); }
+  if (st === "Aprovada"){ a.push('<button class="btn-o" onclick="formStatus(\'' + id + '\',\'Enviada\')">Desfazer aprovação</button>'); a.push('<button class="btn-o" style="border-color:var(--grena);font-weight:700" onclick="liberarFaturamento(\'' + id + '\')">&#10148; ' + (liberada(med) ? "Reenviar liberação ao prestador" : "Liberar faturamento ao prestador") + '</button>'); a.push('<button class="btn" onclick="dadosNF(\'' + id + '\')">Conferir e emitir a NF</button>'); }
   if (st === "NF emitida"){ a.push('<button class="btn-o" onclick="dadosNF(\'' + id + '\')">Dados da NF</button>'); a.push('<button class="btn" onclick="copiarAvisoFinanceiro(\'' + id + '\')">Copiar aviso ao financeiro</button>'); }
+  if (soPrestador()) a = a.filter(function(b){ return /baixarBoletim|copiarTabelaEmail|dadosNF|copiarAvisoFinanceiro|relatorio|baixarRelatorioPDF/i.test(b); });
+  h += painelPagamento(med);
   h += '<div class="modal-actions">' + a.join("") + "</div>";
+  h += painelComunicacao(med);
   var hist = historicoDe(med);
   if (hist.length) h += "<div style='margin-top:16px'><p class='card-title' style='font-size:14px'>Histórico</p>" + hist.slice().reverse().map(function(x){ return "<div class='small' style='padding:4px 0;border-bottom:1px solid var(--border)'><span class='badge " + (STATUS_BADGE[x.s] || "b-gray") + "'>" + esc(x.s) + "</span> " + new Date(x.d).toLocaleString("pt-BR") + " · " + esc(x.p || "") + (x.o ? " · " + esc(x.o) : "") + "</div>"; }).join("") + "</div>";
   openModal(h, true);
@@ -1518,7 +1586,7 @@ function nfInfo(med){
   var uniq = function(arr){ return arr.filter(function(x, i){ return x && arr.indexOf(x) === i; }).join(" / "); };
   var pedidos = L.oc || L.pedido || uniq(itens.map(function(i){ var d = divisaoDe(i, cli).filter(function(x){ return (x.t || "") === (med.Tomador || ""); })[0]; return (d && d.pedido) || i.NumPedido; }));
   var disc = "Prestação de serviços referente a " + compLabel(med.Competencia) + ":\n" + (L.lines || []).map(function(l){ return "- " + l.servico + ": " + brl(l.final); }).join("\n") + "\nTotal: " + brl(med.ValorFaturar);
-  return { cli:cli, unidade: med.UnidadeNome || "", tomador: tm.razao || cli.RazaoSocial || cli.Title, cnpj: tm.cnpj || cli.CNPJ || "", valor: med.ValorFaturar, codigos: uniq(itens.map(function(i){ return i.CodigoServicoNF; })), retencoes: uniq(itens.map(function(i){ return i.Retencoes; })), pedidos: pedidos, rateio: uniq((L.lines || []).filter(function(l){ return l.pct && l.pct < 100; }).map(function(l){ return l.servico; })), disc: disc };
+  return { cli:cli, unidade: med.UnidadeNome || "", tomador: tm.razao || cli.RazaoSocial || cli.Title, cnpj: tm.cnpj || cli.CNPJ || "", valor: med.ValorFaturar, codigos: uniq(itens.map(function(i){ return codigoItem(i); })), retencoes: uniq(itens.map(function(i){ return i.Retencoes; })), pedidos: pedidos, rateio: uniq((L.lines || []).filter(function(l){ return l.pct && l.pct < 100; }).map(function(l){ return l.servico; })), disc: disc };
 }
 // site de emissao da NFS-e (Prefeitura de Mogi das Cruzes). Pode ser trocado em Parametros com Tipo "LinkNF" (campo Texto).
 function linkPrefeituraNF(){ var p = S.parametros.filter(function(x){ return x.Tipo === "LinkNF" && x.Texto; })[0]; return p ? p.Texto : "https://servicos.mogidascruzes.sp.gov.br/tbw/loginCNPJContribuinte.jsp"; }
@@ -1708,11 +1776,17 @@ function prepararEmail(id, modo, cobr){
   h += "<div class='form'>";
   grupos.forEach(function(g, gi){
     var d = g.map(destinatariosDe), para = juntarEmails(d.map(function(x){ return x.para; })), cc = juntarEmails(d.map(function(x){ return x.cc; }));
+    // o prestador (financeiro) nao entra nos e-mails ao cliente; criticidade poe o coordenador em copia
+    cc = emailsDe(cc).filter(function(e){ return !ehEmailPrestador(e); }).join("; ");
+    var critG = g.filter(function(m){ return simB(m.Critico); });
+    if (critG.length) cc = juntarEmails([cc].concat(critG.map(function(m){ return coordenadorDe(m.ClienteId, m.Competencia, m.Unidade || "").emails.join("; "); })));
     if (grupos.length > 1) h += "<div class='full' style='border-top:1px dashed var(--border);padding-top:10px;margin-top:4px'><b style='color:var(--grena)'>E-mail " + (gi + 1) + ": " + esc(g[0].UnidadeNome || cli.Title) + "</b> <span class='small muted'>· " + brl(g[0].ValorFaturar) + "</span></div>";
     h += "<div><label>Para</label><input id='ePara" + gi + "' value='" + esc(para) + "' placeholder='email@cliente.com.br; outro@cliente.com.br'></div><div><label>Cc</label><input id='eCc" + gi + "' value='" + esc(cc) + "' placeholder='opcional'></div>";
     if (grupos.length === 1) h += "<div class='full'><label>Assunto</label><input id='eAss0' value='" + esc((cobr ? "Lembrete: " : "") + assuntoEmail(g)) + "'></div>";
   });
   h += "<div class='full'><label>Mensagem" + (grupos.length > 1 ? " (a mesma para todos; o nome do serviço entra no assunto de cada um)" : "") + "</label><textarea id='eTxt' style='min-height:150px'>" + esc(cobr ? textoCobranca(grupos[0]) : textoPadraoEmail(grupos[0])) + "</textarea><div class='hint'>Depois da mensagem entram " + (grupos[0].length > 1 ? "os boletins" : "o boletim") + " (com as cores da ElevaLife) e a sua assinatura.</div></div>";
+  if (todas.some(function(m){ return simB(m.Critico); })) h += "<div class='full'><div class='alert alert-red' style='margin:0'>Faturamento com criticidade: o coordenador responsável já está em cópia.</div></div>";
+  h += "<div class='full'><label class='check'><input type='checkbox' id='eIncPrest'> Incluir o prestador (" + esc(emailsPrestador().join(", ")) + ") em cópia — só em situações atípicas</label></div>";
   h += "<div class='full'><label class='check'><input type='checkbox' id='eXls' checked> Anexar o boletim em Excel (com o detalhamento das ocorrências)</label></div>";
   var temRel = todas.some(function(m){ return relatorioTipo(m); });
   if (temRel) h += "<div class='full'><label class='check'><input type='checkbox' id='eRel' checked> Anexar o relatório mensal em PDF (" + esc(todas.filter(function(m){ return relatorioTipo(m); }).map(function(m){ return m.UnidadeNome || byId("clientes", m.ClienteId).Title; }).join(", ")) + ")</label></div>";
@@ -1725,7 +1799,7 @@ function prepararEmail(id, modo, cobr){
 function lerGruposEmail(){
   return (window.__emailGrupos || []).map(function(ids, gi){
     var lista = ids.map(function(i){ return byId("medicoes", i); });
-    return { lista: lista, para: v("ePara" + gi), cc: v("eCc" + gi), assunto: $("eAss" + gi) ? v("eAss" + gi) : (window.__emailCobr ? "Lembrete: " : "") + assuntoEmail(lista) };
+    return { lista: lista, para: v("ePara" + gi), cc: ($("eIncPrest") && v("eIncPrest")) ? juntarEmails([v("eCc" + gi), emailsPrestador().join("; ")]) : v("eCc" + gi), assunto: $("eAss" + gi) ? v("eAss" + gi) : (window.__emailCobr ? "Lembrete: " : "") + assuntoEmail(lista) };
   });
 }
 async function previaEmail(id){
@@ -1788,7 +1862,7 @@ async function criarRascunhos(id){
       for (var j = 0; j < G.lista.length; j++){
         var m = G.lista[j], hist = historicoDe(m); hist.push({ s: m.Status, d: new Date().toISOString(), p: CURRENT_USER.name, o: (window.__emailCobr ? "Cobrança ao cliente criada no Outlook para " : "Rascunho de e-mail criado no Outlook para ") + G.para });
         // num e-mail unico com varios servicos, so preenche quem ainda nao tinha contato (nao sobrescreve o de cada servico)
-        if (salvar && (G.lista.length === 1 || !destinatariosDe(m).para)) await salvarDestinatarios(m, emailsDe(G.para).join("; "), emailsDe(G.cc).join("; "));
+        if (salvar && (G.lista.length === 1 || !destinatariosDe(m).para)) await salvarDestinatarios(m, emailsDe(G.para).join("; "), emailsDe(G.cc).filter(function(e){ return !ehEmailPrestador(e) && !(simB(m.Critico) && coordenadorDe(m.ClienteId, m.Competencia, m.Unidade || "").emails.indexOf(e.toLowerCase()) >= 0); }).join("; "));
         await api.update("medicoes", m.id, { Historico: JSON.stringify(hist) });
       }
     }
@@ -2226,6 +2300,8 @@ function tomadoresForm(c){
   return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px;margin-top:4px'><label>Faturamento</label>" +
     "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_FaturarPorServico' " + (c.FaturarPorServico ? "checked" : "") + "> Cada serviço é faturado separadamente (OC, boletim e NF próprios por serviço)</label>" +
     "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_OCMensal' " + (simB(c.OCMensal) ? "checked" : "") + "> O cliente libera uma OC nova todo mês (a OC passa a ser obrigatória antes da NF)</label>" +
+    "<div class='form' style='margin:0 0 10px;padding:0'><div><label>Pedido / OC é obrigatório para a NF?</label><select id='c_PedidoNF'>" + Object.keys(PEDIDO_REGRAS).map(function(k){ return opt(k, PEDIDO_REGRAS[k], c.PedidoNF || ""); }).join("") + "</select></div>" +
+    "<div><label>Dia limite para subir a NF no portal</label><select id='c_DiaLimiteNF'>" + opt("", "Não informado", String(c.DiaLimiteNF || "")) + Array.apply(null, Array(31)).map(function(x, i){ return opt(String(i + 1), "Dia " + (i + 1), String(c.DiaLimiteNF || "")); }).join("") + "</select><div class='hint'>O sistema considera 3 dias antes como prazo interno.</div></div></div>" +
     "<label>Tomadores (CNPJs que recebem NF) — deixe em branco se for um só</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Nome curto</th><th>Razão social</th><th>CNPJ</th><th>E-mail(s) do focal (Para)</th><th>Cópia</th><th>Modelo de boletim</th></tr></thead><tbody>" +
     ts.map(function(t, i){ return "<tr><td><input id='tm_n" + i + "' data-k='" + esc(t.k) + "' value='" + esc(t.nome) + "' placeholder='Ex.: S.A' style='width:100%;padding:7px;border:1px solid var(--border);border-radius:7px'></td><td>" + inpT("tm_r" + i, t.razao) + "</td><td>" + inpT("tm_c" + i, t.cnpj) + "</td><td>" + inpT("tm_e" + i, t.para) + "</td><td>" + inpT("tm_x" + i, t.cc) + "</td><td><select id='tm_m" + i + "' style='padding:7px;border:1px solid var(--border);border-radius:7px'>" + opt("", "Igual ao cliente", t.modelo || "") + S.modelos.map(function(mn){ return opt(mn, mn, t.modelo || ""); }).join("") + "</select></td></tr>"; }).join("") +
     "</tbody></table></div><div class='hint'>Depois, em cada serviço, informe quanto vai para cada tomador (ex.: 70% S.A / 30% Cilindros).</div></div>";
@@ -2244,7 +2320,8 @@ function lerTomadoresForm(){
   return out;
 }
 async function salvarCliente(id){
-  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","CoordenadorEmail","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Pendencias","Ativo","EmailsCopia","FaturarPorServico","OCMensal"].forEach(function(k){ f[k] = v("c_" + k); });
+  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","CoordenadorEmail","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Pendencias","Ativo","EmailsCopia","FaturarPorServico","OCMensal","PedidoNF"].forEach(function(k){ f[k] = v("c_" + k); });
+  f.DiaLimiteNF = parseNum(v("c_DiaLimiteNF")) || null;
   f.Tomadores = JSON.stringify(lerTomadoresForm());
   if (!f.Title){ showToast("Informe o nome do cliente.", true); return; }
   var r = await safe(function(){ return id ? api.update("clientes", id, f) : api.create("clientes", f); }, "Cliente salvo.");
@@ -2262,6 +2339,7 @@ function openContrato(cid, ctId){
     "<div><label>Mês do reajuste</label><input id='k_MesReajuste' value='" + esc(ct.MesReajuste || "") + "' placeholder='Ex.: fevereiro'></div>" +
     "<div><label>Aviso prévio (dias)</label><input id='k_AvisoPrevioDias' inputmode='numeric' value='" + esc(ct.AvisoPrevioDias || "") + "'></div>" +
     "<div><label>Versão</label><input id='k_Versao' inputmode='numeric' value='" + esc(ct.Versao || 1) + "'></div>" +
+    "<div><label>Dia limite da NF no portal do cliente</label><select id='k_DiaLimiteNF'>" + opt("", "O do cadastro do cliente" + (byId("clientes", cid) && byId("clientes", cid).DiaLimiteNF ? " (dia " + byId("clientes", cid).DiaLimiteNF + ")" : ""), String(ct.DiaLimiteNF || "")) + Array.apply(null, Array(31)).map(function(x, i){ return opt(String(i + 1), "Dia " + (i + 1), String(ct.DiaLimiteNF || "")); }).join("") + "</select><div class='hint'>Prazo interno: 3 dias antes.</div></div>" +
     "<div class='full'><label>Link do contrato (PDF no SharePoint)</label><input id='k_LinkContrato' value='" + esc(ct.LinkContrato || "") + "'></div>" +
     "<div class='full'><label>Observações</label><textarea id='k_Observacoes'>" + esc(ct.Observacoes || "") + "</textarea></div></div>" +
     "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarContrato('" + cid + "','" + (ctId || "") + "')\">Salvar</button></div>";
@@ -2269,7 +2347,7 @@ function openContrato(cid, ctId){
 }
 async function salvarContrato(cid, ctId){
   var f = { ClienteId:String(cid) }; ["Title","Status","Inicio","Fim","IndiceReajuste","MesReajuste","LinkContrato","Observacoes"].forEach(function(k){ f[k] = v("k_" + k); });
-  f.AvisoPrevioDias = parseNum(v("k_AvisoPrevioDias")) || null; f.Versao = parseNum(v("k_Versao")) || 1;
+  f.AvisoPrevioDias = parseNum(v("k_AvisoPrevioDias")) || null; f.Versao = parseNum(v("k_Versao")) || 1; f.DiaLimiteNF = parseNum(v("k_DiaLimiteNF")) || null;
   if (f.Inicio && f.Fim && f.Fim < f.Inicio){ showToast("O término não pode ser antes do início.", true); return; }
   var r = await safe(function(){ return ctId ? api.update("contratos", ctId, f) : api.create("contratos", f); }, "Contrato salvo.");
   if (!ctId && r) SEL.contrato = String(r.id);
@@ -2326,7 +2404,8 @@ function openItem(ctId, itemId){
     "<div><label>Regra de desconto</label><select id='i_RegraDesconto' onchange='itemPreview()'>" + Object.keys(REGRAS).map(function(k){ return opt(k, REGRAS[k].label, it.RegraDesconto); }).join("") + "</select></div>" +
     "<div id='wDiv'><label id='lDiv'>Divisor</label><input id='i_Divisor' inputmode='decimal' value='" + esc(it.Divisor != null ? String(it.Divisor).replace(".", ",") : "") + "' oninput='itemPreview()'></div>" +
     "<div><label>Jornada diária (horas)</label><input id='i_JornadaDiaria' inputmode='decimal' value='" + esc(it.JornadaDiaria != null ? String(it.JornadaDiaria).replace(".", ",") : "") + "' oninput='itemPreview()'><div class='hint'>Usada para converter atrasos em horas.</div></div>" +
-    "<div><label>Código do serviço (NF)</label><input id='i_CodigoServicoNF' value='" + esc(it.CodigoServicoNF || "") + "' placeholder='Ex.: 04.06.01'></div>" +
+    "<div><label>Código do serviço (NF)</label><select id='i_CodigoId'>" + codigoOptions(it.CodigoId, it.CodigoServicoNF) + "</select><input type='hidden' id='i_CodigoServicoNF' value='" + esc(it.CodigoServicoNF || "") + "'><div class='hint'>Os códigos ficam em Contratos › Códigos de serviço.</div></div>" +
+    "<div><label>Prazo de faturamento</label><select id='i_PrazoFaturamento'>" + PRAZOS_FAT.map(function(p){ return opt(String(p[0]), p[1], String(Number(it.PrazoFaturamento) || 0)); }).join("") + "</select><div class='hint'>Contratos novos: em geral 120 dias após o início; depois, Imediato.</div></div>" +
     "<div><label>Retenções (conforme contrato)</label><input id='i_Retencoes' value='" + esc(it.Retencoes || "") + "' placeholder='Ex.: ISS 2%, INSS 11%'></div>" +
     (multiTom ? divisaoForm(it, cli) : "<div><label>Nº do pedido / OC</label><input id='i_NumPedido' value='" + esc(it.NumPedido || "") + "'></div>") +
     "<div><label>Ordem no boletim</label><input id='i_Ordem' inputmode='numeric' value='" + esc(it.Ordem || "") + "'></div>" +
@@ -2356,7 +2435,7 @@ function itemPreview(){
 async function salvarItem(ctId, itemId){
   var ct = byId("contratos", ctId);
   var cli = byId("clientes", ct.ClienteId);
-  var f = { ContratoId:String(ctId), ClienteId:String(ct.ClienteId), Title:v("i_Title"), Cargo:v("i_Cargo"), ValorMensal:parseNum(v("i_ValorMensal")), RegraDesconto:v("i_RegraDesconto"), Divisor:parseNum(v("i_Divisor")) || null, JornadaDiaria:parseNum(v("i_JornadaDiaria")) || null, CodigoServicoNF:v("i_CodigoServicoNF"), Retencoes:v("i_Retencoes"), Ordem:parseNum(v("i_Ordem")) || null };
+  var f = { ContratoId:String(ctId), ClienteId:String(ct.ClienteId), Title:v("i_Title"), Cargo:v("i_Cargo"), ValorMensal:parseNum(v("i_ValorMensal")), RegraDesconto:v("i_RegraDesconto"), Divisor:parseNum(v("i_Divisor")) || null, JornadaDiaria:parseNum(v("i_JornadaDiaria")) || null, CodigoServicoNF: v("i_CodigoId") ? ((byId("codigos", v("i_CodigoId")) || {}).Codigo || v("i_CodigoServicoNF")) : v("i_CodigoServicoNF"), CodigoId:v("i_CodigoId"), PrazoFaturamento: parseNum(v("i_PrazoFaturamento")) || 0, Retencoes:v("i_Retencoes"), Ordem:parseNum(v("i_Ordem")) || null };
   if ($("dv_p0")){
     var dv = lerDivisaoForm(cli), soma = dv.reduce(function(a, d){ return a + d.pct; }, 0);
     if (Math.abs(soma - 100) > 0.001){ showToast("A divisão entre tomadores precisa somar 100% (hoje soma " + num(soma, 1) + "%).", true); return; }
@@ -2610,7 +2689,7 @@ function cardUsuarios(){
   var h = "<div class='card' style='border-left:4px solid var(--grena)'><div style='display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start'><div><p class='card-title' style='margin:0'>Usuários e acesso aos clientes</p><p class='card-sub' style='margin:4px 0 0'>Quem tem <b>todos os clientes</b> vê tudo. <b>Só os atribuídos</b> vê os faturamentos dele. <b>Só lança ocorrências</b> vê apenas a tela de Ocorrências, em qualquer cliente (é o acesso de quem não está cadastrado)." + (cad ? "" : " <b>Ainda não há usuários cadastrados: por enquanto todos veem tudo.</b>") + "</p></div><button class='btn btn-s' onclick='openUsuario()'>+ Usuário</button></div>";
   h += "<div class='tbl-wrap' style='margin-top:12px'><table class='tbl'><thead><tr><th>Usuário</th><th>Acesso</th><th class='num'>Faturamentos atribuídos</th><th></th></tr></thead><tbody>" + us.map(function(u){
     var p = usuarioDe(u.email), tot = p && Number(p.Valor) === 1;
-    var ac = !cad ? "<span class='badge b-gray'>todos (sem regra ainda)</span>" : tot ? "<span class='badge b-green'>Todos os clientes</span>" : p && Number(p.Valor) === 2 ? "<span class='badge b-purple'>Só lança ocorrências</span>" : p ? "<span class='badge b-blue'>Só os atribuídos</span>" : "<span class='badge b-amber'>Não cadastrado (só lança ocorrências)</span>";
+    var ac = !cad ? "<span class='badge b-gray'>todos (sem regra ainda)</span>" : tot ? "<span class='badge b-green'>Todos os clientes</span>" : p && Number(p.Valor) === 2 ? "<span class='badge b-purple'>Só lança ocorrências</span>" : p && Number(p.Valor) === 3 ? "<span class='badge b-amber'>Faturamento (prestador)</span>" : p ? "<span class='badge b-blue'>Só os atribuídos</span>" : "<span class='badge b-amber'>Não cadastrado (só lança ocorrências)</span>";
     return "<tr><td><b>" + esc(u.nome || u.email.split("@")[0]) + "</b><div class='small muted'>" + esc(u.email) + "</div></td><td>" + ac + "</td><td class='num'>" + atribuidosDe(u.email) + "</td><td style='text-align:right;white-space:nowrap'><button class='btn-o btn-s' onclick=\"openUsuario('" + esc(u.email) + "')\">Acesso</button> <button class='btn-o btn-s' onclick=\"openAtribuir('" + esc(u.email) + "')\">Atribuir faturamentos</button></td></tr>"; }).join("") + "</tbody></table></div>";
   return h + "<p class='small muted' style='margin:10px 0 0'>Isto organiza o que cada pessoa vê no sistema. Quem tem acesso às listas do SharePoint ainda consegue abri-las por lá.</p></div>";
 }
@@ -2619,7 +2698,7 @@ function openUsuario(email){
   var h = "<h3>" + (email ? "Acesso de " + esc(email) : "Novo usuário") + "</h3><p class='msub'>Depois de salvar, use \"Atribuir faturamentos\" para escolher os clientes e serviços desta pessoa.</p><div class='form'>" +
     "<div><label>E-mail</label><input id='u_Email' type='email' value='" + esc(email || "") + "'" + (email ? " readonly" : "") + " placeholder='nome@elevalife.com.br'></div>" +
     "<div><label>Nome</label><input id='u_Nome' value='" + esc((p && p.Cargo) || "") + "'></div>" +
-    "<div class='full'><label>Acesso</label><select id='u_Acesso'>" + opt("0", "Só os faturamentos atribuídos a ele", p ? String(Number(p.Valor) || 0) : "0") + opt("1", "Todos os clientes", p ? String(Number(p.Valor) || 0) : "0") + opt("2", "Só lança ocorrências (qualquer cliente, sem faturamento)", p ? String(Number(p.Valor) || 0) : "0") + "</select><div class='hint'>Quem entra no sistema sem estar nesta lista fica com \"Só lança ocorrências\".</div></div></div>" +
+    "<div class='full'><label>Acesso</label><select id='u_Acesso'>" + opt("0", "Só os faturamentos atribuídos a ele", p ? String(Number(p.Valor) || 0) : "0") + opt("1", "Todos os clientes", p ? String(Number(p.Valor) || 0) : "0") + opt("2", "Só lança ocorrências (qualquer cliente, sem faturamento)", p ? String(Number(p.Valor) || 0) : "0") + opt("3", "Faturamento (prestador): medições liberadas, NF e recebimentos", p ? String(Number(p.Valor) || 0) : "0") + "</select><div class='hint'>Quem entra no sistema sem estar nesta lista fica com \"Só lança ocorrências\".</div></div></div>" +
     "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick='salvarUsuario()'>Salvar</button></div>";
   openModal(h);
 }
@@ -3385,7 +3464,8 @@ function previaMes(area, comp){
 
 function renderDashVisual(comp, area, fats, prev, clis){
   $("dashMes").textContent = compLabel(comp).replace(/^./, function(x){ return x.toUpperCase(); });
-  $("dashEscopo").textContent = "Indicadores · " + (area || "todas as áreas") + (soMeus() ? " · meus clientes" : "");
+  var bF = $("dashBase") && $("dashBase").value === "fat";
+  $("dashEscopo").textContent = (bF ? "Por mês de faturamento (ocorrências e séries mensais seguem a competência)" : "Por mês de competência") + " · " + (area || "todas as áreas") + (soMeus() ? " · meus clientes" : "");
   // 1) reconhecimento
   var recV = prev.filter(function(r){ return r.ok; }).reduce(function(s, r){ return s + r.v; }, 0), tot = prev.reduce(function(s, r){ return s + r.v; }, 0), falta = Math.max(0, tot - recV);
   var nRec = prev.filter(function(r){ return r.ok; }).length, pct = tot ? Math.round(recV / tot * 100) : 0;
@@ -3500,6 +3580,359 @@ async function copiarCard(id){
 }
 
 // ============================================================
+// FATURAMENTO x PRESTADOR: prazos, data limite, pedido, codigos, liberacao,
+// comunicacao, criticidade, recebimentos (inadimplencia) e indicadores
+// ============================================================
+var PRAZOS_FAT = [[0, "Imediato"], [15, "15 dias"], [30, "30 dias"], [45, "45 dias"], [60, "60 dias"], [75, "75 dias"], [90, "90 dias"], [120, "120 dias"]];
+var MOTIVOS_CRIT = ["Contrato encerrado", "Contrato vencido sem renovação", "Valor divergente", "Sem pedido / OC", "Cliente sem resposta", "Negociação comercial", "Outro"];
+var PEDIDO_REGRAS = { "":"Conforme o cadastro (padrão)", nao:"Não exige pedido", fixo:"Pedido fixo do contrato", mensal:"Pedido novo a cada mês" };
+function prazoTxt(d){ d = Number(d) || 0; var p = PRAZOS_FAT.filter(function(x){ return x[0] === d; })[0]; return p ? p[1] : d + " dias"; }
+function emailsPrestador(){
+  var l = S.parametros.filter(function(p){ return p.Tipo === "Usuario" && Number(p.Valor) === 3 && p.Texto; }).map(function(p){ return String(p.Texto).toLowerCase(); });
+  return l.length ? l : ["financeiro@elevalife.com.br", "financeiro1@elevalife.com.br"];
+}
+function ehEmailPrestador(e){ e = String(e || "").toLowerCase(); return emailsPrestador().indexOf(e) >= 0 || /^financeiro\d*@elevalife\.com\.br$/.test(e); }
+// servicos que compoem um faturamento (unidade)
+function itensDaUnidade(cid, comp, uk){
+  var cli = byId("clientes", cid), ct = contratoVigente(cid, comp) || contratoAtual(cid), its = ct ? itensDoContrato(ct.id) : [], u = unidadeDe(cid, comp, uk || "");
+  if (u.itemId) return its.filter(function(i){ return String(i.id) === String(u.itemId); });
+  if (u.t) return its.filter(function(i){ return divisaoDe(i, cli).some(function(d){ return (d.t || "") === u.t; }); });
+  return its;
+}
+function prazoUnidade(cid, comp, uk){ return itensDaUnidade(cid, comp, uk).reduce(function(m, i){ return Math.max(m, Number(i.PrazoFaturamento) || 0); }, 0); }
+// previsao da NF: inicio da competencia + prazo, nunca antes do mes seguinte ao fechamento
+function previsaoFat(cid, comp, uk){
+  var pz = prazoUnidade(cid, comp, uk), base = addDays(comp + "-01", pz), min = compAdd(comp, 1) + "-01", d = base < min ? min : base;
+  return { prazo:pz, data:d, mes:d.slice(0, 7) };
+}
+function mesFatDe(med){ return previsaoFat(med.ClienteId, med.Competencia, med.Unidade || "").mes; }
+function diaLimiteDe(cid, comp){ var cli = byId("clientes", cid), ct = contratoVigente(cid, comp) || contratoAtual(cid); return Number(ct && ct.DiaLimiteNF) || Number(cli && cli.DiaLimiteNF) || 0; }
+// data limite para subir a NF no portal do cliente (dia fixo do mes de faturamento) e prazo interno (3 dias antes)
+function limiteNF(cid, comp, uk){
+  var dia = diaLimiteDe(cid, comp); if (!dia) return null;
+  var mes = previsaoFat(cid, comp, uk).mes, d = Math.min(dia, daysInMonth(mes)), portal = mes + "-" + pad(d);
+  return { dia:dia, portal:portal, interno: addDays(portal, -3) };
+}
+function situacaoLimite(lim, med){
+  if (!lim) return null;
+  if (med && med.Status === "NF emitida") return med.DataNF && med.DataNF > lim.portal ? { cls:"b-red", txt:"NF emitida após o limite" } : { cls:"b-green", txt:"NF dentro do prazo" };
+  var hoje = todayISO(), d = daysBetween(hoje, lim.interno);
+  if (hoje > lim.portal) return { cls:"b-red", txt:"Limite vencido" };
+  if (d < 0) return { cls:"b-red", txt:"Passou do prazo interno" };
+  if (d <= 3) return { cls:"b-amber", txt:"Em risco: " + d + " dia(s) para o prazo interno" };
+  return { cls:"b-blue", txt: d + " dia(s) para o prazo interno" };
+}
+function codigoItem(it){ var c = it && it.CodigoId ? byId("codigos", it.CodigoId) : null; return c ? c.Codigo + (c.Descricao ? " – " + c.Descricao : "") : (it && it.CodigoServicoNF) || ""; }
+function regraPedido(cli){ if (!cli) return ""; if (cli.PedidoNF) return cli.PedidoNF; return simB(cli.OCMensal) || simB(cli.FaturarPorServico) ? "mensal" : ""; }
+function coordenadorDe(cid, comp, uk){
+  var cli = byId("clientes", cid), its = itensDaUnidade(cid, comp, uk), em = [];
+  its.forEach(function(i){ emailsLista(responsavelItem(i, cli)).forEach(function(e){ if (em.indexOf(e) < 0) em.push(e); }); });
+  if (!em.length) em = emailsLista(cli.CoordenadorEmail);
+  em = em.filter(function(e){ return e.indexOf("@") > 0; });
+  var nomes = em.map(function(e){ var u = usuarioDe(e); return (u && u.Cargo) || e.split("@")[0]; });
+  return { emails:em, nomes:nomes, nome: nomes.join(", ") || cli.Coordenador || "" };
+}
+function liberada(med){ return !!(med && med.DataLiberacao); }
+
+// ---------- quadro "Faturamento" no painel da medicao ----------
+function painelFaturamento(cid, comp, uk, med){
+  var cli = byId("clientes", cid), pv = previsaoFat(cid, comp, uk), lim = limiteNF(cid, comp, uk), sit = situacaoLimite(lim, med), co = coordenadorDe(cid, comp, uk);
+  var its = itensDaUnidade(cid, comp, uk), cods = uniqList(its.map(codigoItem).filter(Boolean)), rp = regraPedido(cli), pedido = med ? ocDe(med) : unidadeDe(cid, comp, uk).pedido;
+  var cel = function(k, val, extra){ return "<div class='fat-cel'><p>" + esc(k) + "</p><div>" + val + "</div>" + (extra || "") + "</div>"; };
+  var h = "<div class='fat-box'>";
+  if (lim) h += "<div class='fat-limite " + (sit ? sit.cls : "") + "'><span>Data limite da NF no portal do cliente</span><b>" + fmtDate(lim.portal) + "</b><em>prazo interno " + fmtDate(lim.interno) + (sit ? " · " + esc(sit.txt) : "") + "</em></div>";
+  else h += "<div class='fat-limite b-gray'><span>Data limite da NF</span><b>não cadastrada</b><em>informe o dia no cadastro do cliente ou do contrato</em></div>";
+  h += "<div class='fat-grid'>" +
+    cel("Coordenador responsável", esc(co.nome || "não informado") + (co.emails.length ? "<div class='small muted'>" + esc(co.emails.join("; ")) + "</div>" : ""), co.emails.length ? "<button class='btn-o btn-s' style='margin-top:6px' onclick=\"emailCoordenador('" + cid + "','" + comp + "','" + ukArg(uk) + "')\">&#9993; E-mail ao coordenador</button>" : "") +
+    cel("Faturamento", "<b>" + esc(compLabel(pv.mes)) + "</b><div class='small muted'>competência " + esc(compLabel(comp)) + " · prazo " + esc(prazoTxt(pv.prazo)) + " · previsão " + fmtDate(pv.data) + "</div>") +
+    cel("Código do serviço", cods.length ? esc(cods.join(" / ")) : "<span class='muted'>não definido</span>") +
+    cel("Pedido / OC para a NF", (rp === "nao" ? "Não exige" : rp === "fixo" ? "Obrigatório (fixo)" : rp === "mensal" ? "Obrigatório (novo a cada mês)" : "Conforme cadastro") + "<div class='small " + (pedido ? "muted" : (rp && rp !== "nao" ? "neg" : "muted")) + "'>" + (pedido ? "Nº " + esc(pedido) : (rp && rp !== "nao" ? "ainda não informado" : "—")) + "</div>") +
+    "</div>";
+  if (med){
+    h += "<div class='fat-acoes'>" + (simB(med.Critico) ? "<span class='badge b-red'>&#9888; Criticidade: " + esc(med.CriticoMotivo || "sim") + "</span> <button class='btn-ghost' onclick=\"criticidade('" + med.id + "')\">alterar</button>" : "<button class='btn-ghost' onclick=\"criticidade('" + med.id + "')\">&#9888; Sinalizar criticidade</button>") +
+      (liberada(med) ? " <span class='badge b-purple'>Liberado ao prestador em " + fmtDate(med.DataLiberacao) + "</span>" : "") + "</div>";
+  }
+  return h + "</div>";
+}
+// ---------- comunicacao (chat) ----------
+function comunicacoesDe(med){ return S.comunicacoes.filter(function(c){ return String(c.MedicaoId) === String(med.id); }).sort(function(a, b){ return String(a.Created || a.Modified || "").localeCompare(String(b.Created || b.Modified || "")); }); }
+var DIAS_SEM_C = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+function quandoTxt(iso){ var d = new Date(iso); if (isNaN(d)) return ""; return d.toLocaleDateString("pt-BR") + " (" + DIAS_SEM_C[d.getDay()] + ") " + d.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" }); }
+function painelComunicacao(med){
+  var l = comunicacoesDe(med);
+  return "<div class='card' style='margin:14px 0 0;padding:12px 14px'><p class='card-title' style='font-size:14px;margin:0 0 8px'>Comunicação deste faturamento <span class='small muted'>(" + l.length + ")</span></p>" +
+    "<div class='chat'>" + (l.length ? l.map(function(c){ var eu = String(c.AutorEmail || "").toLowerCase() === String(CURRENT_USER.email || "").toLowerCase();
+      return "<div class='chat-msg" + (eu ? " eu" : "") + (c.Tipo === "criticidade" ? " crit" : c.Tipo === "sistema" ? " sis" : "") + "'><div class='chat-meta'><b>" + esc(c.Autor || c.AutorEmail || "") + "</b> · " + esc(quandoTxt(c.Quando || c.Created || c.Modified)) + "</div>" + esc(c.Texto || "").replace(/\n/g, "<br>") + "</div>"; }).join("") : "<p class='small muted' style='margin:0'>Nenhuma mensagem ainda. Use para combinar com o coordenador ou o prestador (pedido, divergência, prazo).</p>") + "</div>" +
+    "<div class='row' style='gap:8px;margin-top:8px;align-items:flex-end'><textarea id='chatTxt' placeholder='Escreva uma mensagem (fica registrada com data, dia e horário)' style='flex:1;min-height:54px'></textarea><button class='btn btn-s' onclick=\"enviarComunicacao('" + med.id + "')\">Registrar</button></div></div>";
+}
+async function registrarComunicacao(med, texto, tipo){
+  var f = { Title: (tipo || "mensagem") + " – " + (med.UnidadeNome || ""), MedicaoId:String(med.id), ClienteId:String(med.ClienteId), Competencia:med.Competencia, Unidade:med.Unidade || "", Autor:CURRENT_USER.name || CURRENT_USER.email, AutorEmail:CURRENT_USER.email, Texto:texto, Tipo:tipo || "mensagem" };
+  var o = await api.create("comunicacoes", f); if (o && !o.Created) o.Quando = new Date().toISOString(); return o;
+}
+async function enviarComunicacao(id){
+  var med = byId("medicoes", id), t = v("chatTxt").trim(); if (!t){ showToast("Escreva a mensagem.", true); return; }
+  await safe(function(){ return registrarComunicacao(med, t, "mensagem"); }, "Mensagem registrada.");
+  reabrir(med);
+}
+// ---------- criticidade ----------
+function criticidade(id){
+  var med = byId("medicoes", id), on = simB(med.Critico);
+  var h = "<h3>Criticidade do faturamento</h3><p class='msub'>Com a criticidade ligada, o coordenador responsável entra automaticamente em cópia dos e-mails deste faturamento (negociação com o cliente e liberação ao prestador).</p><div class='form'>" +
+    "<div><label>Situação</label><select id='crOn'>" + opt("1", "Com criticidade", on ? "1" : "1") + opt("0", "Sem criticidade (resolvida)", on ? "" : "x") + "</select></div>" +
+    "<div><label>Motivo</label><select id='crMot'>" + MOTIVOS_CRIT.map(function(m){ return opt(m, m, med.CriticoMotivo || ""); }).join("") + "</select></div>" +
+    "<div class='full'><label>Detalhe (vai para a comunicação)</label><textarea id='crObs' placeholder='Ex.: contrato encerrado em 30/09; cliente pede negociação do saldo'></textarea></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar</button><button class='btn' onclick=\"salvarCriticidade('" + id + "')\">Salvar</button></div>";
+  openModal(h);
+}
+async function salvarCriticidade(id){
+  var med = byId("medicoes", id), on = v("crOn") === "1", mot = v("crMot"), obs = v("crObs").trim();
+  await safe(async function(){
+    await api.update("medicoes", id, { Critico:on, CriticoMotivo: on ? mot : "" });
+    await registrarComunicacao(med, (on ? "Criticidade sinalizada: " + mot : "Criticidade resolvida" + (med.CriticoMotivo ? " (" + med.CriticoMotivo + ")" : "")) + (obs ? "\n" + obs : ""), "criticidade");
+  }, on ? "Criticidade sinalizada." : "Criticidade resolvida.");
+  reabrir(med); renderCurrent();
+}
+// ---------- rascunho simples no Outlook ----------
+async function rascunhoOutlook(para, cc, assunto, html, anexos){
+  if (DEMO){ showToast("Modo demonstração: o rascunho seria criado no Outlook para " + para.join("; ")); return { webLink:"" }; }
+  await getToken(MAIL_SCOPES);
+  var msg = { subject:assunto, importance:"normal", body:{ contentType:"HTML", content:html }, toRecipients: para.map(function(e){ return { emailAddress:{ address:e } }; }), ccRecipients: (cc || []).map(function(e){ return { emailAddress:{ address:e } }; }), attachments: anexos || [] };
+  return graph("https://graph.microsoft.com/v1.0/me/messages", { method:"POST", body: JSON.stringify(msg) }, MAIL_SCOPES);
+}
+function avisoRascunho(r, titulo){
+  var h = "<h3>" + esc(titulo) + "</h3><p class='msub'>Está na pasta <b>Rascunhos</b> do seu Outlook. Revise e clique em <b>Enviar</b>.</p>" + (r && r.webLink ? "<div class='modal-actions'><a class='btn' target='_blank' rel='noopener' href='" + esc(r.webLink) + "'>Abrir no Outlook</a></div>" : "");
+  return h;
+}
+async function emailCoordenador(cid, comp, uk){
+  var cli = byId("clientes", cid), u = unidadeDe(cid, comp, uk || ""), co = coordenadorDe(cid, comp, uk), med = medicaoDe(cid, comp, uk || "");
+  var assunto = "Faturamento " + nomeUnidade(cli, u) + " – " + compLabel(comp);
+  var html = "<div style='font-family:Calibri,Arial;font-size:14px'><p>Olá, " + esc((co.nomes[0] || "").split(" ")[0]) + ".</p><p>Sobre o faturamento <b>" + esc(nomeUnidade(cli, u)) + "</b> da competência <b>" + esc(compLabel(comp)) + "</b>" + (med ? " (status: " + esc(med.Status) + (med.ValorFaturar != null ? ", valor " + brl(med.ValorFaturar) : "") + ")" : "") + ":</p><p>[escreva aqui]</p></div>";
+  try { setLoading(true, "Criando rascunho no Outlook..."); var r = await rascunhoOutlook(co.emails, [], assunto, html); setLoading(false);
+    if (med) await registrarComunicacao(med, "E-mail ao coordenador criado no Outlook (" + co.emails.join("; ") + ").", "sistema").catch(function(){});
+    if (!DEMO) openModal(avisoRascunho(r, "Rascunho para o coordenador criado"));
+  } catch (e){ setLoading(false); showToast("Não consegui criar o rascunho: " + e.message, true); }
+}
+// ---------- liberacao do faturamento ao prestador ----------
+function corpoLiberacao(med){
+  var cli = byId("clientes", med.ClienteId), n = nfInfo(med), pv = previsaoFat(med.ClienteId, med.Competencia, med.Unidade || ""), lim = limiteNF(med.ClienteId, med.Competencia, med.Unidade || ""), co = coordenadorDe(med.ClienteId, med.Competencia, med.Unidade || "");
+  var its = itensDaUnidade(med.ClienteId, med.Competencia, med.Unidade || ""), cods = uniqList(its.map(codigoItem).filter(Boolean)).join(" / ") || n.codigos || "";
+  var tr = function(k, val, dest){ return "<tr><td style='padding:6px 10px;border:1px solid #e5e6e9;background:#fbeef0;color:#6e1423;font-weight:bold;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 10px;border:1px solid #e5e6e9" + (dest ? ";font-weight:bold;color:#b02a2a" : "") + "'>" + esc(val || "—").replace(/\n/g, "<br>") + "</td></tr>"; };
+  return "<div style='font-family:Calibri,Arial;font-size:14px;color:#1f2124'><p>Olá,</p><p>O boletim de medição abaixo foi <b>aprovado pelo cliente</b> e está <b>liberado para faturamento</b>.</p>" +
+    "<table style='border-collapse:collapse;font-size:13.5px'>" +
+    (lim ? tr("DATA LIMITE PARA A NF", fmtDate(lim.interno) + " (limite no portal do cliente: " + fmtDate(lim.portal) + ")", true) : "") +
+    tr("Cliente", cli.Title + (med.UnidadeNome ? " · " + med.UnidadeNome : "")) + tr("Tomador", n.tomador) + tr("CNPJ", n.cnpj) + tr("Competência", compLabel(med.Competencia)) +
+    tr("Mês de faturamento", compLabel(pv.mes) + " (prazo " + prazoTxt(pv.prazo) + ")") + tr("Valor da NF", brl(med.ValorFaturar)) + tr("Código do serviço", cods) + tr("Retenções", n.retencoes) +
+    tr("Pedido / OC", n.pedidos || (regraPedido(cli) === "nao" ? "não exige" : "")) + tr("Condição de pagamento", cli.CondicaoPagamento || "") + tr("Aprovado por", (med.AprovadoPor || "") + (med.DataAprovacao ? " em " + fmtDate(med.DataAprovacao) : "")) +
+    tr("Coordenador", co.nome + (co.emails.length ? " (" + co.emails.join("; ") + ")" : "")) + tr("Discriminação", n.disc) + (med.ObsNF ? tr("Observação", med.ObsNF) : "") +
+    "</table><p style='margin-top:14px'>Ao emitir, registre o nº da NF no sistema Faturamento de Serviços (Medições do mês).</p></div>";
+}
+function liberarFaturamento(id){
+  var med = byId("medicoes", id), co = coordenadorDe(med.ClienteId, med.Competencia, med.Unidade || "");
+  if (faltaOC(med)){ showToast("Este cliente exige pedido/OC: informe a OC do mês antes de liberar.", true); return; }
+  var cc = simB(med.Critico) ? co.emails : [];
+  var h = "<h3>Liberar faturamento ao prestador</h3><p class='msub'>O sistema cria no seu Outlook o e-mail de liberação para o prestador, com a data limite em destaque e o boletim em Excel anexo. Nada é enviado sozinho.</p><div class='form'>" +
+    "<div class='full'><label>Para (prestador)</label><input id='lbPara' value='" + esc(emailsPrestador().join("; ")) + "'></div>" +
+    "<div class='full'><label>Cc</label><input id='lbCc' value='" + esc(cc.join("; ")) + "' placeholder='opcional'>" + (simB(med.Critico) ? "<div class='hint'>Coordenador em cópia por causa da criticidade (" + esc(med.CriticoMotivo || "") + ").</div>" : "") + "</div>" +
+    "<div class='full'><label class='check'><input type='checkbox' id='lbXls' checked> Anexar o boletim em Excel</label></div></div>" +
+    "<div class='card' style='margin:10px 0;padding:10px 12px;max-height:260px;overflow:auto'>" + corpoLiberacao(med) + "</div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar</button><button class='btn' onclick=\"criarLiberacao('" + id + "')\">Criar e-mail de liberação</button></div>";
+  openModal(h, true);
+}
+async function criarLiberacao(id){
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), para = emailsDe(v("lbPara")), cc = emailsDe(v("lbCc")), anexar = v("lbXls");
+  if (!para.length){ showToast("Informe o e-mail do prestador.", true); return; }
+  try {
+    setLoading(true, "Criando o e-mail de liberação...");
+    var anexos = [];
+    if (anexar && typeof ExcelJS !== "undefined"){ var buf = await xlsxBufferBoletim(med); anexos.push({ "@odata.type":"#microsoft.graph.fileAttachment", name: nomeBoletimXlsx(med), contentType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", contentBytes: toBase64(buf) }); }
+    var lim = limiteNF(med.ClienteId, med.Competencia, med.Unidade || "");
+    var r = await rascunhoOutlook(para, cc, "Liberação de faturamento – " + cli.Title + (med.UnidadeNome ? " · " + med.UnidadeNome : "") + " – " + compLabel(med.Competencia) + (lim ? " – NF até " + fmtDate(lim.interno) : ""), corpoLiberacao(med), anexos);
+    var hist = historicoDe(med); hist.push({ s:med.Status, d:new Date().toISOString(), p:CURRENT_USER.name, o:"Faturamento liberado ao prestador (" + para.join("; ") + ")" });
+    await api.update("medicoes", id, { DataLiberacao: todayISO(), Historico: JSON.stringify(hist) });
+    await registrarComunicacao(med, "Faturamento liberado ao prestador: e-mail criado no Outlook para " + para.join("; ") + ".", "sistema").catch(function(){});
+    setLoading(false);
+    openModal(avisoRascunho(r, "E-mail de liberação criado") + (DEMO ? "<div class='alert alert-blue'>Modo demonstração: nenhum e-mail foi criado.</div>" : "") + "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + id + "'))\">Voltar para a medição</button></div>");
+    renderCurrent();
+  } catch (e){ setLoading(false); showToast("Não consegui criar o e-mail: " + e.message, true); }
+}
+// ---------- pagamento / inadimplencia ----------
+function diasCondicao(cli){ var m = String((cli && cli.CondicaoPagamento) || "").match(/(\d+)/); return m ? +m[1] : 30; }
+function vencimentoDe(med){ if (med.DataVencimento) return med.DataVencimento; if (!med.DataNF) return ""; return addDays(med.DataNF, diasCondicao(byId("clientes", med.ClienteId))); }
+function situacaoPag(med){
+  if (med.Status !== "NF emitida") return null;
+  var venc = vencimentoDe(med), hoje = todayISO();
+  if (med.PagStatus === "Pago") return { k:"pago", cls:"b-green", txt:"Pago" + (med.DataPagamento ? " em " + fmtDate(med.DataPagamento) : ""), dias:0 };
+  var atraso = venc && hoje > venc ? daysBetween(venc, hoje) : 0;
+  if (med.PagStatus === "Não pago") return { k:"inad", cls:"b-red", txt:"Não pago" + (atraso ? " · " + atraso + " dia(s) de atraso" : "") + (med.DataPrevista ? " · previsão " + fmtDate(med.DataPrevista) : ""), dias:atraso };
+  if (atraso) return { k:"vencido", cls:"b-red", txt:"Vencido há " + atraso + " dia(s)", dias:atraso };
+  return { k:"aberto", cls:"b-blue", txt:"A vencer" + (venc ? " em " + fmtDate(venc) : ""), dias:0 };
+}
+function painelPagamento(med){
+  var s = situacaoPag(med); if (!s) return "";
+  return "<div class='card' style='margin:14px 0 0;padding:12px 14px;border-left:4px solid " + (s.k === "pago" ? "#1e7d38" : s.k === "aberto" ? "#2a78d6" : "#b02a2a") + "'><div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'><div><p class='card-title' style='font-size:14px;margin:0 0 4px'>Recebimento</p><span class='badge " + s.cls + "'>" + esc(s.txt) + "</span> <span class='small muted'>vencimento " + (vencimentoDe(med) ? fmtDate(vencimentoDe(med)) : "—") + " · NF " + esc(med.NumNF || "?") + "</span></div><button class='btn-o btn-s' onclick=\"formPagamento('" + med.id + "')\">Registrar pagamento</button></div></div>";
+}
+function formPagamento(id){
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), st = med.PagStatus || "Aberto";
+  var h = "<h3>Recebimento · " + esc(cli.Title) + (med.UnidadeNome ? " · " + esc(med.UnidadeNome) : "") + "</h3><p class='msub'>NF " + esc(med.NumNF || "?") + " de " + fmtDate(med.DataNF) + " · " + brl(med.ValorFaturar) + " · condição: " + esc(cli.CondicaoPagamento || "30 dias") + "</p><div class='form'>" +
+    "<div><label>Situação</label><select id='pgSt' onchange='pgRefresh()'>" + opt("Aberto", "Em aberto", st) + opt("Pago", "Pago", st) + opt("Não pago", "Não pago (inadimplente)", st) + "</select></div>" +
+    "<div><label>Vencimento</label><input type='date' id='pgVenc' value='" + esc(vencimentoDe(med)) + "'><div class='hint'>Calculado pela data da NF + condição de pagamento. Pode ajustar.</div></div>" +
+    "<div id='wPgPago'><label>Data do pagamento</label><input type='date' id='pgData' value='" + esc(med.DataPagamento || todayISO()) + "'></div>" +
+    "<div id='wPgPrev'><label>Previsão de recebimento</label><input type='date' id='pgPrev' value='" + esc(med.DataPrevista || "") + "'><div class='hint'>Data combinada com o cliente.</div></div>" +
+    "<div class='full'><label>Observação (vai para a comunicação)</label><textarea id='pgObs'></textarea></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"" + (CURRENT_TAB === "recebimentos" ? "closeModal()" : "reabrir(byId('medicoes','" + id + "'))") + "\">Voltar</button><button class='btn' onclick=\"salvarPagamento('" + id + "')\">Salvar</button></div>";
+  openModal(h); pgRefresh();
+}
+function pgRefresh(){ var st = v("pgSt"); $("wPgPago").classList.toggle("hidden", st !== "Pago"); $("wPgPrev").classList.toggle("hidden", st !== "Não pago"); }
+async function salvarPagamento(id){
+  var med = byId("medicoes", id), st = v("pgSt"), obs = v("pgObs").trim();
+  if (st === "Pago" && !v("pgData")){ showToast("Informe a data do pagamento.", true); return; }
+  var f = { PagStatus: st, DataVencimento: v("pgVenc"), DataPagamento: st === "Pago" ? v("pgData") : "", DataPrevista: st === "Não pago" ? v("pgPrev") : "" };
+  await safe(async function(){
+    await api.update("medicoes", id, f);
+    await registrarComunicacao(med, "Recebimento: " + (st === "Pago" ? "pago em " + fmtDate(f.DataPagamento) : st === "Não pago" ? "não pago" + (f.DataPrevista ? ", previsão " + fmtDate(f.DataPrevista) : "") : "em aberto") + (obs ? "\n" + obs : ""), "sistema").catch(function(){});
+  }, "Recebimento registrado.");
+  if (CURRENT_TAB === "recebimentos"){ closeModal(); renderCurrent(); } else { reabrir(med); renderCurrent(); }
+}
+// ---------- tela Recebimentos ----------
+function renderRecebimentos(){
+  var f = $("recFiltro").value || "pendentes", q = norm($("recBusca").value || "");
+  var all = S.medicoes.filter(function(m){ return m.Status === "NF emitida"; }).map(function(m){ return { m:m, c:byId("clientes", m.ClienteId), s:situacaoPag(m), venc:vencimentoDe(m) }; }).filter(function(r){ return r.c; });
+  var hoje = todayISO(), mes = hoje.slice(0, 7);
+  var abertoV = 0, vencV = 0, recMes = 0, fatTot = 0;
+  all.forEach(function(r){ var val = Number(r.m.ValorFaturar) || 0; fatTot += val; if (r.s.k !== "pago") abertoV += val; if (r.s.k === "vencido" || r.s.k === "inad") vencV += val; if (r.s.k === "pago" && String(r.m.DataPagamento || "").slice(0, 7) === mes) recMes += val; });
+  var nInad = uniqList(all.filter(function(r){ return r.s.k === "vencido" || r.s.k === "inad"; }).map(function(r){ return r.c.id; })).length;
+  $("recKpis").innerHTML = kpi("A receber", brl(abertoV), "NFs emitidas ainda não pagas") + kpi("Vencido", brl(vencV), nInad + " cliente(s) com atraso") + kpi("Inadimplência", (fatTot ? num(vencV / fatTot * 100, 1) : "0") + "%", "vencido ÷ total das NFs registradas") + kpi("Recebido no mês", brl(recMes), compLabel(mes));
+  var rows = all.filter(function(r){ return (f === "todos") || (f === "pendentes" && r.s.k !== "pago") || (f === "vencidos" && (r.s.k === "vencido" || r.s.k === "inad")) || (f === "pagos" && r.s.k === "pago"); })
+    .filter(function(r){ return !q || norm(r.c.Title + " " + (r.m.UnidadeNome || "") + " " + (r.m.NumNF || "")).indexOf(q) >= 0; })
+    .sort(function(a, b){ return String(a.venc).localeCompare(String(b.venc)); });
+  $("recTable").innerHTML = rows.length ? "<thead><tr><th>Cliente / faturamento</th><th>Competência</th><th>NF</th><th class='num'>Valor</th><th>Vencimento</th><th>Situação</th><th></th></tr></thead><tbody>" + rows.map(function(r){
+    return "<tr><td><b>" + esc(r.c.Title) + "</b>" + (r.m.UnidadeNome ? "<div class='small muted'>" + esc(r.m.UnidadeNome) + "</div>" : "") + "</td><td>" + esc(compLabel(r.m.Competencia)) + "</td><td>" + esc(r.m.NumNF || "") + "<div class='small muted'>" + fmtDate(r.m.DataNF) + "</div></td><td class='num'>" + brl(r.m.ValorFaturar) + "</td><td>" + fmtDate(r.venc) + "</td><td><span class='badge " + r.s.cls + "'>" + esc(r.s.txt) + "</span></td><td style='text-align:right;white-space:nowrap'><button class='btn-o btn-s' onclick=\"formPagamento('" + r.m.id + "')\">Registrar</button> <button class='btn-ghost' onclick=\"reabrir(byId('medicoes','" + r.m.id + "'))\">Abrir</button></td></tr>"; }).join("") + "</tbody>"
+    : "<tr><td class='empty'>Nenhuma NF nesta situação.</td></tr>";
+}
+// ---------- tela Codigos de servico ----------
+function podeEditarCodigos(){ return isGestor() || soPrestador(); }
+function renderCodigos(){
+  var q = norm($("codBusca").value || ""), tp = $("codTipo").value;
+  var uso = {}; S.itens.forEach(function(i){ if (i.CodigoId) uso[i.CodigoId] = (uso[i.CodigoId] || 0) + 1; });
+  var rows = S.codigos.filter(function(c){ return (!tp || c.Tipo === tp) && (!q || norm(c.Codigo + " " + c.Descricao).indexOf(q) >= 0); }).sort(function(a, b){ return String(a.Codigo).localeCompare(String(b.Codigo), "pt-BR", { numeric:true }); });
+  $("codTable").innerHTML = rows.length ? "<thead><tr><th>Código</th><th>Descrição</th><th>Tipo</th><th class='num'>ISS</th><th>Retenções</th><th class='num'>Serviços que usam</th><th>Situação</th></tr></thead><tbody>" + rows.map(function(c){
+    return "<tr" + (podeEditarCodigos() ? " class='click' onclick=\"openCodigo('" + c.id + "')\"" : "") + "><td><b>" + esc(c.Codigo) + "</b></td><td>" + esc(c.Descricao || "") + "</td><td><span class='badge " + (c.Tipo === "Pontual" ? "b-amber" : "b-blue") + "'>" + esc(c.Tipo || "Recorrente") + "</span></td><td class='num'>" + (c.AliquotaISS != null && c.AliquotaISS !== "" ? num(c.AliquotaISS, 2) + "%" : "–") + "</td><td class='small'>" + esc(c.Retencoes || "") + "</td><td class='num'>" + (uso[c.id] || 0) + "</td><td>" + (c.Ativo === false ? "<span class='badge b-gray'>inativo</span>" : "<span class='badge b-green'>ativo</span>") + "</td></tr>"; }).join("") + "</tbody>"
+    : "<tr><td class='empty'>Nenhum código cadastrado. " + (podeEditarCodigos() ? "Use \"+ Novo código\"." : "") + "</td></tr>";
+  $("codNovo").classList.toggle("hidden", !podeEditarCodigos());
+}
+function openCodigo(id){
+  var c = id ? byId("codigos", id) : { Tipo:"Recorrente", Ativo:true };
+  var h = "<h3>" + (id ? "Editar código de serviço" : "Novo código de serviço") + "</h3><p class='msub'>Recorrente: fica fixo no serviço do contrato até alguém trocar. Pontual: escolhido na hora, em faturamentos avulsos.</p><div class='form'>" +
+    "<div><label>Código</label><input id='cd_Codigo' value='" + esc(c.Codigo || "") + "' placeholder='Ex.: 04.06.01'></div>" +
+    "<div><label>Tipo</label><select id='cd_Tipo'>" + opt("Recorrente", "Recorrente", c.Tipo) + opt("Pontual", "Pontual", c.Tipo) + "</select></div>" +
+    "<div class='full'><label>Descrição</label><input id='cd_Descricao' value='" + esc(c.Descricao || "") + "' placeholder='Ex.: Enfermagem, inclusive serviços auxiliares'></div>" +
+    "<div><label>Alíquota do ISS (%)</label><input id='cd_ISS' inputmode='decimal' value='" + (c.AliquotaISS != null && c.AliquotaISS !== "" ? esc(String(c.AliquotaISS).replace(".", ",")) : "") + "'></div>" +
+    "<div><label>Retenções</label><input id='cd_Ret' value='" + esc(c.Retencoes || "") + "' placeholder='Ex.: INSS 11%, IR 1,5%'></div>" +
+    "<div><label>Situação</label><select id='cd_Ativo'>" + opt("1", "Ativo", c.Ativo === false ? "0" : "1") + opt("0", "Inativo", c.Ativo === false ? "0" : "1") + "</select></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarCodigo('" + (id || "") + "')\">Salvar</button></div>";
+  openModal(h);
+}
+async function salvarCodigo(id){
+  var f = { Codigo:v("cd_Codigo").trim(), Tipo:v("cd_Tipo"), Descricao:v("cd_Descricao").trim(), AliquotaISS: v("cd_ISS") ? parseNum(v("cd_ISS")) : null, Retencoes:v("cd_Ret").trim(), Ativo: v("cd_Ativo") === "1" };
+  if (!f.Codigo){ showToast("Informe o código.", true); return; }
+  f.Title = f.Codigo + (f.Descricao ? " – " + f.Descricao : "");
+  await safe(function(){ return id ? api.update("codigos", id, f) : api.create("codigos", f); }, "Código salvo.");
+  closeModal(); renderCurrent();
+}
+function codigoOptions(sel, legado){
+  var ativos = S.codigos.filter(function(c){ return c.Ativo !== false || String(c.id) === String(sel); }).sort(function(a, b){ return String(a.Codigo).localeCompare(String(b.Codigo), "pt-BR", { numeric:true }); });
+  return opt("", legado ? "Manter o texto antigo (" + legado + ")" : "Selecione...", sel || "") + ativos.map(function(c){ return opt(c.id, c.Codigo + (c.Descricao ? " – " + c.Descricao : "") + (c.Tipo === "Pontual" ? " (pontual)" : ""), sel || ""); }).join("");
+}
+
+// ---------- indicadores do faturamento (Dashboard) ----------
+function faturamentosPorMesFat(area, mes){
+  var out = [];
+  for (var k = 0; k <= 5; k++){ var comp = compAdd(mes, -k); faturamentosDoMes(area, comp).forEach(function(r){ if (previsaoFat(r.c.id, comp, r.u.key).mes === mes){ r.comp = comp; out.push(r); } }); }
+  return out;
+}
+function mediaDias(pares){ var v = pares.filter(function(p){ return p[0] && p[1] && p[1] >= p[0]; }).map(function(p){ return daysBetween(p[0], p[1]); }); return v.length ? v.reduce(function(s, x){ return s + x; }, 0) / v.length : null; }
+function renderDashFaturamento(comp, area, fats){
+  var el = $("cardFatPrazos"); if (!el) return;
+  var hoje = todayISO();
+  // 1) data limite
+  var comLim = fats.map(function(r){ var cc = r.comp || comp; return { r:r, lim: limiteNF(r.c.id, cc, r.u.key), cc:cc }; }).filter(function(x){ return x.lim; });
+  var pend = comLim.filter(function(x){ return !(x.r.m && x.r.m.Status === "NF emitida"); });
+  var risco = pend.filter(function(x){ var d = daysBetween(hoje, x.lim.interno); return d >= 0 && d <= 3; }), atras = pend.filter(function(x){ return hoje > x.lim.interno; });
+  var emit = comLim.filter(function(x){ return x.r.m && x.r.m.Status === "NF emitida"; }), noPrazo = emit.filter(function(x){ return !x.r.m.DataNF || x.r.m.DataNF <= x.lim.portal; });
+  var lib = fats.filter(function(r){ return r.m && liberada(r.m) && r.m.Status !== "NF emitida"; });
+  var lista = risco.concat(atras).slice(0, 8);
+  el.innerHTML = vizHead("cardFatPrazos", "Data limite das NFs", "Faturamentos com data limite cadastrada: quantos estão em risco (até 3 dias para o prazo interno), atrasados (passou do prazo interno sem NF) e o % de NFs emitidas dentro do limite do portal do cliente.") +
+    "<div class='mini-kpis'>" + miniKpi("Liberados aguardando NF", lib.length, "b-purple") + miniKpi("Em risco (≤ 3 dias)", risco.length, "b-amber") + miniKpi("Atrasados", atras.length, "b-red") + miniKpi("NF no prazo", emit.length ? Math.round(noPrazo.length / emit.length * 100) + "%" : "–", "b-green") + "</div>" +
+    (lista.length ? "<div class='tbl-wrap' style='margin-top:10px'><table class='tbl'><thead><tr><th>Faturamento</th><th>Prazo interno</th><th>Status</th></tr></thead><tbody>" + lista.map(function(x){ return "<tr class='click' onclick=\"openMedicao('" + x.r.c.id + "','" + x.cc + "','" + ukArg(x.r.u.key) + "')\"><td>" + esc(nomeUnidade(x.r.c, x.r.u)) + "</td><td>" + fmtDate(x.lim.interno) + "</td><td><span class='badge " + (hoje > x.lim.interno ? "b-red" : "b-amber") + "'>" + esc(x.r.m ? x.r.m.Status : "Não gerada") + "</span></td></tr>"; }).join("") + "</tbody></table></div>" : (comLim.length ? "<div class='viz-vazio' style='padding:16px'>Nenhum faturamento em risco.</div>" : "<div class='viz-vazio' style='padding:16px'>Nenhum cliente com data limite cadastrada ainda.</div>"));
+  // 2) tempo por etapa
+  var meds = fats.map(function(r){ return r.m; }).filter(Boolean);
+  var et = [["Rascunho → envio", mediaDias(meds.map(function(m){ return [String(m.GeradoEm || "").slice(0, 10), m.DataEnvio]; }))], ["Envio → aprovação", mediaDias(meds.map(function(m){ return [m.DataEnvio, m.DataAprovacao]; }))], ["Aprovação → liberação", mediaDias(meds.map(function(m){ return [m.DataAprovacao, m.DataLiberacao]; }))], ["Liberação → NF", mediaDias(meds.map(function(m){ return [m.DataLiberacao || m.DataAprovacao, m.DataNF]; }))]];
+  $("cardFatEtapas").innerHTML = vizHead("cardFatEtapas", "Tempo médio por etapa", "Dias corridos, em média, entre as etapas dos faturamentos do período. Mostra onde o processo trava.") + "<div class='viz-chart' style='height:200px'><canvas id='chEtapas'></canvas></div>";
+  drawChart("chEtapas", { type:"bar", data:{ labels: et.map(function(x){ return x[0]; }), datasets:[{ data: et.map(function(x){ return x[1] == null ? 0 : Math.round(x[1] * 10) / 10; }), backgroundColor:VIZ.grena, borderRadius:4, maxBarThickness:22 }] },
+    options:{ indexAxis:"y", maintainAspectRatio:false, layout:{ padding:{ right:60 } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(c){ return " " + num(c.raw, 1) + " dia(s)"; } } } }, scales:{ x:{ display:false, beginAtZero:true }, y:{ grid:{ display:false }, border:{ display:false }, ticks:{ color:VIZ.ink } } } },
+    plugins:[{ id:"rotDias", afterDatasetsDraw:function(ch){ var c = ch.ctx, meta = ch.getDatasetMeta(0); c.save(); c.font = "600 12px -apple-system,Segoe UI,Arial"; c.fillStyle = VIZ.ink; c.textBaseline = "middle"; meta.data.forEach(function(b, i){ c.fillText(et[i][1] == null ? "sem dados" : num(et[i][1], 1) + " dia(s)", b.x + 6, b.y); }); c.restore(); } }] });
+  // 3) pedido, criticidade e comunicacao
+  var semOC = fats.filter(function(r){ return r.m && faltaOC(r.m); }), semOCv = semOC.reduce(function(s, r){ return s + (Number(r.m.ValorFaturar) || 0); }, 0);
+  var crit = fats.filter(function(r){ return r.m && simB(r.m.Critico); }), porMot = {}; crit.forEach(function(r){ var k = r.m.CriticoMotivo || "Outro"; porMot[k] = (porMot[k] || 0) + 1; });
+  var ids = {}; meds.forEach(function(m){ ids[String(m.id)] = 1; });
+  var msgs = S.comunicacoes.filter(function(c){ return ids[String(c.MedicaoId)]; });
+  $("cardFatPend").innerHTML = vizHead("cardFatPend", "Pedidos, criticidades e comunicação", "Faturamentos aprovados parados por falta de pedido/OC, criticidades abertas por motivo e mensagens registradas no período.") +
+    "<div class='mini-kpis'>" + miniKpi("Aguardando pedido/OC", semOC.length + (semOC.length ? " · " + brlCurto(semOCv) : ""), "b-amber") + miniKpi("Criticidades abertas", crit.length, "b-red") + miniKpi("Mensagens", msgs.length, "b-blue") + "</div>" +
+    (crit.length ? "<div class='viz-legend' style='border:0;padding-top:6px'>" + Object.keys(porMot).map(function(k){ return "<div class='viz-leg'><span class='viz-sw' style='background:#e34948'></span>" + esc(k) + " (" + porMot[k] + ")</div>"; }).join("") + "</div>" : "") +
+    (crit.length ? "<div class='tbl-wrap' style='margin-top:8px'><table class='tbl'><tbody>" + crit.slice(0, 6).map(function(r){ return "<tr class='click' onclick=\"openMedicao('" + r.c.id + "','" + (r.comp || comp) + "','" + ukArg(r.u.key) + "')\"><td>" + esc(nomeUnidade(r.c, r.u)) + "</td><td><span class='badge b-red'>" + esc(r.m.CriticoMotivo || "") + "</span></td></tr>"; }).join("") + "</tbody></table></div>" : "");
+  // 4) por codigo de servico
+  var porCod = {};
+  fats.forEach(function(r){ if (!r.m) return; var L = linhasDe(r.m); (L.lines || []).forEach(function(l){ var it = byId("itens", l.itemId || l.rel || ""); var k = it ? (codigoItem(it) || "Sem código") : "Sem código"; porCod[k] = (porCod[k] || 0) + (Number(l.final) || 0); }); });
+  var cods = Object.keys(porCod).sort(function(a, b){ return porCod[b] - porCod[a]; }).slice(0, 10);
+  $("cardFatCod").innerHTML = vizHead("cardFatCod", "Faturado por código de serviço", "Soma das linhas das medições geradas no período, agrupadas pelo código de serviço de cada serviço do contrato.") +
+    (cods.length ? "<div class='viz-chart' style='height:" + Math.max(160, cods.length * 30 + 30) + "px'><canvas id='chCod'></canvas></div>" : "<div class='viz-vazio'>Nenhuma medição gerada no período.</div>");
+  if (cods.length) drawChart("chCod", { type:"bar", data:{ labels: cods.map(function(k){ return k.length > 42 ? k.slice(0, 40) + "…" : k; }), datasets:[{ data: cods.map(function(k){ return r2(porCod[k]); }), backgroundColor: cods.map(function(k){ return k === "Sem código" ? "#a7abb2" : VIZ.teal; }), borderRadius:4, maxBarThickness:20 }] },
+    options:{ indexAxis:"y", maintainAspectRatio:false, layout:{ padding:{ right:70 } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(c){ return " " + brl(c.raw); } } } }, scales:{ x:{ display:false, beginAtZero:true }, y:{ grid:{ display:false }, border:{ display:false }, ticks:{ color:VIZ.ink, font:{ size:11.5 } } } } }, plugins:[PL_FIM] });
+  // 5) inadimplencia (todas as NFs, independente do periodo)
+  var nfs = S.medicoes.filter(function(m){ var c = byId("clientes", m.ClienteId); return m.Status === "NF emitida" && c && (!area || c.Area === area) && visivel(c); });
+  var faixas = [["1–30", 1, 30], ["31–60", 31, 60], ["61–90", 61, 90], ["> 90", 91, 99999]], fv = [0, 0, 0, 0], venc = 0, aberto = 0, tot = 0, prevMes = {};
+  nfs.forEach(function(m){ var s = situacaoPag(m), val = Number(m.ValorFaturar) || 0; tot += val; if (s.k !== "pago"){ aberto += val; var dPrev = (m.PagStatus === "Não pago" && m.DataPrevista) ? m.DataPrevista : vencimentoDe(m); if (dPrev){ var mk = dPrev.slice(0, 7); prevMes[mk] = (prevMes[mk] || 0) + val; } }
+    if (s.dias > 0 && s.k !== "pago"){ venc += val; faixas.forEach(function(f, i){ if (s.dias >= f[1] && s.dias <= f[2]) fv[i] += val; }); } });
+  var mesesPrev = [0, 1, 2].map(function(k){ return compAdd(hoje.slice(0, 7), k); });
+  var atrasados = Object.keys(prevMes).filter(function(k){ return k < hoje.slice(0, 7); }).reduce(function(s, k){ return s + prevMes[k]; }, 0);
+  $("cardFatInad").innerHTML = vizHead("cardFatInad", "Inadimplência e recebimentos", "NFs emitidas ainda não pagas: valor vencido por faixa de atraso e o que deve entrar nos próximos meses (vencimento ou previsão informada pelo prestador). Detalhes em Recebimentos.") +
+    "<div class='mini-kpis'>" + miniKpi("A receber", brlCurto(aberto), "b-blue") + miniKpi("Vencido", brlCurto(venc), "b-red") + miniKpi("Inadimplência", tot ? num(venc / tot * 100, 1) + "%" : "0%", "b-red") + "</div>" +
+    "<div class='grid2' style='gap:14px;margin-top:8px'><div><p class='rel-sec' style='margin-top:4px'>Vencido por atraso (dias)</p><div class='viz-chart' style='height:170px'><canvas id='chAging'></canvas></div></div><div><p class='rel-sec' style='margin-top:4px'>Previsão de recebimento</p><div class='viz-chart' style='height:170px'><canvas id='chPrev'></canvas></div></div></div>" +
+    "<div style='text-align:right;margin-top:6px'><button class='btn-ghost' onclick=\"showTab('recebimentos')\">Abrir Recebimentos &rsaquo;</button></div>";
+  drawChart("chAging", { type:"bar", data:{ labels: faixas.map(function(f){ return f[0]; }), datasets:[{ data: fv.map(r2), backgroundColor:["#eda100", "#eb6834", "#e34948", "#9b1c2e"], borderRadius:{ topLeft:4, topRight:4 }, borderSkipped:false, maxBarThickness:40 }] },
+    options:{ maintainAspectRatio:false, layout:{ padding:{ top:20 } }, plugins:{ legend:{ display:false }, topo:{ valores: fv, fmt:brlCurto }, tooltip:{ callbacks:{ label:function(c){ return " " + brl(c.raw); } } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:VIZ.ink2 } }, y:{ display:false, beginAtZero:true, grace:"15%" } } }, plugins:[PL_TOPO] });
+  var pvv = [atrasados].concat(mesesPrev.map(function(k){ return prevMes[k] || 0; }));
+  drawChart("chPrev", { type:"bar", data:{ labels: ["atrasado"].concat(mesesPrev.map(mesCurto)), datasets:[{ data: pvv.map(r2), backgroundColor:["#e34948", VIZ.acr, VIZ.acr, VIZ.acr], borderRadius:{ topLeft:4, topRight:4 }, borderSkipped:false, maxBarThickness:40 }] },
+    options:{ maintainAspectRatio:false, layout:{ padding:{ top:20 } }, plugins:{ legend:{ display:false }, topo:{ valores: pvv, fmt:brlCurto }, tooltip:{ callbacks:{ label:function(c){ return " " + brl(c.raw); } } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:VIZ.ink2 } }, y:{ display:false, beginAtZero:true, grace:"15%" } } }, plugins:[PL_TOPO] });
+}
+function miniKpi(l, v, cls){ return "<div class='mini-kpi'><span class='badge " + cls + "'>&nbsp;</span><p>" + esc(l) + "</p><b>" + esc(String(v)) + "</b></div>"; }
+var TABS_PRESTADOR = ["dashboard", "medicoes", "variaveis", "codigos", "recebimentos", "ajuda"];
+function podeVerRecebimentos(){ var p = perfilAcesso(); return p === "total" || p === "prestador" || isGestor(); }
+function linhaFatLista(r, comp){
+  var pv = previsaoFat(r.c.id, comp, r.u.key), lim = limiteNF(r.c.id, comp, r.u.key), sit = situacaoLimite(lim, r.m);
+  return "<div class='small' style='margin-top:2px'><span class='muted'>fatura " + esc(compLabel(pv.mes)) + "</span>" + (lim ? " · <span class='badge " + (sit ? sit.cls : "b-gray") + "' title='" + esc(sit ? sit.txt : "") + "'>NF até " + fmtDate(lim.interno) + "</span>" : "") +
+    (r.m && liberada(r.m) && r.m.Status !== "NF emitida" ? " <span class='badge b-purple'>liberado</span>" : "") + (r.m && simB(r.m.Critico) ? " <span class='badge b-red'>&#9888; " + esc(r.m.CriticoMotivo || "crítico") + "</span>" : "") + "</div>";
+}
+// dados de exemplo para a demonstracao
+function demoFaturamento(){
+  S.codigos = [
+    { id:"cd1", Codigo:"04.06.01", Descricao:"Enfermagem, inclusive serviços auxiliares", AliquotaISS:2, Retencoes:"INSS 11%", Tipo:"Recorrente", Ativo:true },
+    { id:"cd2", Codigo:"04.08.01", Descricao:"Terapia ocupacional, fisioterapia e fonoaudiologia", AliquotaISS:2, Retencoes:"INSS 11%", Tipo:"Recorrente", Ativo:true },
+    { id:"cd3", Codigo:"06.04.01", Descricao:"Ginástica, dança, esportes e atividades físicas", AliquotaISS:3, Retencoes:"", Tipo:"Recorrente", Ativo:true },
+    { id:"cd4", Codigo:"17.01.01", Descricao:"Assessoria ou consultoria (palestras e treinamentos)", AliquotaISS:5, Retencoes:"IR 1,5%", Tipo:"Pontual", Ativo:true }];
+  S.comunicacoes = [];
+  S.itens.forEach(function(i){ var t = norm(i.Title + " " + i.Cargo); i.CodigoId = /enferm/.test(t) ? "cd1" : /fisio|terap/.test(t) ? "cd2" : /ativid|gin|educa/.test(t) ? "cd3" : ""; });
+  S.clientes.forEach(function(c, k){ c.DiaLimiteNF = [20, 25, 10, 15, 22, 18, 12, 28][k % 8]; if (k === 1) c.PedidoNF = "mensal"; });
+  var nova = S.itens.filter(function(i){ return /Ginástica|Academia|Atividades/i.test(i.Title); })[0]; if (nova) nova.PrazoFaturamento = 120;
+  var hoje = todayISO();
+  S.medicoes.forEach(function(m, k){
+    if (m.Status === "Aprovada" && k % 2 === 0) m.DataLiberacao = addDays(hoje, -2);
+    if (m.Status === "NF emitida"){ m.DataNF = m.DataNF || addDays(hoje, -40 - k); if (k % 3 === 0){ m.PagStatus = "Pago"; m.DataPagamento = addDays(m.DataNF, 28); } else if (k % 3 === 1){ m.PagStatus = "Não pago"; m.DataPrevista = addDays(hoje, 15); } }
+    if (k === 2){ m.Critico = true; m.CriticoMotivo = "Contrato encerrado"; S.comunicacoes.push({ id:"cm" + k, MedicaoId:String(m.id), ClienteId:String(m.ClienteId), Competencia:m.Competencia, Autor:"Usuário demonstração", AutorEmail:"demo@elevalife.com.br", Texto:"Criticidade sinalizada: Contrato encerrado\nCliente pediu negociação do saldo.", Tipo:"criticidade", Created: addDays(hoje, -1) + "T10:15:00" }); }
+  });
+}
+
+// ============================================================
 // AJUDA: Como usar · Fluxos (BPMN) · Indicadores · Versão
 // ============================================================
 var AJUDA_TAB = "uso";
@@ -3508,12 +3941,12 @@ var AJUDA_USO = [
   { t:"Acesso e navegação", obj:"Orientar o primeiro acesso, o login e a navegação entre as telas.", perfis:"todos", passos:[
     "Abra o sistema pelo link elevalife-sistemas.github.io/faturamento-servicos e clique em <b>Entrar com Microsoft</b>. O login é a mesma conta do Outlook e do Teams; não existe senha própria do sistema.",
     "Os dados ficam nas listas do SharePoint do site BPM. Você vê e altera apenas o que a sua conta pode acessar lá.",
-    "O menu lateral segue a ordem: Dashboard, Fechamento do mês, Medições do mês, Ocorrências, Clientes e contratos, Renovações, Valores dos Contratos, Margem, Parâmetros, Configuração e Ajuda. Margem, Parâmetros e Configuração aparecem só para gestores.",
+    "O menu lateral segue a ordem: Dashboard, Fechamento do mês, Medições do mês, Ocorrências, Clientes e contratos, Renovações, Valores dos Contratos, Códigos de serviço, Recebimentos, Margem, Parâmetros, Configuração e Ajuda. Margem, Parâmetros e Configuração aparecem só para gestores; Recebimentos, para gestores, acesso total e prestador.",
     "No topo ficam o botão <b>Meus clientes / Todos os clientes</b>, o nome de quem está logado, <b>Atualizar</b> (recarrega os dados do SharePoint) e <b>Sair</b>.",
     "Depois que uma versão nova é publicada, pressione <b>Ctrl+F5</b>, clique em <b>Sair</b> e entre de novo para carregar a versão mais recente."
   ]},
   { t:"Perfis de acesso e atribuição de faturamentos", obj:"Explicar o que cada perfil vê e como atribuir clientes e serviços a cada pessoa.", perfis:"gestor", passos:[
-    "Há três perfis: <b>Todos os clientes</b> (vê tudo), <b>Só os atribuídos</b> (vê os faturamentos dele, sem poder trocar para todos) e <b>Só lança ocorrências</b> (vê apenas a tela de Ocorrências, em qualquer cliente, sem valores em R$).",
+    "Há quatro perfis: <b>Todos os clientes</b> (vê tudo), <b>Só os atribuídos</b> (vê os faturamentos dele, sem poder trocar para todos), <b>Só lança ocorrências</b> (vê apenas a tela de Ocorrências, em qualquer cliente, sem valores em R$) e <b>Faturamento (prestador)</b> (Medições, Valores dos Contratos, Códigos de serviço, Recebimentos e Dashboard, sem lançar ocorrências nem gerar boletins).",
     "Quem entra no sistema sem estar cadastrado fica automaticamente com o perfil <b>Só lança ocorrências</b>.",
     "Para cadastrar ou mudar o perfil: <b>Configuração › Usuários e acesso › + Usuário</b> (ou <b>Acesso</b> na linha da pessoa).",
     "Para atribuir faturamentos: <b>Atribuir faturamentos</b> na linha da pessoa. Marque o cliente para ela coordenar o cliente inteiro; em clientes com vários serviços, marque só os serviços dela (ex.: só a Ergonomia da Gerdau Pinda).",
@@ -3545,16 +3978,36 @@ var AJUDA_USO = [
     "Revise no Outlook e clique em <b>Enviar</b>. Depois volte ao sistema e clique em <b>Já enviei</b> para marcar a medição como enviada.",
     "Use <b>Ver prévia</b> para conferir o corpo do e-mail antes de criar o rascunho, e <b>Cobrar cliente</b> para criar um lembrete quando o cliente demora a responder."
   ]},
+  { t:"Prazo de faturamento, data limite e pedido", obj:"Garantir que cada NF seja emitida no mês certo e antes do prazo do portal do cliente.", perfis:"coord", passos:[
+    "No serviço do contrato, escolha o <b>Prazo de faturamento</b>: Imediato, 15, 30, 45, 60, 75, 90 ou 120 dias. Contratos novos costumam faturar 120 dias após o início; depois, troque para Imediato.",
+    "O sistema calcula o <b>mês de faturamento</b> de cada medição: início da competência + prazo, nunca antes do mês seguinte ao fechamento.",
+    "No cadastro do cliente (ou do contrato, se for diferente), escolha o <b>Dia limite para subir a NF no portal</b>. O sistema usa <b>3 dias antes</b> como prazo interno.",
+    "Em <b>Pedido / OC é obrigatório para a NF?</b>, escolha: não exige, pedido fixo do contrato ou pedido novo a cada mês. Quando é obrigatório e falta, a liberação ao prestador e a NF ficam bloqueadas.",
+    "No painel da medição aparecem em destaque a data limite, o prazo interno, o mês de faturamento, o código do serviço, a regra do pedido e o coordenador responsável."
+  ]},
+  { t:"Liberação ao prestador, comunicação e criticidade", obj:"Avisar o prestador que o boletim foi aprovado e registrar a conversa de cada faturamento.", perfis:"coord", passos:[
+    "Os e-mails ao cliente não levam mais o prestador (financeiro@ e financeiro1@) em cópia. Em situações atípicas, marque <b>Incluir o prestador em cópia</b> no preparo do e-mail.",
+    "Com a medição aprovada (e o pedido informado, quando obrigatório), clique em <b>Liberar faturamento ao prestador</b>. O sistema cria no seu Outlook o e-mail de liberação com a data limite em destaque, os dados da NF e o boletim anexo.",
+    "No painel da medição, use <b>E-mail ao coordenador</b> para falar com o responsável e a seção <b>Comunicação</b> para registrar mensagens com data, dia e horário.",
+    "Em situações críticas (ex.: contrato encerrado), clique em <b>Sinalizar criticidade</b> e escolha o motivo. O coordenador passa a entrar em cópia dos e-mails desse faturamento."
+  ]},
+  { t:"Prestador: emissão da NF e recebimentos", obj:"Orientar o prestador de faturamento na emissão das NFs e no controle de pagamentos.", perfis:"coord", passos:[
+    "Em <b>Medições do mês</b>, os faturamentos liberados aparecem com o selo <b>liberado</b> e a data limite. Abra a medição e clique em <b>Conferir e emitir a NF</b>; o coordenador também pode registrar a NF.",
+    "Depois de emitir no portal da Prefeitura, registre o número e a data da NF.",
+    "Em <b>Recebimentos</b>, acompanhe as NFs emitidas: o vencimento é a data da NF + a condição de pagamento do cliente (pode ser ajustado).",
+    "Use <b>Registrar</b> para marcar <b>Pago</b> (com a data) ou <b>Não pago</b>, informando a previsão de recebimento combinada com o cliente.",
+    "Em <b>Códigos de serviço</b>, mantenha o banco de códigos (código, descrição, ISS, retenções, recorrente ou pontual). No serviço do contrato, o código é escolhido nessa lista."
+  ]},
   { t:"Fechamento do mês", obj:"Acompanhar o roteiro de cada faturamento até a NF.", perfis:"coord", passos:[
     "Em <b>Fechamento do mês</b>, cada linha mostra as etapas: ocorrências, rascunho, enviado, aprovado, OC e NF.",
     "Os faturamentos que dependem de você aparecem primeiro, com o <b>próximo passo</b> em um botão (gerar, enviar, cobrar, emitir NF).",
     "Os indicadores no topo mostram quantos estão com você, com o cliente e concluídos."
   ]},
   { t:"Aprovação, OC e emissão da NF", obj:"Registrar a aprovação do cliente e emitir a nota fiscal.", perfis:"coord", passos:[
-    "Quando o cliente aprovar, abra a medição e marque <b>Aprovada</b>. Se o cliente contestar, marque <b>Contestada</b>, ajuste as ocorrências e gere de novo.",
+    "Quando o cliente responder, abra a medição e clique em <b>Cliente aprovou</b> (registra quem aprovou, a data e a OC, quando exigida) ou em <b>Cliente contestou</b> (registra o motivo); corrija as ocorrências e gere de novo.",
     "Informe o <b>número da OC</b> quando o cliente exigir. Sem OC, a medição fica com o selo <b>Falta OC</b>.",
     "Clique em <b>Conferir e emitir a NF</b>. O botão <b>Abrir site da Prefeitura (NFS-e)</b> abre o portal de Mogi das Cruzes; o login e a emissão são feitos por você.",
-    "Depois de emitir, informe o número e a data da NF e marque <b>NF emitida</b>. Nunca emita notas de teste: toda nota emitida no portal é real."
+    "Depois de emitir, registre o número e a data da NF e use <b>Copiar aviso ao financeiro</b> para avisar o Financeiro pelo Teams. Nunca emita notas de teste: toda nota emitida no portal é real."
   ]},
   { t:"Clientes, contratos e serviços", obj:"Manter o cadastro que o sistema usa para calcular cada boletim.", perfis:"coord", passos:[
     "Em <b>Clientes e contratos</b>, cadastre o cliente: razão social, CNPJ, área, cidade (para feriados), coordenador, aprovador, e-mails em cópia e condição de pagamento.",
@@ -3589,12 +4042,12 @@ var AJUDA_USO = [
   ]}
 ];
 var AJUDA_FLUXOS = [
-  { t:"Ciclo mensal do faturamento", d:"Da ocorrência lançada à NF emitida, com o rascunho sempre revisado por uma pessoa antes do envio.",
-    lanes:["Lançador / Coordenador", "Coordenador", "Cliente", "Sistema"],
-    steps:[ { l:0, k:"ini", x:"Início do mês" }, { l:0, x:"Lança faltas, horas extras e coberturas" }, { l:3, x:"Calcula pelo contrato e pelos preços" },
-      { l:3, k:"gate", x:"Tem preço?", nao:"Não: fica com valor pendente" }, { l:1, x:"Gera o rascunho em Medição do mês" }, { l:3, x:"Confere OC, pendências e desatualizados" },
-      { l:1, x:"Cria o rascunho do e-mail no Outlook" }, { l:1, x:"Revisa e envia ao cliente" }, { l:2, x:"Aprova o boletim e envia a OC" },
-      { l:1, k:"gate", x:"OC recebida?", nao:"Não: Cobrar cliente" }, { l:1, x:"Emite a NF no portal da Prefeitura" }, { l:1, k:"fim", x:"NF emitida" } ] },
+  { t:"Ciclo mensal do faturamento", d:"Da ocorrência lançada ao pagamento recebido, com o rascunho sempre revisado por uma pessoa antes do envio.",
+    lanes:["Lançador / Coordenador", "Coordenador", "Cliente", "Prestador", "Sistema"],
+    steps:[ { l:0, k:"ini", x:"Início do mês" }, { l:0, x:"Lança faltas, horas extras e coberturas" }, { l:4, k:"gate", x:"Tem preço?", nao:"Não: fica com valor pendente" },
+      { l:1, x:"Gera o rascunho em Medição do mês" }, { l:4, x:"Confere OC, pendências e data limite" }, { l:1, x:"Cria o e-mail ao cliente no Outlook" },
+      { l:2, x:"Aprova o boletim e envia a OC" }, { l:1, k:"gate", x:"Pedido ok?", nao:"Não: Cobrar cliente" }, { l:1, x:"Libera o faturamento ao prestador" },
+      { l:3, x:"Emite a NF até o prazo interno" }, { l:3, x:"Registra pagamento ou inadimplência" }, { l:3, k:"fim", x:"Recebido" } ] },
   { t:"Ocorrência lançada por quem não fatura", d:"O lançador registra o fato; o valor é calculado pelo sistema e completado pelo coordenador quando faltar preço.",
     lanes:["Lançador", "Sistema", "Coordenador"],
     steps:[ { l:0, k:"ini", x:"Ocorrência no cliente" }, { l:0, x:"Escolhe cliente, serviço e tipo" }, { l:0, x:"Informa dias, horas ou horário e justificativa" },
@@ -3626,6 +4079,14 @@ var AJUDA_IND = [
     ["Valor a faturar por faturamento", "Os 15 maiores faturamentos da competência, coloridos por reconhecido ou não."],
     ["Pendências", "Faturamentos sem medição, rascunhos (e desatualizados), enviados sem resposta há mais de 2 dias, aprovados sem OC ou sem NF, cadastros incompletos e ocorrências sem justificativa."]
   ]},
+  { g:"Faturamento e recebimento (Dashboard)", itens:[
+    ["Ver por competência ou por mês de faturamento", "Em Ver por, escolha mês de faturamento para somar os faturamentos cujo mês previsto de NF é o escolhido (competência + prazo de faturamento). Ocorrências e séries mensais seguem a competência."],
+    ["Data limite das NFs", "Liberados aguardando NF; em risco (até 3 dias para o prazo interno, sem NF); atrasados (passou do prazo interno sem NF); e % de NFs emitidas até a data limite do portal."],
+    ["Tempo médio por etapa", "Média de dias corridos entre rascunho → envio → aprovação → liberação ao prestador → NF."],
+    ["Pedidos, criticidades e comunicação", "Faturamentos aprovados parados por falta de pedido/OC (quantidade e R$), criticidades abertas por motivo e mensagens registradas."],
+    ["Faturado por código de serviço", "Soma das linhas das medições do período agrupadas pelo código de serviço do contrato."],
+    ["Inadimplência e recebimentos", "A receber (NFs não pagas), vencido por faixa de atraso (1–30, 31–60, 61–90, > 90 dias), % de inadimplência (vencido ÷ total das NFs registradas) e previsão de recebimento por mês (vencimento ou previsão informada)."]
+  ]},
   { g:"Relatório de ocorrências", itens:[
     ["Resumo", "Quantidade, horas e dias, valor e número de clientes do tipo ou grupo escolhido, com aviso de valores pendentes e lançamentos sem justificativa."],
     ["Por cliente / por profissional", "Agrupa os lançamentos para mostrar onde e com quem as ocorrências se concentram."],
@@ -3646,6 +4107,7 @@ var AJUDA_IND = [
   ]}
 ];
 var AJUDA_VERSOES = [
+  ["V 1.13", "21/10/2026", ["Perfil Faturamento (prestador) e tela Recebimentos (pago, não pago, previsão e inadimplência).", "Prazo de faturamento por serviço, mês de faturamento e Dashboard por competência ou por faturamento.", "Data limite da NF por cliente/contrato com prazo interno de 3 dias; regra de pedido obrigatório.", "Liberação de faturamento ao prestador por e-mail; prestador fora dos e-mails ao cliente.", "Coordenador e comunicação no painel da medição; criticidade com coordenador em cópia.", "Banco de Códigos de serviço; novos indicadores de faturamento e recebimento."]],
   ["V 1.12", "19/10/2026", ["Dashboard redesenhado: roscas com % e total no centro, valor e ajustes por mês, botão Copiar e ⓘ em cada quadro.", "Relatório de ocorrências ao clicar nas linhas e nas fatias, com exportação para Excel.", "Nova tela Ajuda: Como usar, Fluxos, Indicadores e Versão."]],
   ["V 1.11", "16/10/2026", ["Falta e serviço suspenso podem ser medidos em horas.", "Perfil Só lança ocorrências: só a tela de Ocorrências, sem valores; ocorrência sem preço fica com valor pendente.", "Perfis de acesso e tela Usuários e acesso, com atribuição manual de faturamentos.", "Menu Tabela de preços renomeado para Valores dos Contratos."]],
   ["V 1.10", "09/10/2026", ["Área por serviço (ex.: Ergonomia dentro da Gerdau Pinda).", "Nome da unidade junto ao serviço (Ergonomia – S.A / – Cilindros)."]],
