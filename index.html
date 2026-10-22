@@ -276,6 +276,9 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 @media (max-width:900px){ .fat-grid{grid-template-columns:1fr 1fr;} }
 .mini-kpi p{padding-right:14px;}
 .mini-kpi .b-red{background:#e34948;} .mini-kpi .b-amber{background:#eda100;} .mini-kpi .b-green{background:#1baf7a;} .mini-kpi .b-blue{background:#2a78d6;} .mini-kpi .b-purple{background:#6250d6;}
+.fat-cel{min-width:0;}
+.fat-cel select{width:100%;max-width:100%;text-overflow:ellipsis;}
+.fat-cel .hint{font-size:11.5px;color:var(--text2);margin-top:4px;line-height:1.35;}
 
 </style>
 </head>
@@ -826,8 +829,10 @@ function contratosDoCliente(cid){
 }
 function contratoCobre(ct, comp){
   var ini = comp + "-01", fim = lastDay(comp);
-  return (!ct.Inicio || ct.Inicio <= fim) && (!ct.Fim || ct.Fim >= ini);
+  // contrato "Em renovação" continua valendo depois do termino, ate entrar a nova versao
+  return (!ct.Inicio || ct.Inicio <= fim) && (!ct.Fim || ct.Fim >= ini || ct.Status === "Em renovação");
 }
+function emRenovacao(ct, comp){ return !!(ct && ct.Status === "Em renovação" && ct.Fim && ct.Fim < comp + "-01"); }
 function contratoVigente(cid, comp){
   var list = contratosDoCliente(cid).filter(function(c){ return c.Status !== "Encerrado" || (c.Fim && contratoCobre(c, comp)); });
   for (var i = 0; i < list.length; i++) if (contratoCobre(list[i], comp)) return list[i];
@@ -1116,7 +1121,8 @@ function conferir(cid, comp, med, uk){
   var out = []; var cli = byId("clientes", cid); var ct = contratoVigente(cid, comp);
   if (!ct){ out.push({ n:"red", t:"Não há contrato vigente para " + compLabel(comp) + "." }); return out; }
   if (!ct.Fim) out.push({ n:"blue", t:"Contrato sem data de término cadastrada. O comercial precisa informar a vigência." });
-  else if (ct.Fim < todayISO()) out.push({ n:"red", t:"O contrato venceu em " + fmtDate(ct.Fim) + ". Verifique a renovação com o comercial." });
+  else if (emRenovacao(ct, comp)) out.push({ n:"amber", t:"Contrato vencido em " + fmtDate(ct.Fim) + ": faturando em renovação, com os mesmos serviços e valores, até entrar a nova versão (Reajustar / nova versão)." });
+  else if (ct.Fim < todayISO() && ct.Status !== "Em renovação") out.push({ n:"red", t:"O contrato venceu em " + fmtDate(ct.Fim) + ". Verifique a renovação com o comercial ou marque o contrato como \"Em renovação\" para continuar faturando." });
   itensDoContrato(ct.id).forEach(function(i){ if (i.RegraDesconto !== "DiasCorridos" && !Number(i.Divisor)) out.push({ n:"amber", t:"O item \"" + i.Title + "\" está sem divisor da regra de desconto." }); });
   var mm = montarMedicao(cid, comp, uk), rel = mm.ocorrIds || [];
   var pend = S.ocorrencias.filter(function(o){ return rel.indexOf(String(o.id)) >= 0 && simB(o.ValorPendente); });
@@ -1382,6 +1388,8 @@ function renderDashboard(){
   renderDashFaturamento(comp, area, fats);
   // pendencias
   var pend = [];
+  var emRen = uniqList(fats.filter(function(r){ return emRenovacao(contratoVigente(r.c.id, r.comp || comp), r.comp || comp); }).map(function(r){ return r.c.Title; }));
+  if (emRen.length) pend.push(["amber", emRen.length + " cliente(s) faturando com contrato vencido em renovação: " + emRen.join(", ") + ". Cobrar o comercial pela nova versão."]);
   var semMed = fats.filter(function(r){ return !r.m; });
   if (semMed.length) pend.push(["red", semMed.length + " faturamento(s) sem medição gerada em " + compLabel(comp) + ": " + semMed.map(function(r){ return nomeUnidade(r.c, r.u); }).join(", ") + "."]);
   var rasc = meds.filter(function(m){ return m.Status === "Rascunho"; });
@@ -1402,7 +1410,7 @@ function renderDashboard(){
   if (sj.length) pend.push(["amber", sj.length + " ocorrência(s) de " + compLabel(comp) + " sem justificativa."]);
   $("dashPend").innerHTML = pend.length ? pend.map(function(p){ return '<div class="alert alert-' + p[0] + '">' + esc(p[1]) + "</div>"; }).join("") : '<div class="alert alert-green">Nada pendente nesta competência.</div>';
   var ren = renovacoesRows(area).filter(function(r){ return r.dias != null && r.dias <= 90; }).sort(function(a, b){ return a.dias - b.dias; });
-  $("dashRenov").innerHTML = ren.length ? '<table class="tbl"><thead><tr><th>Cliente</th><th>Término</th><th>Prazo</th></tr></thead><tbody>' + ren.map(function(r){ return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td>" + esc(r.c.Title) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + "</td></tr>"; }).join("") + "</tbody></table>" : '<div class="alert alert-green">Nenhum contrato vence nos próximos 90 dias.</div>' + (renovacoesRows(area).some(function(r){ return r.dias == null; }) ? '<div class="alert alert-blue">Há contratos sem data de término cadastrada. Veja em Renovações.</div>' : "");
+  $("dashRenov").innerHTML = ren.length ? '<table class="tbl"><thead><tr><th>Cliente</th><th>Término</th><th>Prazo</th></tr></thead><tbody>' + ren.map(function(r){ return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td>" + esc(r.c.Title) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + (r.ct.Status === "Em renovação" ? " <span class='badge b-amber'>em renovação</span>" : "") + "</td></tr>"; }).join("") + "</tbody></table>" : '<div class="alert alert-green">Nenhum contrato vence nos próximos 90 dias.</div>' + (renovacoesRows(area).some(function(r){ return r.dias == null; }) ? '<div class="alert alert-blue">Há contratos sem data de término cadastrada. Veja em Renovações.</div>' : "");
 }
 // ---- indicador de ocorrencias ----
 var OCO_GRUPOS = [
@@ -1481,6 +1489,8 @@ async function gerarMedicao(cid, comp, uk, silent){
   var fields = { Title: nomeUnidade(cli, u) + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:String(m.contrato.id), ValorPadrao:m.ValorPadrao, Descontos:m.Descontos, Acrescimos:m.Acrescimos, ValorFaturar:m.ValorFaturar, Status:"Rascunho",
     Unidade: uk, UnidadeNome: u.nome || "", Tomador: u.t || "",
     Linhas: JSON.stringify({ lines:m.lines, ocorrIds:m.ocorrIds, versao:m.contrato.Versao, pedido:u.pedido || "", oc: ex ? (linhasDe(ex).oc || "") : "" }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString() };
+  // contrato vencido faturando em renovacao: ja abre com criticidade (coordenador em copia dos e-mails)
+  if (emRenovacao(m.contrato, comp) && !(ex && simB(ex.Critico))){ fields.Critico = true; fields.CriticoMotivo = "Contrato vencido sem renovação"; }
   if (ex) await api.update("medicoes", ex.id, fields); else await api.create("medicoes", fields);
   return true;
 }
@@ -2468,7 +2478,7 @@ function renderRenovacoes(){
   if (!rows.length){ $("renTable").innerHTML = "<tr><td class='empty'>Nenhum contrato neste filtro.</td></tr>"; return; }
   var tot = rows.reduce(function(s, r){ return s + r.total; }, 0);
   $("renTable").innerHTML = "<thead><tr><th>Cliente</th><th>Área</th><th>Nº proposta</th><th>Versão</th><th>Início</th><th>Término</th><th>Prazo</th><th>Reajuste</th><th class='num'>Valor mensal</th></tr></thead><tbody>" + rows.map(function(r){
-    return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td><b>" + esc(r.c.Title) + "</b></td><td>" + esc(r.c.Area || "") + "</td><td>" + esc(r.ct.Title || "") + "</td><td>" + esc(r.ct.Versao || 1) + "</td><td>" + fmtDate(r.ct.Inicio) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + "</td><td class='small'>" + esc([r.ct.IndiceReajuste, r.ct.MesReajuste].filter(Boolean).join(" · ")) + "</td><td class='num'>" + brl(r.total) + "</td></tr>";
+    return "<tr class='click' onclick=\"goCliente('" + r.c.id + "')\"><td><b>" + esc(r.c.Title) + "</b></td><td>" + esc(r.c.Area || "") + "</td><td>" + esc(r.ct.Title || "") + "</td><td>" + esc(r.ct.Versao || 1) + "</td><td>" + fmtDate(r.ct.Inicio) + "</td><td>" + fmtDate(r.ct.Fim) + "</td><td>" + prazoBadge(r.dias) + (r.ct.Status === "Em renovação" ? " <span class='badge b-amber'>em renovação</span>" : "") + "</td><td class='small'>" + esc([r.ct.IndiceReajuste, r.ct.MesReajuste].filter(Boolean).join(" · ")) + "</td><td class='num'>" + brl(r.total) + "</td></tr>";
   }).join("") + "</tbody><tfoot><tr><td colspan='8'>" + rows.length + " contrato(s)</td><td class='num'>" + brl(tot) + "</td></tr></tfoot>";
 }
 
@@ -3639,7 +3649,9 @@ function painelFaturamento(cid, comp, uk, med){
   var cli = byId("clientes", cid), pv = previsaoFat(cid, comp, uk), lim = limiteNF(cid, comp, uk), sit = situacaoLimite(lim, med), co = coordenadorDe(cid, comp, uk);
   var its = itensDaUnidade(cid, comp, uk), cods = uniqList(its.map(codigoItem).filter(Boolean)), rp = regraPedido(cli), pedido = med ? ocDe(med) : unidadeDe(cid, comp, uk).pedido;
   var cel = function(k, val, extra){ return "<div class='fat-cel'><p>" + esc(k) + "</p><div>" + val + "</div>" + (extra || "") + "</div>"; };
-  var h = "<div class='fat-box'>";
+  var chave = cid + "|" + comp + "|" + (uk || ""), pode = podeEditarFat(cid, comp, uk), ed = pode && window.__fatEdit === chave;
+  if (ed) return painelFatEdicao(cid, comp, uk, med, co, its, rp);
+  var h = "<div class='fat-box'>" + (pode ? "<div style='text-align:right;margin:-4px 0 6px'><button class='btn-o btn-s' onclick=\"window.__fatEdit='" + esc(chave).replace(/'/g, "") + "';openMedicao('" + cid + "','" + comp + "','" + ukArg(uk) + "')\">&#9998; Editar data limite, prazo, código e pedido</button></div>" : "");
   if (lim) h += "<div class='fat-limite " + (sit ? sit.cls : "") + "'><span>Data limite da NF no portal do cliente</span><b>" + fmtDate(lim.portal) + "</b><em>prazo interno " + fmtDate(lim.interno) + (sit ? " · " + esc(sit.txt) : "") + "</em></div>";
   else h += "<div class='fat-limite b-gray'><span>Data limite da NF</span><b>não cadastrada</b><em>informe o dia no cadastro do cliente ou do contrato</em></div>";
   h += "<div class='fat-grid'>" +
@@ -3653,6 +3665,40 @@ function painelFaturamento(cid, comp, uk, med){
       (liberada(med) ? " <span class='badge b-purple'>Liberado ao prestador em " + fmtDate(med.DataLiberacao) + "</span>" : "") + "</div>";
   }
   return h + "</div>";
+}
+// so o coordenador responsavel pelo faturamento edita estes dados pelo painel
+function podeEditarFat(cid, comp, uk){ if (soPrestador() || soOcorrencias()) return false; var e = String(CURRENT_USER.email || "").toLowerCase(); return !!e && coordenadorDe(cid, comp, uk).emails.indexOf(e) >= 0; }
+function painelFatEdicao(cid, comp, uk, med, co, its, rp){
+  var cli = byId("clientes", cid), ct = contratoVigente(cid, comp) || contratoAtual(cid), dia = String(diaLimiteDe(cid, comp) || ""), pz = String(prazoUnidade(cid, comp, uk));
+  var cel = function(k, campo, hint){ return "<div class='fat-cel'><p>" + esc(k) + "</p><div>" + campo + "</div>" + (hint ? "<div class='hint'>" + hint + "</div>" : "") + "</div>"; };
+  var h = "<div class='fat-box' style='border-color:var(--grena);background:#fff'><p class='card-title' style='font-size:14px;margin:0 0 10px'>&#9998; Editar dados do faturamento <span class='small muted'>(só o coordenador responsável)</span></p><div class='fat-grid'>" +
+    cel("Data limite da NF (dia do mês)", "<select id='fe_dia'>" + opt("", "Não informado", dia) + Array.apply(null, Array(31)).map(function(x, i){ return opt(String(i + 1), "Dia " + (i + 1), dia); }).join("") + "</select>", "Vale para todos os faturamentos de " + esc(cli.Title) + ". Prazo interno: 3 dias antes.") +
+    cel("Prazo de faturamento", "<select id='fe_prazo'>" + PRAZOS_FAT.map(function(p){ return opt(String(p[0]), p[1], pz); }).join("") + "</select>", its.length > 1 ? "Vale para os " + its.length + " serviços deste faturamento." : "Vale para este serviço.") +
+    cel("Código do serviço", its.map(function(it, i){ return (its.length > 1 ? "<div class='small muted' style='margin-top:" + (i ? 6 : 0) + "px'>" + esc(it.Title) + "</div>" : "") + "<select class='fe_cod' data-it='" + it.id + "'>" + codigoOptions(it.CodigoId, it.CodigoServicoNF) + "</select>"; }).join(""), S.codigos.length ? "" : "Cadastre os códigos em Códigos de serviço.") +
+    cel("Pedido / OC para a NF", "<select id='fe_ped'>" + Object.keys(PEDIDO_REGRAS).map(function(k){ return opt(k, PEDIDO_REGRAS[k], cli.PedidoNF || ""); }).join("") + "</select>", "Vale para o cliente todo. O nº da OC do mês é informado na medição aprovada.") +
+    "</div><div class='modal-actions' style='margin-top:10px'><button class='btn-o btn-s' onclick=\"window.__fatEdit='';openMedicao('" + cid + "','" + comp + "','" + ukArg(uk) + "')\">Cancelar</button><button class='btn btn-s' onclick=\"salvarFatEdicao('" + cid + "','" + comp + "','" + ukArg(uk) + "')\">Salvar</button></div></div>";
+  return h;
+}
+async function salvarFatEdicao(cid, comp, uk){
+  if (!podeEditarFat(cid, comp, uk)){ showToast("Só o coordenador responsável pode alterar estes dados.", true); return; }
+  var cli = byId("clientes", cid), ct = contratoVigente(cid, comp) || contratoAtual(cid), its = itensDaUnidade(cid, comp, uk);
+  var dia = parseNum(v("fe_dia")) || null, pz = parseNum(v("fe_prazo")) || 0, ped = v("fe_ped");
+  var cods = [].slice.call(document.querySelectorAll(".fe_cod")).map(function(el){ return { it: el.getAttribute("data-it"), cod: el.value }; });
+  await safe(async function(){
+    // dia limite: no contrato, se ele ja tem um dia proprio; senao no cliente
+    if (ct && Number(ct.DiaLimiteNF)) { if (Number(ct.DiaLimiteNF) !== dia) await api.update("contratos", ct.id, { DiaLimiteNF: dia }); }
+    else if ((Number(cli.DiaLimiteNF) || null) !== dia) await api.update("clientes", cid, { DiaLimiteNF: dia });
+    if ((cli.PedidoNF || "") !== ped) await api.update("clientes", cid, { PedidoNF: ped });
+    for (var i = 0; i < its.length; i++){
+      var it = its[i], f = {}, c = cods.filter(function(x){ return String(x.it) === String(it.id); })[0];
+      if ((Number(it.PrazoFaturamento) || 0) !== pz) f.PrazoFaturamento = pz;
+      if (c && String(it.CodigoId || "") !== String(c.cod || "")){ f.CodigoId = c.cod; if (c.cod) f.CodigoServicoNF = (byId("codigos", c.cod) || {}).Codigo || it.CodigoServicoNF; }
+      if (Object.keys(f).length) await api.update("itens", it.id, f);
+    }
+    var med = medicaoDe(cid, comp, uk || "");
+    if (med) await registrarComunicacao(med, "Dados do faturamento atualizados: dia limite " + (dia || "—") + ", prazo " + prazoTxt(pz) + ", pedido " + (PEDIDO_REGRAS[ped] || "") + ".", "sistema").catch(function(){});
+  }, "Dados do faturamento salvos.");
+  window.__fatEdit = ""; openMedicao(cid, comp, uk); renderCurrent();
 }
 // ---------- comunicacao (chat) ----------
 function comunicacoesDe(med){ return S.comunicacoes.filter(function(c){ return String(c.MedicaoId) === String(med.id); }).sort(function(a, b){ return String(a.Created || a.Modified || "").localeCompare(String(b.Created || b.Modified || "")); }); }
@@ -3983,7 +4029,8 @@ var AJUDA_USO = [
     "O sistema calcula o <b>mês de faturamento</b> de cada medição: início da competência + prazo, nunca antes do mês seguinte ao fechamento.",
     "No cadastro do cliente (ou do contrato, se for diferente), escolha o <b>Dia limite para subir a NF no portal</b>. O sistema usa <b>3 dias antes</b> como prazo interno.",
     "Em <b>Pedido / OC é obrigatório para a NF?</b>, escolha: não exige, pedido fixo do contrato ou pedido novo a cada mês. Quando é obrigatório e falta, a liberação ao prestador e a NF ficam bloqueadas.",
-    "No painel da medição aparecem em destaque a data limite, o prazo interno, o mês de faturamento, o código do serviço, a regra do pedido e o coordenador responsável."
+    "No painel da medição aparecem em destaque a data limite, o prazo interno, o mês de faturamento, o código do serviço, a regra do pedido e o coordenador responsável.",
+    "O coordenador responsável pode alterar ali mesmo a data limite, o prazo de faturamento, o código do serviço e a regra do pedido, pelo botão <b>Editar data limite, prazo, código e pedido</b>. Os demais usuários só visualizam."
   ]},
   { t:"Liberação ao prestador, comunicação e criticidade", obj:"Avisar o prestador que o boletim foi aprovado e registrar a conversa de cada faturamento.", perfis:"coord", passos:[
     "Os e-mails ao cliente não levam mais o prestador (financeiro@ e financeiro1@) em cópia. Em situações atípicas, marque <b>Incluir o prestador em cópia</b> no preparo do e-mail.",
@@ -4032,7 +4079,8 @@ var AJUDA_USO = [
   ]},
   { t:"Renovações", obj:"Antecipar o vencimento dos contratos.", perfis:"coord", passos:[
     "Em <b>Renovações</b>, os contratos aparecem com o prazo até o término; o número no menu indica quantos vencem em até 60 dias.",
-    "Use <b>Reajustar / nova versão</b> para registrar a renovação com o novo valor e a nova vigência."
+    "Contrato vencido mas em negociação: edite o contrato e mude o <b>Status</b> para <b>Em renovação</b>. O sistema continua faturando com os mesmos serviços e valores, mostra um alerta amarelo na conferência e já abre o faturamento com a criticidade \"Contrato vencido sem renovação\" (coordenador em cópia dos e-mails).",
+    "Use <b>Reajustar / nova versão</b> para registrar a renovação com o novo valor e a nova vigência. As competências a partir do novo início usam os valores novos; o que já foi enviado não muda. Diferença retroativa entra como Ajuste (acréscimo) no mês seguinte."
   ]},
   { t:"Configuração (gestores)", obj:"Manter usuários, modelos de boletim e a estrutura do sistema.", perfis:"gestor", passos:[
     "<b>Usuários e acesso</b>: perfis e atribuição de faturamentos (veja a seção de perfis).",
@@ -4107,6 +4155,8 @@ var AJUDA_IND = [
   ]}
 ];
 var AJUDA_VERSOES = [
+  ["V 1.15", "23/10/2026", ["Data limite, prazo de faturamento, código do serviço e regra do pedido editáveis no painel da medição pelo coordenador responsável."]],
+  ["V 1.14", "22/10/2026", ["Contrato \"Em renovação\" continua faturando depois do término, com alerta na conferência, criticidade automática e destaque em Renovações e nas pendências."]],
   ["V 1.13", "21/10/2026", ["Perfil Faturamento (prestador) e tela Recebimentos (pago, não pago, previsão e inadimplência).", "Prazo de faturamento por serviço, mês de faturamento e Dashboard por competência ou por faturamento.", "Data limite da NF por cliente/contrato com prazo interno de 3 dias; regra de pedido obrigatório.", "Liberação de faturamento ao prestador por e-mail; prestador fora dos e-mails ao cliente.", "Coordenador e comunicação no painel da medição; criticidade com coordenador em cópia.", "Banco de Códigos de serviço; novos indicadores de faturamento e recebimento."]],
   ["V 1.12", "19/10/2026", ["Dashboard redesenhado: roscas com % e total no centro, valor e ajustes por mês, botão Copiar e ⓘ em cada quadro.", "Relatório de ocorrências ao clicar nas linhas e nas fatias, com exportação para Excel.", "Nova tela Ajuda: Como usar, Fluxos, Indicadores e Versão."]],
   ["V 1.11", "16/10/2026", ["Falta e serviço suspenso podem ser medidos em horas.", "Perfil Só lança ocorrências: só a tela de Ocorrências, sem valores; ocorrência sem preço fica com valor pendente.", "Perfis de acesso e tela Usuários e acesso, com atribuição manual de faturamentos.", "Menu Tabela de preços renomeado para Valores dos Contratos."]],
