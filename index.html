@@ -280,6 +280,12 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
 .fat-cel select{width:100%;max-width:100%;text-overflow:ellipsis;}
 .fat-cel .hint{font-size:11.5px;color:var(--text2);margin-top:4px;line-height:1.35;}
 
+.pt-row{display:grid;grid-template-columns:minmax(0,3fr) 70px 110px 120px 110px 28px;gap:8px;align-items:center;margin-bottom:6px;}
+.pt-row.pt-head span{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;}
+.pt-row.pt-foot{border-top:1px solid var(--border);padding-top:8px;font-weight:700;}
+.pt-row .num{text-align:right;}
+.form .pt-row input,.form .pt-row select{padding:7px 9px;}
+@media (max-width:700px){.pt-row{grid-template-columns:1fr 1fr;}.pt-row.pt-head{display:none;}}
 </style>
 </head>
 <body>
@@ -303,6 +309,8 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <div class="tab" data-tab="variaveis"><span class="tab-icon">&#128178;</span>Valores dos Contratos</div>
       <div class="tab" data-tab="codigos"><span class="tab-icon">&#127991;</span>Códigos de serviço</div>
       <div class="tab" data-tab="recebimentos"><span class="tab-icon">&#128176;</span>Recebimentos</div>
+      <p class="tab-group-label">Profissionais</p>
+      <div class="tab" data-tab="pagamentos"><span class="tab-icon">&#128184;</span>Pagamentos a profissionais</div>
       <p class="tab-group-label gestor-only">Gestão</p>
       <div class="tab gestor-only" data-tab="margem"><span class="tab-icon">&#128202;</span>Margem</div>
       <div class="tab gestor-only" data-tab="parametros"><span class="tab-icon">&#9881;</span>Parâmetros</div>
@@ -360,6 +368,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
           <div class="card viz-card" id="cardFatCod"></div>
         </div>
         <div class="card viz-card" id="cardFatInad"></div>
+        <div class="card viz-card" id="cardPagProf"></div>
         <div class="card viz-card" id="cardOco"></div>
         <div class="card viz-card" id="cardClientes"></div>
         <div class="grid2">
@@ -379,7 +388,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <!-- MEDICOES -->
       <div class="panel" id="panel-medicoes">
         <div class="page-head"><div><h1 class="page-title">Medições do mês</h1><p class="page-sub">Gere o boletim de cada cliente a partir do contrato vigente e das ocorrências lançadas.</p></div>
-          <button class="btn" onclick="gerarTodas()">Gerar rascunhos da competência</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-o" id="btnPontual" onclick="openPontual()">+ Serviço pontual</button><button class="btn" onclick="gerarTodas()">Gerar rascunhos da competência</button></div></div>
         <div class="toolbar"><label>Competência</label><input type="month" id="medComp" onchange="renderMedicoes()"><label>Área</label><select id="medArea" onchange="renderMedicoes()"></select><label>Status</label><select id="medStatus" onchange="renderMedicoes()"></select></div>
         <div class="tbl-wrap"><table class="tbl" id="medTable"></table></div>
       </div>
@@ -454,6 +463,15 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
         <div class="toolbar"><label>Mostrar</label><select id="recFiltro" onchange="renderRecebimentos()"><option value="pendentes">Em aberto (a vencer e vencidos)</option><option value="vencidos">Vencidos / não pagos</option><option value="pagos">Pagos</option><option value="todos">Todos</option></select><label>Buscar</label><input id="recBusca" placeholder="Cliente ou nº da NF" oninput="renderRecebimentos()" style="max-width:240px"></div>
         <div class="kpi-grid" id="recKpis"></div>
         <div class="tbl-wrap"><table class="tbl" id="recTable"></table></div>
+      </div>
+
+      <!-- PAGAMENTOS A PROFISSIONAIS -->
+      <div class="panel" id="panel-pagamentos">
+        <div class="page-head"><div><h1 class="page-title">Pagamentos a profissionais</h1><p class="page-sub">Solicitações ao prestador financeiro (BPO) com no mínimo 1 dia de antecedência. O BPO consulta aqui, classifica o status e anexa o comprovante.</p></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-o" onclick="baixarPlanilhaPagamentos()">Baixar planilha</button><button class="btn-o" onclick="openProfissional()">+ Profissional</button><button class="btn" onclick="window.__spEditId='';openSolicitacao()">+ Solicitar pagamento</button></div></div>
+        <div class="toolbar"><div class="chip-row" id="pgChips"></div><label id="pgLStatus">Status</label><select id="pgStatusF" onchange="renderPagamentos()"></select><label id="pgLMes">Pagamento em</label><input type="month" id="pgMes" onchange="renderPagamentos()"><label>Buscar</label><input id="pgBusca" placeholder="Profissional, projeto ou descrição" oninput="renderPagamentos()" style="max-width:240px"></div>
+        <div class="kpi-grid" id="pgKpis"></div>
+        <div class="tbl-wrap"><table class="tbl" id="pgTable"></table></div>
       </div>
 
       <!-- AJUDA -->
@@ -542,7 +560,7 @@ var GRAPH_SITE = "https://graph.microsoft.com/v1.0/sites/" + SITE_HOST + ":" + S
 // ---- Estrutura das listas no SharePoint ----
 // tipos: t = texto, ml = texto longo, n = numero, b = sim/nao
 var SCHEMA = {
-  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailsCopia","t"],["CoordenadorEmail","t"],["Pendencias","ml"],["OCMensal","b"],["DiaLimiteNF","n"],["PedidoNF","t"]] },
+  clientes:   { list:"FAT_Clientes",   label:"Clientes", cols:[["RazaoSocial","t"],["CNPJ","t"],["Unidade","t"],["Local","t"],["Area","t"],["Coordenador","t"],["AprovadorNome","t"],["AprovadorEmail","t"],["ModeloBoletim","t"],["CondicaoPagamento","t"],["Observacoes","ml"],["Ativo","b"],["Tomadores","ml"],["FaturarPorServico","b"],["EmailUnico","b"],["EmailsCopia","t"],["CoordenadorEmail","t"],["Pendencias","ml"],["OCMensal","b"],["DiaLimiteNF","n"],["PedidoNF","t"]] },
   contratos:  { list:"FAT_Contratos",  label:"Contratos", cols:[["ClienteId","t"],["Versao","n"],["Inicio","t"],["Fim","t"],["IndiceReajuste","t"],["MesReajuste","t"],["AvisoPrevioDias","n"],["Status","t"],["LinkContrato","t"],["Observacoes","ml"],["DiaLimiteNF","n"]] },
   itens:      { list:"FAT_Itens",      label:"Itens do contrato", cols:[["ContratoId","t"],["ClienteId","t"],["Cargo","t"],["ValorMensal","n"],["RegraDesconto","t"],["Divisor","n"],["JornadaDiaria","n"],["CodigoServicoNF","t"],["Retencoes","t"],["Rateio","t"],["NumPedido","t"],["Ordem","n"],["Divisao","ml"],["DescBoletim","t"],["Requisitante","t"],["Unid","t"],["Localidade","t"],["CentroCusto","t"],["RelTipo","t"],["RelHoras","t"],["RelFonte","t"],["ResponsavelEmail","t"],["Area","t"],["PrazoFaturamento","n"],["CodigoId","t"]] },
   variaveis:  { list:"FAT_Variaveis",  label:"Tabela de variáveis", cols:[["ClienteId","t"],["Cargo","t"],["Tipo","t"],["Periodo","t"],["Valor","n"],["VigenciaInicio","t"]] },
@@ -827,8 +845,6 @@ function clientesAtivos(area){
 function contratosDoCliente(cid){
   return S.contratos.filter(function(c){ return String(c.ClienteId) === String(cid); }).sort(function(a, b){ return (b.Versao||0) - (a.Versao||0); });
 }
-// 03/11/2026 — Contrato lançado pelo Comercial (SIGE) fica "Provisório" (ou "Retido") até o Financeiro conferir: NÃO entra no faturamento nem no fechamento.
-function ehContratoPendente(c){ return !!c && (c.Status === "Provisório" || c.Status === "Retido"); }
 function contratoCobre(ct, comp){
   var ini = comp + "-01", fim = lastDay(comp);
   // contrato "Em renovação" continua valendo depois do termino, ate entrar a nova versao
@@ -836,11 +852,11 @@ function contratoCobre(ct, comp){
 }
 function emRenovacao(ct, comp){ return !!(ct && ct.Status === "Em renovação" && ct.Fim && ct.Fim < comp + "-01"); }
 function contratoVigente(cid, comp){
-  var list = contratosDoCliente(cid).filter(function(c){ return !ehContratoPendente(c) && (c.Status !== "Encerrado" || (c.Fim && contratoCobre(c, comp))); });
+  var list = contratosDoCliente(cid).filter(function(c){ return c.Status !== "Encerrado" || (c.Fim && contratoCobre(c, comp)); });
   for (var i = 0; i < list.length; i++) if (contratoCobre(list[i], comp)) return list[i];
   return null;
 }
-function contratoAtual(cid){ return contratoVigente(cid, curComp()) || contratosDoCliente(cid).filter(function(c){ return !ehContratoPendente(c); })[0] || null; }
+function contratoAtual(cid){ return contratoVigente(cid, curComp()) || contratosDoCliente(cid)[0] || null; }
 function itensDoContrato(ctId){
   return S.itens.filter(function(i){ return String(i.ContratoId) === String(ctId); }).sort(function(a, b){ return (a.Ordem||0) - (b.Ordem||0); });
 }
@@ -901,6 +917,19 @@ function descontoItem(item, comp, dias, horas){
 }
 // calcula valor (com sinal), custo e detalhe de uma ocorrencia
 // servicos de uma ocorrencia (ItemId pode ter varios ids separados por virgula = media)
+// medicoes em que a ocorrencia vai entrar: so as unidades do servico (e das unidades escolhidas), nao todas do cliente
+function medicoesAfetadas(cid, o){
+  var cli = byId("clientes", cid), comp = o.Competencia, ct = contratoVigente(cid, comp), its = ct ? itensDoContrato(ct.id) : [];
+  var ids = idsDaOco(o); if (!ids.length && o.Cargo){ var ip = itemPorCargo(its, o.Cargo); if (ip) ids = [String(ip.id)]; }
+  var toms = String(o.Tomador || "").split(",").filter(Boolean), alvo = ids.map(function(i){ return byId("itens", i); }).filter(Boolean);
+  return unidadesDe(cid, comp).filter(function(u){
+    if (u.pontual) return false;
+    if (!alvo.length) return true;
+    if (u.itemId) return ids.indexOf(String(u.itemId)) >= 0 && (!toms.length || toms.indexOf(u.t || "") >= 0);
+    if (String(u.key).indexOf("T:") === 0) return (!toms.length || toms.indexOf(u.t) >= 0) && alvo.some(function(it){ return divisaoDe(it, cli).some(function(d){ return (d.t || "") === u.t; }); });
+    return true;
+  }).map(function(u){ return medicaoDe(cid, comp, u.key); }).filter(Boolean);
+}
 function idsDaOco(o){ return String(o.ItemId || "").split(",").map(function(x){ return x.trim(); }).filter(Boolean); }
 function calcOcorrencia(o){
   var t = TIPOS[o.Tipo]; if (!t) return { erro:"Tipo inválido" };
@@ -1004,7 +1033,6 @@ function ehCoordenador(cli, email){ email = String(email || "").toLowerCase(); r
 function emailsLista(t){ return String(t || "").toLowerCase().split(/[;,\s]+/).filter(Boolean); }
 function pendenciasCliente(cli){
   var out = [], comp = curComp(), ct = contratoVigente(cli.id, comp) || contratoAtual(cli.id);
-  contratosDoCliente(cli.id).filter(ehContratoPendente).forEach(function(p){ out.push("Contrato " + (p.Status === "Retido" ? "retido" : "provisório") + " lançado pelo Comercial (v" + (p.Versao || 1) + ", nº " + (p.Title || "a informar") + ") aguardando validação: conferir nº, vigência, serviços e valor e, estando certo, mudar o Status para Vigente. Enquanto isso ele não fatura."); });
   if (!ct) out.push("Cadastrar o contrato (nº, início e término da vigência).");
   else {
     if (!ct.Fim) out.push("Informar o término da vigência do contrato.");
@@ -1056,6 +1084,15 @@ function montarMedicao(cid, comp, uk){
   // ocorrencia com tomador escolhido vai inteira para ele (ex.: ajuste de pedido so da Fisio Cilindros); sem tomador, divide pelo % do contrato
   var lanca = function(l, v, o, txt, horas){
     var t = o.Tomador || "";
+    if (t.indexOf(",") >= 0){
+      var ks = t.split(",").filter(Boolean), itL = byItem[l.rel] || byItem[l.itemId], dv = itL ? divisaoDe(itL, cli) : [];
+      var ps = ks.map(function(k){ var d = dv.filter(function(x){ return (x.t || "") === k; })[0]; return d ? Number(d.pct) || 0 : 0; });
+      if (!ps.some(Boolean)) ps = ks.map(function(){ return 1; });
+      var pts = repartir(Math.abs(v), ps), hs = repartir(horas || 0, ps), nms = ks.map(function(k){ return tomadorDe(cli, k).nome || k; }).join(" e ");
+      ks.forEach(function(k, i){ l.fx = l.fx || {}; var f = l.fx[k] = l.fx[k] || { d:0, a:0, h:0 }; if (v < 0) f.d = r2(f.d + pts[i]); else f.a = r2(f.a + pts[i]); f.h = r2(f.h + hs[i]);
+        l.just.push({ s: txt + " (dividido entre " + nms + ")", t: k, m: 1 }); l.oc.push({ id: String(o.id), t: k }); });
+      return;
+    }
     if (t){ l.fx = l.fx || {}; var f = l.fx[t] = l.fx[t] || { d:0, a:0, h:0 }; if (v < 0) f.d = r2(f.d - v); else f.a = r2(f.a + v); f.h = r2(f.h + (horas || 0)); }
     else { if (v < 0) l.desconto = r2(l.desconto - v); else l.acrescimo = r2(l.acrescimo + v); l.horas = r2(l.horas + (horas || 0)); }
     l.just.push({ s: txt, t: t }); l.oc.push({ id: String(o.id), t: t });
@@ -1106,7 +1143,7 @@ function montarMedicao(cid, comp, uk){
     // linha so de ocorrencias dirigidas a outro tomador: nao aparece aqui
     if (l.tipo === "variavel" && !part.padrao && !part.desconto && !part.acrescimo && !part.horas) return;
     var visJ = function(j){ return typeof j === "string" || inteiro || !j.t || j.t === meuT; };
-    var just = l.just.filter(visJ).map(function(j){ return typeof j === "string" ? j : j.s + (j.t && !inteiro && part.pct < 100 ? " (integral para esta unidade)" : ""); });
+    var just = l.just.filter(visJ).filter(function(j, i, a){ return typeof j === "string" || !j.m || a.findIndex(function(x){ return x.s === j.s; }) === i; }).map(function(j){ return typeof j === "string" ? j : j.s + (j.t && !j.m && !inteiro && part.pct < 100 ? " (integral para esta unidade)" : ""); });
     var ocs = l.oc.filter(visJ).map(function(x){ return typeof x === "string" ? x : x.id; });
     if (dirigida && part.pct < 100 && !l.desconto && !l.acrescimo && !l.horas && l.tipo === "variavel") part.pct = 100;
     var nome = l.servico;
@@ -1680,7 +1717,7 @@ function copiarTabelaEmail(id, modo, pronto){
   }
   var ordemU = unidadesDe(med.ClienteId, med.Competencia).map(function(u){ return u.key; });
   var irmas = medicoesDoMes(med.ClienteId, med.Competencia).sort(function(a, b){ return ordemU.indexOf(a.Unidade || "") - ordemU.indexOf(b.Unidade || ""); });
-  modo = irmas.length > 1 ? (modo || "um") : "um";
+  modo = irmas.length > 1 ? (modo || (simB(cli.EmailUnico) ? "todos" : "um")) : "um";
   var lista = modo === "todos" ? irmas : [med];
   window.__emailHTML = lista.map(function(m){ return emailBoletimHTML(m); }).join("<div style='height:22px;line-height:22px;'>&nbsp;</div>");
   window.__emailNome = cli.Title + (modo === "todos" ? "" : (med.UnidadeNome ? " " + med.UnidadeNome : "")) + " " + med.Competencia;
@@ -1773,7 +1810,7 @@ function prepararEmail(id, modo, cobr){
   window.__emailCobr = !!cobr;
   var ABERTO = cobr ? { "Enviada":1 } : { "Rascunho":1, "Enviada":1, "Contestada":1 };
   var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), todasM = irmasDe(med), irmas = todasM.filter(function(m){ return ABERTO[m.Status] || m === med; });
-  modo = irmas.length > 1 ? (modo || "um") : "um";
+  modo = irmas.length > 1 ? (modo || (simB(cli.EmailUnico) ? "juntos" : "um")) : "um";
   var grupos = modo === "juntos" ? [irmas] : modo === "separados" ? irmas.map(function(m){ return [m]; }) : [[med]];
   window.__emailGrupos = grupos.map(function(g){ return g.map(function(m){ return m.id; }); });
   var chip = function(k, t){ return "<button class='chip" + (modo === k ? " active" : "") + "' onclick=\"prepararEmail('" + id + "','" + k + "'," + (cobr ? "true" : "false") + ")\">" + t + "</button>"; };
@@ -1961,7 +1998,10 @@ function exportOcorrencias(){
 // ============================================================
 // OCORRENCIAS
 // ============================================================
-function itensOcoNome(o){ var cA = byId("clientes", o.ClienteId), c = o.Tomador ? cA : null; return idsDaOco(o).map(function(i){ var it = byId("itens", i); return it ? nomeItemUnid(it, cA) : ""; }).filter(Boolean).join(" + ") + (idsDaOco(o).length > 1 ? " (média)" : "") + (c ? " · só " + (tomadorDe(c, o.Tomador).nome || o.Tomador) : ""); }
+function ocoTomChecks(inicio){ var ks = [].slice.call(document.querySelectorAll(".oTomCk")).filter(function(c){ return c.checked; }).map(function(c){ return c.value; }); return ks.length ? ks.join(",") + (ks.length === 1 ? "," : "") : (inicio ? "__varias" : "__varias"); }
+// valor gravado: "" divide pelo contrato, "k" so uma unidade, "k1,k2" so as marcadas (todas marcadas = contrato)
+function ocoTomValor(){ var t = v("oTom"); if (t !== "__varias") return t; var ks = String(window.__ocoTom || "").split(",").filter(function(k){ return k && k !== "__varias"; }), tot = document.querySelectorAll(".oTomCk").length; if (ks.length === 1) return ks[0]; if (!ks.length || ks.length === tot) return ""; return ks.join(","); }
+function itensOcoNome(o){ var cA = byId("clientes", o.ClienteId), c = o.Tomador ? cA : null; return idsDaOco(o).map(function(i){ var it = byId("itens", i); return it ? nomeItemUnid(it, cA) : ""; }).filter(Boolean).join(" + ") + (idsDaOco(o).length > 1 ? " (média)" : "") + (c ? " · só " + String(o.Tomador).split(",").filter(Boolean).map(function(k){ return tomadorDe(c, k).nome || k; }).join(" e ") : ""); }
 function cargoOco(o){ var it = byId("itens", idsDaOco(o)[0] || ""); return String(o.Cargo || (it && it.Cargo) || "").trim(); }
 function profOco(o){ return String(o.Profissional || "").trim(); }
 // opcoes de cargo e profissional montadas a partir das ocorrencias da competencia/cliente/tipo (mantem a escolha atual)
@@ -2004,7 +2044,7 @@ function openOcorrencia(id){
     "<div><label>Faturar na competência</label><input type='month' id='oComp' value='" + esc(o.Competencia || compOf(o.Data)) + "' onchange='ocoFormRefresh(true)'><div class='hint'>Mude só para ajustes de meses anteriores.</div></div>" +
     "<div id='wItem'><label id='lItem'>Serviço afetado</label><select id='oItem' onchange='ocoFormRefresh()'></select><div id='oItemHint' class='hint'></div></div>" +
     "<div id='wItemMulti' class='full hidden'></div>" +
-    "<div id='wTom' class='hidden'><label>Lançar em qual unidade</label><select id='oTom' onchange='window.__ocoTom=this.value;ocoFormRefresh()'></select><div class='hint' id='oTomHint'></div></div>" +
+    "<div id='wTom' class='hidden'><label>Lançar em qual unidade</label><select id='oTom' onchange='window.__ocoTom=this.value==&quot;__varias&quot;?ocoTomChecks(true):this.value;ocoFormRefresh()'></select><div id='oTomMulti' class='hidden' style='margin-top:6px'></div><div class='hint' id='oTomHint'></div></div>" +
     "<div id='wCargo'><label>Cargo</label><input id='oCargo' list='dlCargos' value='" + esc(o.Cargo || "") + "' oninput='ocoFormRefresh()'>" + cargoDatalist() + "</div>" +
     "<div><label>Profissional</label><input id='oProf' value='" + esc(o.Profissional || "") + "'></div>" +
     "<div id='wUnid'><label>Medir em</label><select id='oUnid' onchange='ocoFormRefresh()'>" + opt("dias", "Dias", (!Number(o.Dias) && Number(o.Horas) && !o.HoraInicio) ? "horas" : "dias") + opt("horas", "Horas", (!Number(o.Dias) && Number(o.Horas) && !o.HoraInicio) ? "horas" : "dias") + "</select></div>" +
@@ -2029,7 +2069,7 @@ function ocoCompSync(){ var d = v("oData"); if (d) $("oComp").value = compOf(d);
 function ocoForm(){
   var porH = (TIPOS[v("oTipo")] || {}).modo === "dias" && v("oUnid") === "horas";
   return { HorasQtd: porH ? horasTexto(v("oHorasQ")) : 0, ClienteId:v("oCli"), Tipo:v("oTipo"), Data:v("oData"), Competencia:v("oComp") || compOf(v("oData")), ItemId: v("oItem") === "__multi" ? [].slice.call(document.querySelectorAll(".oItemM:checked")).map(function(x){ return x.value; }).join(",") : v("oItem"), Cargo:v("oCargo"), Profissional:v("oProf"), Dias: porH ? 0 : parseNum(v("oDias")),
-    HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid"), Tomador: $("wTom") && !$("wTom").classList.contains("hidden") ? v("oTom") : "" };
+    HoraInicio:v("oIni"), HoraFim:v("oFim"), Manual:(TIPOS[v("oTipo")]||{}).grupo === "manual" ? true : v("oManual"), Valor:parseNum(v("oValor")), Justificativa:v("oJust"), SolicitadoCliente:v("oSolic"), Evidencia:v("oEvid"), Tomador: $("wTom") && !$("wTom").classList.contains("hidden") ? ocoTomValor() : "" };
 }
 function ocoFormRefresh(rebuildItems){
   var t = TIPOS[v("oTipo")] || {}, cid = v("oCli"), comp = v("oComp") || compOf(v("oData"));
@@ -2060,9 +2100,11 @@ function ocoFormRefresh(rebuildItems){
     show("wTom", on);
     if (on){
       var pctTxt = divs[0].map(function(x){ var tm = tomadorDe(cliT, x.t); return num(Number(x.pct), Number(x.pct) % 1 ? 1 : 0) + "% " + (tm.nome || x.t); }).join(" / ");
-      var cur = window.__ocoTom || "";
-      $("oTom").innerHTML = opt("", "Dividir conforme o contrato (" + pctTxt + ")", cur) + tks.map(function(k){ var tm = tomadorDe(cliT, k); return opt(k, "Somente " + (tm.nome || k) + " (100%)", cur); }).join("");
-      $("oTomHint").textContent = $("oTom").value ? "O valor inteiro entra só no faturamento de " + (tomadorDe(cliT, $("oTom").value).nome || $("oTom").value) + "." : "Use \"Somente…\" quando a ocorrência é de uma unidade só (ex.: ajuste de pedido de uma unidade).";
+      var cur = window.__ocoTom || "", varias = cur.indexOf(",") >= 0 || cur === "__varias", selK = varias ? cur.split(",") : [];
+      $("oTom").innerHTML = opt("", "Dividir conforme o contrato (" + pctTxt + ")", cur) + tks.map(function(k){ var tm = tomadorDe(cliT, k); return opt(k, "Somente " + (tm.nome || k) + " (100%)", cur); }).join("") + (tks.length > 2 ? opt("__varias", "Escolher as unidades (mais de uma)…", varias ? "__varias" : cur) : "");
+      $("oTomMulti").classList.toggle("hidden", !varias);
+      if (varias) $("oTomMulti").innerHTML = tks.map(function(k){ var tm = tomadorDe(cliT, k), pc = (divs[0].filter(function(x){ return (x.t || "") === k; })[0] || {}).pct; return "<label class='check' style='margin:2px 0'><input type='checkbox' class='oTomCk' value='" + esc(k) + "'" + (selK.indexOf(k) >= 0 ? " checked" : "") + " onchange='window.__ocoTom=ocoTomChecks();ocoFormRefresh()'> " + esc(tm.nome || k) + (pc != null ? " <span class='muted small'>(" + num(Number(pc), Number(pc) % 1 ? 1 : 0) + "% no contrato)</span>" : "") + "</label>"; }).join("");
+      $("oTomHint").textContent = varias ? (selK.filter(Boolean).length >= 2 ? "O valor é dividido só entre as unidades marcadas, na proporção do contrato entre elas." : "Marque pelo menos duas unidades.") : $("oTom").value ? "O valor inteiro entra só no faturamento de " + (tomadorDe(cliT, $("oTom").value).nome || $("oTom").value) + "." : "Use \"Somente…\" quando a ocorrência é de uma unidade só, ou \"Escolher as unidades\" quando atinge duas.";
     }
   })();
   var o0 = $("oItem").options[0]; if (o0 && o0.value === "" && $("oItem").options.length > 1) o0.textContent = t.grupo === "variavel" ? "Automático (pelo cargo)" : "Selecione...";
@@ -2078,8 +2120,8 @@ function ocoFormRefresh(rebuildItems){
   atualizarCalculadora();
   if (t.grupo === "variavel" && !v("oCargo") && v("oItem")){ var it = byId("itens", v("oItem")); if (it) $("oCargo").value = it.Cargo || ""; }
   var o = ocoForm(), r = calcOcorrencia(o), box = $("oCalc"), warn = "";
-  var med = cid ? medicoesDoMes(cid, o.Competencia).filter(function(m){ return m.Status !== "Rascunho"; })[0] : null;
-  if (med) warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
+  var med = cid ? medicoesAfetadas(cid, o).filter(function(m){ return m.Status !== "Rascunho"; })[0] : null;
+  if (med) warn = "<div class='d' style='color:var(--red-tx);font-weight:600'>Atenção: a medição de " + compLabel(o.Competencia) + (med.UnidadeNome ? " (" + esc(med.UnidadeNome) + ")" : "") + " já está \"" + esc(med.Status) + "\". Para cobrar ou descontar agora, lance na competência atual como ajuste.</div>";
   if (semValorF && t.grupo !== "manual"){
     var durTxt = r.horas ? "Duração: " + hFmt(r.horas) : o.HorasQtd ? hFmt(o.HorasQtd) + " de ausência" : (o.Dias ? num(o.Dias, o.Dias % 1 ? 1 : 0) + " dia(s)" : "");
     if (r.erro && erroDePreco(r.erro)) box.innerHTML = "<div class='small muted'>" + esc(durTxt) + "</div><div class='d' style='color:#a15c00;font-weight:600'>Sem preço cadastrado para este cliente/cargo. Pode salvar: a ocorrência fica com valor pendente e o coordenador completa.</div>" + warn;
@@ -2272,7 +2314,7 @@ function renderClienteDetail(){
   h += "<div class='card'><div class='section-head'><h4>Contrato</h4><div style='display:flex;gap:8px;flex-wrap:wrap'>" + (ct ? "<button class='btn-o btn-s' onclick=\"openContrato('" + c.id + "','" + ct.id + "')\">Editar contrato</button><button class='btn btn-s' onclick=\"openRenovar('" + ct.id + "')\">Renovar / nova versão</button>" : "<button class='btn btn-s' onclick=\"openContrato('" + c.id + "')\">Cadastrar contrato</button>") + "</div></div>";
   if (cts.length > 1) h += "<div class='version-tabs'>" + cts.map(function(x){ return "<button class='chip" + (ct && String(x.id) === String(ct.id) ? " active" : "") + "' onclick=\"SEL.contrato='" + x.id + "';renderClienteDetail()\">Versão " + esc(x.Versao || 1) + (x.Inicio ? " · desde " + fmtDate(x.Inicio) : "") + "</button>"; }).join("") + "</div>";
   if (ct){
-    h += "<dl class='dl'>" + dl("Nº proposta / contrato", ct.Title) + dl("Versão", String(ct.Versao || 1)) + dl("Status", ehContratoPendente(ct) ? ct.Status + " · aguardando validação (não fatura)" : ct.Status) + dl("Início", fmtDate(ct.Inicio)) + dl("Término", fmtDate(ct.Fim)) + "<div><dt>Prazo</dt><dd>" + vigenciaBadge(ct) + "</dd></div>" + dl("Índice de reajuste", ct.IndiceReajuste) + dl("Mês do reajuste", ct.MesReajuste) + dl("Aviso prévio (dias)", ct.AvisoPrevioDias ? String(ct.AvisoPrevioDias) : "") + "</dl>" + (ct.LinkContrato ? "<p class='small' style='margin:12px 0 0'><a href='" + esc(ct.LinkContrato) + "' target='_blank' rel='noopener'>Abrir contrato (PDF)</a></p>" : "");
+    h += "<dl class='dl'>" + dl("Nº proposta / contrato", ct.Title) + dl("Versão", String(ct.Versao || 1)) + dl("Status", ct.Status) + dl("Início", fmtDate(ct.Inicio)) + dl("Término", fmtDate(ct.Fim)) + "<div><dt>Prazo</dt><dd>" + vigenciaBadge(ct) + "</dd></div>" + dl("Índice de reajuste", ct.IndiceReajuste) + dl("Mês do reajuste", ct.MesReajuste) + dl("Aviso prévio (dias)", ct.AvisoPrevioDias ? String(ct.AvisoPrevioDias) : "") + "</dl>" + (ct.LinkContrato ? "<p class='small' style='margin:12px 0 0'><a href='" + esc(ct.LinkContrato) + "' target='_blank' rel='noopener'>Abrir contrato (PDF)</a></p>" : "");
     var its = itensDoContrato(ct.id);
     h += "<div class='section-head' style='margin-top:18px'><h4>Serviços do contrato · " + brl(totalContrato(ct.id)) + "/mês</h4><button class='btn-o btn-s' onclick=\"openItem('" + ct.id + "')\">+ Adicionar serviço</button></div>";
     h += its.length ? "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th>Cargo</th><th class='num'>Valor mensal</th><th>Regra de desconto</th><th class='num'>1 dia vale</th><th>NF</th></tr></thead><tbody>" + its.map(function(i){
@@ -2313,6 +2355,7 @@ function tomadoresForm(c){
   return "<div class='full' style='border-top:1px dashed var(--border);padding-top:12px;margin-top:4px'><label>Faturamento</label>" +
     "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_FaturarPorServico' " + (c.FaturarPorServico ? "checked" : "") + "> Cada serviço é faturado separadamente (OC, boletim e NF próprios por serviço)</label>" +
     "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_OCMensal' " + (simB(c.OCMensal) ? "checked" : "") + "> O cliente libera uma OC nova todo mês (a OC passa a ser obrigatória antes da NF)</label>" +
+    "<label class='check' style='margin-bottom:10px'><input type='checkbox' id='c_EmailUnico' " + (simB(c.EmailUnico) ? "checked" : "") + "> Enviar todos os boletins do mês em um único e-mail (vale quando o cliente tem mais de um faturamento)</label>" +
     "<div class='form' style='margin:0 0 10px;padding:0'><div><label>Pedido / OC é obrigatório para a NF?</label><select id='c_PedidoNF'>" + Object.keys(PEDIDO_REGRAS).map(function(k){ return opt(k, PEDIDO_REGRAS[k], c.PedidoNF || ""); }).join("") + "</select></div>" +
     "<div><label>Dia limite para subir a NF no portal</label><select id='c_DiaLimiteNF'>" + opt("", "Não informado", String(c.DiaLimiteNF || "")) + Array.apply(null, Array(31)).map(function(x, i){ return opt(String(i + 1), "Dia " + (i + 1), String(c.DiaLimiteNF || "")); }).join("") + "</select><div class='hint'>O sistema considera 3 dias antes como prazo interno.</div></div></div>" +
     "<label>Tomadores (CNPJs que recebem NF) — deixe em branco se for um só</label><div class='tbl-wrap'><table class='tbl'><thead><tr><th>Nome curto</th><th>Razão social</th><th>CNPJ</th><th>E-mail(s) do focal (Para)</th><th>Cópia</th><th>Modelo de boletim</th></tr></thead><tbody>" +
@@ -2333,7 +2376,7 @@ function lerTomadoresForm(){
   return out;
 }
 async function salvarCliente(id){
-  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","CoordenadorEmail","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Pendencias","Ativo","EmailsCopia","FaturarPorServico","OCMensal","PedidoNF"].forEach(function(k){ f[k] = v("c_" + k); });
+  var f = {}; ["Title","RazaoSocial","CNPJ","Area","Unidade","Local","Coordenador","CoordenadorEmail","AprovadorNome","AprovadorEmail","ModeloBoletim","CondicaoPagamento","Observacoes","Pendencias","Ativo","EmailsCopia","FaturarPorServico","OCMensal","EmailUnico","PedidoNF"].forEach(function(k){ f[k] = v("c_" + k); });
   f.DiaLimiteNF = parseNum(v("c_DiaLimiteNF")) || null;
   f.Tomadores = JSON.stringify(lerTomadoresForm());
   if (!f.Title){ showToast("Informe o nome do cliente.", true); return; }
@@ -2345,7 +2388,7 @@ function openContrato(cid, ctId){
   var ct = ctId ? byId("contratos", ctId) : { Status:"Vigente", Versao: (contratosDoCliente(cid)[0] || {}).Versao ? contratosDoCliente(cid)[0].Versao + 1 : 1 };
   var h = "<h3>" + (ctId ? "Editar contrato" : "Cadastrar contrato") + "</h3><p class='msub'>Preenchido pelo comercial a cada negociação.</p><div class='form'>" +
     "<div><label>Nº proposta / contrato</label><input id='k_Title' value='" + esc(ct.Title || "") + "'></div>" +
-    "<div><label>Status</label><select id='k_Status'>" + ["Vigente","Em renovação","Encerrado","Provisório","Retido"].map(function(s){ return opt(s, s, ct.Status); }).join("") + "</select></div>" +
+    "<div><label>Status</label><select id='k_Status'>" + ["Vigente","Em renovação","Encerrado"].map(function(s){ return opt(s, s, ct.Status); }).join("") + "</select></div>" +
     "<div><label>Início da vigência</label><input type='date' id='k_Inicio' value='" + esc(ct.Inicio || "") + "'></div>" +
     "<div><label>Término da vigência</label><input type='date' id='k_Fim' value='" + esc(ct.Fim || "") + "'></div>" +
     "<div><label>Índice de reajuste</label><input id='k_IndiceReajuste' value='" + esc(ct.IndiceReajuste || "") + "' placeholder='Ex.: IPCA, IGP-M, acordo coletivo'></div>" +
@@ -4158,7 +4201,6 @@ var AJUDA_IND = [
   ]}
 ];
 var AJUDA_VERSOES = [
-  ["V 1.16", "03/11/2026", ["Status de contrato \"Provisório\" e \"Retido\" (lançados pelo Comercial/SIGE): não entram no faturamento nem no fechamento, aparecem nas pendências do cliente até o Financeiro conferir e mudar para Vigente."]],
   ["V 1.15", "23/10/2026", ["Data limite, prazo de faturamento, código do serviço e regra do pedido editáveis no painel da medição pelo coordenador responsável."]],
   ["V 1.14", "22/10/2026", ["Contrato \"Em renovação\" continua faturando depois do término, com alerta na conferência, criticidade automática e destaque em Renovações e nas pendências."]],
   ["V 1.13", "21/10/2026", ["Perfil Faturamento (prestador) e tela Recebimentos (pago, não pago, previsão e inadimplência).", "Prazo de faturamento por serviço, mês de faturamento e Dashboard por competência ou por faturamento.", "Data limite da NF por cliente/contrato com prazo interno de 3 dias; regra de pedido obrigatório.", "Liberação de faturamento ao prestador por e-mail; prestador fora dos e-mails ao cliente.", "Coordenador e comunicação no painel da medição; criticidade com coordenador em cópia.", "Banco de Códigos de serviço; novos indicadores de faturamento e recebimento."]],
@@ -4211,167 +4253,739 @@ function svgRaias(f){
 
 </script>
 <script>
-/* Integração SIGE-novasreceitas -> Faturamento (#novo=, contrato v1). Dois modos:
-   criar  = abre cliente > contrato > serviço já preenchidos;
-   editar = (reenvio) localiza cliente/contrato/serviço já cadastrados e abre só as telas com campos alterados, preenchendo SOMENTE o que mudou (destacado).
-   Nada é salvo sem o usuário clicar em Salvar em cada etapa. O trecho depois do # não vai a servidor e é apagado do endereço. */
-(function(){
-  var D=null;
-  try{
-    var m=String(location.hash||'').match(/^#novo=([A-Za-z0-9_-]+)$/);
-    if(m){
-      var j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));
-      if(j&&j.v===1){D=j;try{sessionStorage.setItem('fatNovo',JSON.stringify(j));}catch(e){}}
-      try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
-    }else{
-      var s0=null;try{s0=sessionStorage.getItem('fatNovo');}catch(e){}
-      if(s0)D=JSON.parse(s0);
+// ============================================================
+// V 1.16 - SERVICOS PONTUAIS e PAGAMENTOS A PROFISSIONAIS
+// Pontual = uma medicao (FAT_Medicoes, TipoFat "Pontual", Unidade "P:<id>") que reaproveita
+// painel, comunicacao, criticidade, liberacao ao prestador, NF, recebimentos e indicadores.
+// ============================================================
+SCHEMA.medicoes.cols.push(["TipoFat", "t"]);
+SCHEMA.profissionais = { list:"FAT_Profissionais", label:"Profissionais", cols:[["Documento","t"],["TipoPessoa","t"],["Especialidade","t"],["Telefone","t"],["Email","t"],["Meio","t"],["DadosPagamento","ml"],["Origem","t"],["Ativo","b"],["RemuneracaoRef","n"],["AjudaCustoRef","n"],["Obs","ml"]] };
+SCHEMA.pagamentos = { list:"FAT_Pagamentos", label:"Pagamentos a profissionais", cols:[["Solicitante","t"],["SolicitanteEmail","t"],["ProfissionalId","t"],["Favorecido","t"],["Empresa","t"],["DataSolicitacao","t"],["DataPagamento","t"],["Valor","n"],["Remuneracao","n"],["AjudaCusto","n"],["Modalidade","t"],["Meio","t"],["DadosPagamento","ml"],["Motivo","t"],["Descricao","ml"],["Area","t"],["Projeto","t"],["Obs","ml"],["NFLink","t"],["ComprovanteLink","t"],["StatusPag","t"],["MotivoStatus","ml"],["DataPago","t"],["MedicaoId","t"],["ClienteId","t"],["HistoricoPag","ml"]] };
+S.profissionais = []; S.pagamentos = [];
+NUMERIC = {}; BOOLS = {};
+Object.keys(SCHEMA).forEach(function(k){ SCHEMA[k].cols.forEach(function(c){ if (c[1] === "n") NUMERIC[c[0]] = 1; if (c[1] === "b") BOOLS[c[0]] = 1; }); });
+TABS_PRESTADOR.push("pagamentos");
+PAR_TIPOS.TeamsWebhook = "Teams: aviso de novas solicitações de pagamento (link do fluxo)";
+
+// as listas novas sao opcionais: enquanto nao existirem, o sistema segue funcionando e a tela de Pagamentos avisa
+var LISTAS_OPCIONAIS = ["profissionais", "pagamentos"], PAG_PENDENTE = [];
+api.resolveLists = (function(orig){ return async function(){
+  await orig.apply(this, arguments);
+  PAG_PENDENTE = MISSING_LISTS.filter(function(k){ return LISTAS_OPCIONAIS.indexOf(k) >= 0; });
+  MISSING_LISTS = MISSING_LISTS.filter(function(k){ return LISTAS_OPCIONAIS.indexOf(k) < 0; });
+  var tf = (MISSING_COLS.medicoes || []).filter(function(c){ return c[0] === "TipoFat"; });
+  if (tf.length){ PAG_PENDENTE.push("TipoFat"); MISSING_COLS.medicoes = MISSING_COLS.medicoes.filter(function(c){ return c[0] !== "TipoFat"; }); if (!MISSING_COLS.medicoes.length) delete MISSING_COLS.medicoes; window.__tipoFatFalta = true; }
+}; })(api.resolveLists);
+toSP = (function(orig){ return function(key, fields){ var o = orig(key, fields); if (key === "medicoes" && window.__tipoFatFalta) delete o.TipoFat; return o; }; })(toSP);
+async function criarBasePagamentos(){
+  try {
+    setLoading(true, "Criando a base de pagamentos no SharePoint...");
+    for (var i = 0; i < PAG_PENDENTE.length; i++){
+      var k = PAG_PENDENTE[i];
+      if (k === "TipoFat"){ MISSING_COLS.medicoes = [["TipoFat", "t"]]; await api.addColumns("medicoes"); window.__tipoFatFalta = false; }
+      else await api.createList(k);
     }
-  }catch(e){D=null;}
-  if(!D||!D.cliente)return;
-  var ST={fila:[],aguarda:null,fim:false},byEl=function(i){return document.getElementById(i);};
-  var ROT={'cliente.nome':'Nome do cliente','cliente.razao':'Razão social','cliente.cnpj':'CNPJ','area':'Área','unidade':'Unidade','servico':'Serviço','contrato.coord':'Coordenador','contrato.coordEmail':'E-mail do coordenador','contrato.aprov':'Aprovador','contrato.aprovEmail':'E-mail do aprovador','item.condPag':'Condição de pagamento','contrato.numero':'Nº do contrato','contrato.inicio':'Início da vigência','contrato.fim':'Fim da vigência','contrato.numMeses':'Nº de meses','contrato.indice':'Índice de reajuste','contrato.mesReajuste':'Mês de reajuste','contrato.diaLimiteNF':'Dia limite da NF','contrato.valorMensal':'Valor mensal','item.codigo':'Código do serviço','item.prazoFat':'Prazo de faturamento','contrato.oc':'Pedido de compra'};
-  var CLI=['cliente.nome','cliente.razao','cliente.cnpj','area','unidade','contrato.coord','contrato.coordEmail','contrato.aprov','contrato.aprovEmail','item.condPag'];
-  var CTR=['contrato.numero','contrato.inicio','contrato.fim','contrato.numMeses','contrato.indice','contrato.mesReajuste','contrato.diaLimiteNF'];
-  var ITM=['servico','contrato.valorMensal','item.codigo','item.prazoFat','contrato.oc','area'];
-  function get(o,k){var p=k.split('.'),x=o;for(var i=0;i<p.length;i++){if(x==null)return '';x=x[p[i]];}return x==null?'':String(x).trim();}
-  function mudou(keys){var a=D.anterior||{};return keys.filter(function(k){return get(D,k)!==get(a,k);});}
-  function rot(keys){return keys.map(function(k){return ROT[k]||k;}).join(', ');}
-  function banner(t){
-    var b=byEl('novoBanner');
-    if(!t){if(b)b.remove();return;}
-    if(!b){b=document.createElement('div');b.id='novoBanner';b.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99999;background:#6e1423;color:#fff;padding:10px 14px;border-radius:10px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:380px';document.body.appendChild(b);}
-    b.innerHTML='<b>Venda (SIGE)</b> — '+t+' <a href="#" id="novoX" style="color:#fff;margin-left:8px;text-decoration:underline">cancelar</a>';
-    byEl('novoX').onclick=function(e){e.preventDefault();encerrar();};
+    PAG_PENDENTE = []; await loadAll(); setLoading(false); showToast("Base de pagamentos criada."); renderCurrent();
+  } catch (e){ setLoading(false); showToast("Não consegui criar a base: " + e.message + (/storage|armazenamento|507/i.test(e.message) ? " (armazenamento do SharePoint da organização cheio)" : ""), true); }
+}
+
+// ---------- utilitarios do pontual ----------
+function ukPontual(uk){ return String(uk || "").indexOf("P:") === 0; }
+function ehPontual(med){ return !!med && (med.TipoFat === "Pontual" || ukPontual(med.Unidade)); }
+function pontualDe(med){ return (med && linhasDe(med).pontual) || {}; }
+function medPorUk(cid, uk){ return S.medicoes.filter(function(m){ return String(m.ClienteId) === String(cid) && (m.Unidade || "") === uk; })[0] || null; }
+function meuEmail(){ return String(CURRENT_USER.email || "").toLowerCase(); }
+function totalItensPontual(itens){ return r2((itens || []).reduce(function(s, i){ return s + (Number(i.qtd) || 0) * (Number(i.unit) || 0); }, 0)); }
+function codigoPontual(P){ var c = P && P.codigoId ? byId("codigos", P.codigoId) : null; return c ? c.Codigo + (c.Descricao ? " – " + c.Descricao : "") : ""; }
+var UNIDADES_PT = ["hora", "dia", "sessão", "unidade", "pacote", "mês", "participante"];
+
+// ---------- ganchos no motor de medicao ----------
+unidadesDe = (function(orig){ return function(cid, comp){
+  var out = orig(cid, comp);
+  out.forEach(function(u){ if (!ukPontual(u.key)) return; var m = medPorUk(cid, u.key), P = pontualDe(m); u.pontual = true; u.antiga = true; u.nome = "Pontual · " + (P.descricao || (m && m.UnidadeNome) || ""); u.para = P.para || ""; u.cc = P.cc || ""; u.pedido = ""; u.area = P.area || ""; });
+  if (!contratoVigente(cid, comp) && out.some(function(u){ return u.pontual; })) out = out.filter(function(u){ return u.key !== "" || medicaoDe(cid, comp, ""); });
+  return out;
+}; })(unidadesDe);
+unidadeVisivel = (function(orig){ return function(c, u){
+  if (!u || !u.pontual) return orig(c, u);
+  if (!soMeus()) return true;
+  var P = pontualDe(medPorUk(c.id, u.key));
+  return emailsLista(P.coordEmail).indexOf(meuEmail()) >= 0 || ehMeuCliente(c, CURRENT_USER.email);
+}; })(unidadeVisivel);
+areaUnidade = (function(orig){ return function(c, u){ if (u && u.pontual) return u.area || c.Area || ""; return orig(c, u); }; })(areaUnidade);
+faturamentosDoMes = (function(orig){ return function(area, comp){
+  if (!area) return orig(area, comp);
+  return orig("", comp).filter(function(r){
+    if (r.u.pontual) return (r.u.area || r.c.Area) === area;
+    return clienteNaArea(r.c, area) && (r.c.FaturarPorServico ? areaUnidade(r.c, r.u) : r.c.Area) === area;
+  });
+}; })(faturamentosDoMes);
+pendenciasCliente = (function(orig){ return function(cli){
+  var soPont = !contratosDoCliente(cli.id).length && S.medicoes.some(function(m){ return String(m.ClienteId) === String(cli.id) && ehPontual(m); });
+  if (!soPont) return orig(cli);
+  return String(cli.Pendencias || "").split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean);
+}; })(pendenciasCliente);
+montarMedicao = (function(orig){ return function(cid, comp, uk){
+  if (!ukPontual(uk)) return orig.apply(this, arguments);
+  var m = medPorUk(cid, uk); if (!m) return { erro:"Serviço pontual não encontrado." };
+  var L = linhasDe(m);
+  return { contrato:{ id:"", Versao:"" }, unidade: unidadeDe(cid, comp, uk), lines: L.lines || [], ocorrIds: [], ValorPadrao: Number(m.ValorPadrao) || 0, Descontos: 0, Acrescimos: 0, ValorFaturar: Number(m.ValorFaturar) || 0 };
+}; })(montarMedicao);
+conferir = (function(orig){ return function(cid, comp, med, uk){
+  var k = med ? (med.Unidade || "") : (uk || "");
+  if (!ukPontual(k)) return orig.apply(this, arguments);
+  med = med || medPorUk(cid, k);
+  var out = [], cli = byId("clientes", cid), P = pontualDe(med);
+  if (!(Number(med && med.ValorFaturar) > 0)) out.push({ n:"red", t:"Informe os itens e valores do serviço (Editar serviço pontual)." });
+  if (!P.para) out.push({ n:"amber", t:"Sem e-mail do cliente para validar o serviço." });
+  if (!P.nfPara) out.push({ n:"amber", t:"Informe o e-mail do responsável no cliente que recebe a NF." });
+  if (!P.codigoId) out.push({ n:"amber", t:"Escolha o código de serviço da NF." });
+  if (cli && !cli.CNPJ) out.push({ n:"amber", t:"Cliente sem CNPJ no cadastro." });
+  if (med && (med.Status === "Rascunho" || med.Status === "Enviada")) out.push({ n:"blue", t:"Serviço pontual: NF separada. O pedido do cliente é obrigatório antes de liberar ao financeiro." });
+  return out;
+}; })(conferir);
+rascunhoDesatualizado = (function(orig){ return function(med){ if (ehPontual(med)) return null; return orig(med); }; })(rascunhoDesatualizado);
+gerarMedicao = (function(orig){ return function(cid, comp, uk, silent){ if (ukPontual(uk)){ if (!silent) showToast("Serviço pontual: use Editar serviço pontual.", true); return Promise.resolve(false); } return orig.apply(this, arguments); }; })(gerarMedicao);
+acaoGerar = (function(orig){ return function(cid, comp, uk){ if (ukPontual(uk)){ var m = medPorUk(cid, uk); if (m) openPontual(m.id); return Promise.resolve(); } return orig.apply(this, arguments); }; })(acaoGerar);
+modeloDe = (function(orig){ return function(med){ if (ehPontual(med)) return ""; return orig(med); }; })(modeloDe);
+ocObrigatoria = (function(orig){ return function(med){ if (ehPontual(med)){ var cli = byId("clientes", med.ClienteId); return !(cli && cli.PedidoNF === "nao"); } return orig(med); }; })(ocObrigatoria);
+itensDaUnidade = (function(orig){ return function(cid, comp, uk){ if (ukPontual(uk)) return []; return orig.apply(this, arguments); }; })(itensDaUnidade);
+previsaoFat = (function(orig){ return function(cid, comp, uk){
+  if (!ukPontual(uk)) return orig.apply(this, arguments);
+  var m = medPorUk(cid, uk), d = (m && (m.DataAprovacao || "")) || todayISO();
+  return { prazo:0, data:d, mes:d.slice(0, 7) };
+}; })(previsaoFat);
+coordenadorDe = (function(orig){ return function(cid, comp, uk){
+  if (!ukPontual(uk)) return orig.apply(this, arguments);
+  var cli = byId("clientes", cid) || {}, P = pontualDe(medPorUk(cid, uk));
+  var em = emailsLista(P.coordEmail); if (!em.length) em = emailsLista(cli.CoordenadorEmail);
+  em = em.filter(function(e){ return e.indexOf("@") > 0; });
+  var nomes = em.map(function(e){ var u = usuarioDe(e); return (u && u.Cargo) || (e === emailsLista(P.coordEmail)[0] && P.coordNome) || e.split("@")[0]; });
+  return { emails:em, nomes:nomes, nome: nomes.join(", ") || cli.Coordenador || "" };
+}; })(coordenadorDe);
+destinatariosDe = (function(orig){ return function(med){ if (ehPontual(med)){ var P = pontualDe(med); return { para: P.para || "", cc: P.cc || "" }; } return orig(med); }; })(destinatariosDe);
+salvarDestinatarios = (function(orig){ return async function(med, para, cc){
+  if (!ehPontual(med)) return orig.apply(this, arguments);
+  var L = linhasDe(med); L.pontual = L.pontual || {}; if (L.pontual.para === para && (L.pontual.cc || "") === cc) return;
+  L.pontual.para = para; L.pontual.cc = cc; await api.update("medicoes", med.id, { Linhas: JSON.stringify(L) });
+}; })(salvarDestinatarios);
+// faturamentos "irmaos" no e-mail: so os do mesmo responsavel (ex.: Ergonomia da Gerdau Pinda e do Alexandre, nao entra no e-mail do Cristiano)
+var UNIDADES_BASE = unidadesDe, MEDICOES_BASE = medicoesDoMes;
+function respDe(cid, comp, uk){ var u0 = unidadesDe, m0 = medicoesDoMes; unidadesDe = UNIDADES_BASE; medicoesDoMes = MEDICOES_BASE; try { return coordenadorDe(cid, comp, uk || "").emails; } finally { unidadesDe = u0; medicoesDoMes = m0; } }
+function mesmoResp(a, b){ if (!a.length || !b.length) return true; return a.some(function(e){ return b.indexOf(e) >= 0; }); }
+function mesmoRespMed(m, med){ return String(m.id) === String(med.id) || mesmoResp(respDe(m.ClienteId, m.Competencia, m.Unidade), respDe(med.ClienteId, med.Competencia, med.Unidade)); }
+irmasDe = (function(orig){ return function(med){ if (ehPontual(med)) return [med]; return orig(med).filter(function(m){ return !ehPontual(m) && mesmoRespMed(m, med); }); }; })(irmasDe);
+assuntoEmail = (function(orig){ return function(lista){
+  var m = lista[0]; if (!ehPontual(m)) return orig(lista);
+  var cli = byId("clientes", m.ClienteId); return "Validação de serviço – " + cli.Title + " – " + (pontualDe(m).descricao || m.UnidadeNome || "");
+}; })(assuntoEmail);
+textoPadraoEmail = (function(orig){ return function(lista){
+  var m = lista[0]; if (!ehPontual(m)) return orig(lista);
+  var P = pontualDe(m);
+  return saudacao() + ".\n\nSegue o resumo do serviço realizado pela ElevaLife: " + (P.descricao || m.UnidadeNome || "") + (P.datas ? ", em " + P.datas : "") + (P.local ? " (" + P.local + ")" : "") + ".\n\n" +
+    "Pedimos, por gentileza, a validação dos valores respondendo a este e-mail com o número do pedido de compra (PO/OC). A nota fiscal será emitida após o recebimento do pedido" + (P.nfPara ? " e enviada para " + P.nfPara : "") + ".\n\nFicamos à disposição para qualquer ajuste.";
+}; })(textoPadraoEmail);
+textoCobranca = (function(orig){ return function(lista){
+  var m = lista[0]; if (!ehPontual(m)) return orig(lista);
+  var P = pontualDe(m);
+  return saudacao() + ".\n\nReenviamos o resumo do serviço " + (P.descricao || m.UnidadeNome || "") + (P.datas ? ", realizado em " + P.datas : "") + ", enviado em " + fmtDate(m.DataEnvio) + ", que ainda aguarda validação.\n\nPedimos, por gentileza, o retorno com a validação e o número do pedido de compra (PO/OC) para seguirmos com a emissão da nota fiscal.\n\nFicamos à disposição.";
+}; })(textoCobranca);
+nfInfo = (function(orig){ return function(med){
+  if (!ehPontual(med)) return orig(med);
+  var cli = byId("clientes", med.ClienteId), L = linhasDe(med), P = L.pontual || {}, tm = tomadorDe(cli, ""), c = P.codigoId ? byId("codigos", P.codigoId) : null;
+  var disc = "Serviço pontual: " + (P.descricao || med.UnidadeNome || "") + (P.datas ? "\nRealizado em: " + P.datas : "") + (P.local ? "\nLocal: " + P.local : "") + "\n" +
+    (P.itens || []).map(function(i){ var q = Number(i.qtd) || 0; return "- " + i.desc + ": " + num(q, q % 1 ? 2 : 0) + " " + (i.unid || "") + " × " + brl(i.unit) + " = " + brl(q * (Number(i.unit) || 0)); }).join("\n") + "\nTotal: " + brl(med.ValorFaturar);
+  return { cli:cli, unidade: med.UnidadeNome || "", tomador: tm.razao || cli.RazaoSocial || cli.Title, cnpj: tm.cnpj || cli.CNPJ || "", valor: med.ValorFaturar, codigos: codigoPontual(P), retencoes: c ? (c.Retencoes || "") : "", pedidos: L.oc || "", rateio:"", disc: disc };
+}; })(nfInfo);
+corpoLiberacao = (function(orig){ return function(med){
+  var h = orig(med); if (!ehPontual(med)) return h;
+  var P = pontualDe(med);
+  var tr = function(k, val, dest){ return "<tr><td style='padding:6px 10px;border:1px solid #e5e6e9;background:#fbeef0;color:#6e1423;font-weight:bold;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 10px;border:1px solid #e5e6e9" + (dest ? ";font-weight:bold;color:#b02a2a" : "") + "'>" + esc(val || "—").replace(/\n/g, "<br>") + "</td></tr>"; };
+  h = h.replace("O boletim de medição abaixo foi <b>aprovado pelo cliente</b> e está <b>liberado para faturamento</b>.", "O <b>serviço pontual</b> abaixo foi <b>validado pelo cliente</b>" + (linhasDe(med).oc ? " (pedido nº " + esc(linhasDe(med).oc) + ")" : "") + " e está <b>liberado para faturamento</b>. Emitir em <b>NF separada</b>.");
+  h = h.replace("<table style='border-collapse:collapse;font-size:13.5px'>", "<table style='border-collapse:collapse;font-size:13.5px'>" + tr("ENVIAR A NF PARA", P.nfPara || "e-mail do cliente não informado", true) + tr("Tipo", "Serviço pontual (NF separada)") + tr("Realizado em", (P.datas || "") + (P.local ? " · " + P.local : "")));
+  return h;
+}; })(corpoLiberacao);
+emailBoletimHTML = (function(orig){ return function(med){
+  if (!ehPontual(med)) return orig(med);
+  var cli = byId("clientes", med.ClienteId), L = linhasDe(med), P = L.pontual || {}, n = nfInfo(med);
+  var G = "#6e1423", GB = "#fbeef0", BR = "#e5e6e9", T = "#1f2124", T2 = "#6b6f76", WH = "#ffffff", F = "font-family:Calibri,Arial,Helvetica,sans-serif;";
+  var W = function(t, sz, bold){ return "<font color='#ffffff' style='color:#ffffff;'><span style='color:#ffffff;" + F + "font-size:" + sz + ";" + (bold ? "font-weight:bold;" : "") + "'>" + t + "</span></font>"; };
+  var gtd = function(inner, al, pad, w){ return "<td bgcolor='" + G + "'" + (w ? " width='" + w + "'" : "") + " align='" + al + "' valign='middle' style='background-color:" + G + ";color:" + WH + ";padding:" + pad + ";border:1px solid " + G + ";" + F + "white-space:nowrap;'>" + inner + "</td>"; };
+  var body = (P.itens || []).map(function(i, k){
+    var bg = k % 2 ? "#fafbfc" : WH, q = Number(i.qtd) || 0;
+    var td = function(v, al){ return "<td bgcolor='" + bg + "' align='" + al + "' valign='top' style='background-color:" + bg + ";padding:10px 12px;border-bottom:1px solid " + BR + ";" + F + "font-size:13px;color:" + T + ";white-space:nowrap;'>" + v + "</td>"; };
+    return "<tr><td bgcolor='" + bg + "' valign='top' style='background-color:" + bg + ";padding:10px 12px;border-bottom:1px solid " + BR + ";" + F + "font-size:13px;color:" + T + ";'><b>" + esc(i.desc) + "</b></td>" + td(num(q, q % 1 ? 2 : 0) + " " + esc(i.unid || ""), "right") + td(brl(i.unit), "right") + td("<b>" + brl(q * (Number(i.unit) || 0)) + "</b>", "right") + "</tr>";
+  }).join("");
+  var info = [["Tomador", esc(n.tomador)], ["CNPJ", esc(n.cnpj || "–")]];
+  if (P.datas) info.push(["Realizado em", esc(P.datas)]);
+  if (P.local) info.push(["Local", esc(P.local)]);
+  if (n.pedidos) info.push(["Pedido / OC", esc(n.pedidos)]);
+  return "<table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0' style='width:600px;border-collapse:collapse;" + F + "'>" +
+    "<tr>" + gtd(W("ELEVALIFE &middot; VALIDAÇÃO DE SERVIÇO", "11px", true) + "<br>" + W(esc(cli.Title), "20px", true) + "<br>" + W(esc(P.descricao || med.UnidadeNome || ""), "14px", true), "left", "16px 18px") + gtd(W("Valor do serviço", "11px") + "<br>" + W(brl(med.ValorFaturar), "18px", true), "right", "16px 18px") + "</tr>" +
+    "<tr><td colspan='2' bgcolor='" + GB + "' style='background-color:" + GB + ";padding:10px 18px;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'><tr>" +
+      info.map(function(x){ return "<td valign='top' style='padding-right:12px;" + F + "'><div style='font-size:10px;font-weight:bold;color:" + G + ";text-transform:uppercase;'>" + x[0] + "</div><div style='font-size:12.5px;color:" + T + ";padding-top:1px;'>" + x[1] + "</div></td>"; }).join("") + "</tr></table></td></tr>" +
+    "<tr><td colspan='2' style='padding:0;'><table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='border-collapse:collapse;'>" +
+      "<tr>" + gtd(W("ITEM", "11px", true), "left", "9px 12px", "52%") + gtd(W("QTD.", "11px", true), "right", "9px 12px", "16%") + gtd(W("VALOR UNIT.", "11px", true), "right", "9px 12px", "16%") + gtd(W("TOTAL", "11px", true), "right", "9px 12px", "16%") + "</tr>" + body +
+      "<tr>" + gtd(W("TOTAL DO SERVIÇO", "13px", true), "left", "11px 12px") + gtd("", "right", "11px 12px") + gtd("", "right", "11px 12px") + gtd(W(brl(med.ValorFaturar), "13px", true), "right", "11px 12px") + "</tr>" +
+    "</table></td></tr>" +
+    "<tr><td colspan='2' bgcolor='" + WH + "' style='background-color:" + WH + ";padding:12px 18px;border:1px solid " + BR + ";border-top:0;" + F + "font-size:11.5px;color:" + T2 + ";line-height:1.5;'>Por favor, valide os valores respondendo a este e-mail e informe o número do pedido de compra (PO/OC). A nota fiscal será emitida após o recebimento do pedido.<br><b style='color:" + G + ";'>ElevaLife Saúde e Educação</b> &middot; 15 anos elevando pessoas e resultados</td></tr>" +
+  "</table>";
+}; })(emailBoletimHTML);
+boletimWorkbook = (function(orig){ return function(id){
+  var med = byId("medicoes", id); if (!ehPontual(med)) return orig(id);
+  var cli = byId("clientes", med.ClienteId), P = pontualDe(med), n = nfInfo(med);
+  var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Serviço pontual");
+  ws.columns = [{ width:48 }, { width:12 }, { width:14 }, { width:16 }, { width:16 }];
+  ws.mergeCells("A1:E1"); ws.getCell("A1").value = "RESUMO DE SERVIÇO PONTUAL"; ws.getCell("A1").font = { bold:true, size:16, color:{ argb:"FF6E1423" } };
+  var info = [["Fornecedor", "ELEVALIFE SAÚDE E EDUCAÇÃO LTDA – CNPJ 15.447.255/0001-74"], ["Cliente", n.tomador], ["CNPJ do cliente", n.cnpj], ["Serviço", P.descricao || med.UnidadeNome || ""], ["Realizado em", (P.datas || "") + (P.local ? " · " + P.local : "")], ["Nº do pedido", n.pedidos], ["Status", med.Status + (med.DataAprovacao ? " em " + fmtDate(med.DataAprovacao) : "")]];
+  info.forEach(function(r, i){ ws.getCell("A" + (i + 3)).value = r[0]; ws.getCell("A" + (i + 3)).font = { bold:true }; ws.mergeCells("B" + (i + 3) + ":E" + (i + 3)); ws.getCell("B" + (i + 3)).value = r[1]; });
+  var start = info.length + 4, hr = ws.getRow(start); hr.values = ["Item", "Qtd.", "Unidade", "Valor unit.", "Total"]; styleHeader(hr);
+  (P.itens || []).forEach(function(i, k){ var q = Number(i.qtd) || 0; ws.getRow(start + 1 + k).values = [i.desc, q, i.unid || "", Number(i.unit) || 0, r2(q * (Number(i.unit) || 0))]; });
+  var tr = ws.getRow(start + 1 + (P.itens || []).length); tr.values = ["Total", null, null, null, Number(med.ValorFaturar) || 0]; tr.font = { bold:true };
+  ws.getColumn(4).numFmt = '"R$" #,##0.00'; ws.getColumn(5).numFmt = '"R$" #,##0.00';
+  return wb;
+}; })(boletimWorkbook);
+copiarTabelaEmail = (function(orig){ return function(id, modo, pronto){
+  var med = byId("medicoes", id), bk = medicoesDoMes;
+  medicoesDoMes = ehPontual(med) ? function(){ return [med]; } : function(c, k){ return bk(c, k).filter(function(m){ return !ehPontual(m) && mesmoRespMed(m, med); }); };
+  try { return orig.call(this, id, ehPontual(med) ? "um" : modo, ehPontual(med) ? true : pronto); } finally { medicoesDoMes = bk; }
+}; })(copiarTabelaEmail);
+prepararEmail = (function(orig){ return function(id, modo, cobr){
+  var med = byId("medicoes", id), bk = unidadesDe;
+  if (!ehPontual(med)){ var rMed = respDe(med.ClienteId, med.Competencia, med.Unidade); unidadesDe = function(c, k){ return bk(c, k).filter(function(u){ return !u.pontual && mesmoResp(respDe(c, k, u.key), rMed); }); }; }
+  try { return orig.apply(this, arguments); } finally { unidadesDe = bk; }
+}; })(prepararEmail);
+painelFaturamento = (function(orig){ return function(cid, comp, uk, med){
+  if (!ukPontual(uk)) return orig.apply(this, arguments);
+  med = med || medPorUk(cid, uk);
+  var P = pontualDe(med), pv = previsaoFat(cid, comp, uk), co = coordenadorDe(cid, comp, uk), ped = med ? ocDe(med) : "";
+  var cel = function(k, val, extra){ return "<div class='fat-cel'><p>" + esc(k) + "</p><div>" + val + "</div>" + (extra || "") + "</div>"; };
+  var h = "<div class='fat-box'><div class='fat-limite b-grena'><span>Serviço pontual · NF separada</span><b>" + esc(P.descricao || "") + "</b><em>" + esc((P.datas || "") + (P.local ? " · " + P.local : "")) + "</em></div><div class='fat-grid'>" +
+    cel("Coordenador responsável", esc(co.nome || "não informado") + (co.emails.length ? "<div class='small muted'>" + esc(co.emails.join("; ")) + "</div>" : ""), co.emails.length ? "<button class='btn-o btn-s' style='margin-top:6px' onclick=\"emailCoordenador('" + cid + "','" + comp + "','" + ukArg(uk) + "')\">&#9993; E-mail ao coordenador</button>" : "") +
+    cel("Faturamento", "<b>" + (med && med.DataAprovacao ? "Validado em " + fmtDate(med.DataAprovacao) : "Após a validação do cliente") + "</b><div class='small muted'>competência " + esc(compLabel(comp)) + "</div>") +
+    cel("Código do serviço", codigoPontual(P) ? esc(codigoPontual(P)) : "<span class='muted'>não definido</span>") +
+    cel("Pedido do cliente", (ocObrigatoria(med) ? "Obrigatório para liberar" : "Não exige") + "<div class='small " + (ped ? "muted" : "neg") + "'>" + (ped ? "Nº " + esc(ped) : "ainda não informado") + "</div>") +
+    cel("Enviar a NF para", P.nfPara ? esc(P.nfPara) : "<span class='neg'>não informado</span>") +
+    "</div>";
+  if (med){
+    h += "<div class='fat-acoes'>" + (simB(med.Critico) ? "<span class='badge b-red'>&#9888; Criticidade: " + esc(med.CriticoMotivo || "sim") + "</span> <button class='btn-ghost' onclick=\"criticidade('" + med.id + "')\">alterar</button>" : "<button class='btn-ghost' onclick=\"criticidade('" + med.id + "')\">&#9888; Sinalizar criticidade</button>") +
+      (liberada(med) ? " <span class='badge b-purple'>Liberado ao prestador em " + fmtDate(med.DataLiberacao) + "</span>" : "") + "</div>";
   }
-  function limpar(){try{sessionStorage.removeItem('fatNovo');}catch(e){}}
-  function encerrar(msg){ST.fim=true;ST.fila=[];ST.aguarda=null;limpar();banner(null);if(msg&&typeof showToast==='function')showToast(msg);}
-  function aviso(msg,erro){if(typeof showToast==='function')showToast(msg,!!erro);}
-  function sv(id,val,marca){var e=byEl(id);if(!e||val==null||String(val)==='')return;val=String(val);var ant=e.value;
-    if(e.tagName==='SELECT'){var ok=false;for(var i=0;i<e.options.length;i++)if(e.options[i].value===val){e.value=val;ok=true;break;}if(!ok)return;}else e.value=val;
-    if(marca&&ant!==e.value){e.style.outline='2px solid #C9822B';e.title='Valor atual no Faturamento: '+(ant||'(vazio)');}}
-  function iso(t){t=String(t||'').trim();var m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
-    return /^\d{4}-\d{2}-\d{2}$/.test(t)?t:'';}
-  function fimPorMeses(ini,n){n=parseInt(n,10);if(!ini||!n||n<1||n>120)return '';
-    var p=ini.split('-'),d=new Date(Date.UTC(+p[0],+p[1]-1+n,+p[2]-1));return d.toISOString().slice(0,10);}
-  function dig(x){return String(x||'').replace(/\D/g,'');}
-  var nm=function(s){return (typeof norm==='function'?norm:function(x){return String(x||'').toLowerCase();})(String(s||'').trim());};
-  function acharCliente(){
-    var c=D.cliente,cn=dig(c.cnpj),n1=nm(c.nome),n2=nm(c.razao);
-    var A=D.anterior&&D.anterior.cliente||{},ac=dig(A.cnpj),a1=nm(A.nome);
-    return (S.clientes||[]).filter(function(x){
-      var t=nm(x.Title),r=nm(x.RazaoSocial),xc=dig(x.CNPJ);
-      if(cn&&xc===cn)return true;if(ac&&xc===ac)return true;
-      if(cn&&String(x.Tomadores||'').replace(/\D/g,'').indexOf(cn)>=0)return true;
-      return (n1&&(t===n1||r===n1))||(n2&&(t===n2||r===n2))||(a1&&(t===a1));
-    })[0]||null;
-  }
-  function acharContrato(cid){
-    var lista=contratosDoCliente(cid),alvo=[get(D.anterior||{},'contrato.numero'),get(D,'contrato.numero')].filter(Boolean).map(nm);
-    for(var i=0;i<lista.length;i++)if(alvo.indexOf(nm(lista[i].Title))>=0)return lista[i];
-    return null;
-  }
-  function acharItem(ctId){
-    var its=itensDoContrato(ctId),alvo=[get(D.anterior||{},'servico'),get(D,'servico')].filter(Boolean).map(nm);
-    for(var i=0;i<its.length;i++)if(alvo.indexOf(nm(its[i].Title))>=0)return its[i];
-    return its.length===1?its[0]:null;
-  }
-  /* ---- telas ---- */
-  function preencherCliente(ed,ch){
-    var c=D.cliente,k=D.contrato||{},it=D.item||{};
-    function w(key,id,val){if(!ed||ch.indexOf(key)>=0)sv(id,val,ed);}
-    w('cliente.nome','c_Title',c.nome);w('cliente.razao','c_RazaoSocial',c.razao);w('cliente.cnpj','c_CNPJ',c.cnpj);w('area','c_Area',D.area);w('unidade','c_Unidade',D.unidade);
-    w('contrato.coord','c_Coordenador',k.coord);w('contrato.coordEmail','c_CoordenadorEmail',k.coordEmail);w('contrato.aprov','c_AprovadorNome',k.aprov);w('contrato.aprovEmail','c_AprovadorEmail',k.aprovEmail);
-    w('item.condPag','c_CondicaoPagamento',it.condPag);
-    if(!ed)sv('c_DiaLimiteNF',k.diaLimiteNF);
-  }
-  function preencherContrato(ed,ch){
-    var k=D.contrato||{},ini=iso(k.inicio),fim=iso(k.fim)||((!ed||ch.indexOf('contrato.numMeses')>=0||ch.indexOf('contrato.inicio')>=0)?fimPorMeses(ini,k.numMeses):'');
-    function w(key,id,val){if(!ed||ch.indexOf(key)>=0)sv(id,val,ed);}
-    w('contrato.numero','k_Title',k.numero);w('contrato.inicio','k_Inicio',ini);
-    if(!ed||ch.indexOf('contrato.fim')>=0||ch.indexOf('contrato.inicio')>=0||ch.indexOf('contrato.numMeses')>=0)sv('k_Fim',fim,ed);
-    w('contrato.indice','k_IndiceReajuste',k.indice);w('contrato.mesReajuste','k_MesReajuste',k.mesReajuste);w('contrato.diaLimiteNF','k_DiaLimiteNF',k.diaLimiteNF);
-    if(!ed)sv('k_Observacoes','Aberto a partir da venda no SIGE-novasreceitas.');
-  }
-  function preencherItem(ed,ch){
-    var k=D.contrato||{},it=D.item||{};
-    function w(key,id,val){if(!ed||ch.indexOf(key)>=0)sv(id,val,ed);}
-    w('servico','i_Title',D.servico||'');w('contrato.valorMensal','i_ValorMensal',k.valorMensal);
-    if(!ed||ch.indexOf('item.codigo')>=0){var sel=byEl('i_CodigoId'),cod=String(it.codigo||'').trim();
-      if(cod){var ok=false;if(sel)for(var i=0;i<sel.options.length;i++)if(sel.options[i].value&&sel.options[i].text.indexOf(cod)>=0){sel.value=sel.options[i].value;ok=true;break;}
-        if(!ok)sv('i_CodigoServicoNF',cod);}}
-    if(!ed||ch.indexOf('item.prazoFat')>=0){var pz=String(it.prazoFat||'');if(/imediat/i.test(pz))sv('i_PrazoFaturamento','0',ed);else{var d=dig(pz);if(d)sv('i_PrazoFaturamento',d,ed);}}
-    w('contrato.oc','i_NumPedido',k.oc);w('area','i_Area',D.area);
-    if(typeof itemPreview==='function')try{itemPreview();}catch(e){}
-    if(byEl('dv_p0'))aviso('Este cliente tem mais de um tomador: confira a divisão (%) e os pedidos antes de salvar.',true);
-  }
-  function passo(titulo,aguarda,abrir,preencher){
-    return function(ed,ch,tot,n){
-      ST.aguarda=aguarda;banner('passo '+n+' de '+tot+': '+titulo+(ed&&ch.length?' — alterado: '+rot(ch):'')+'. Revise e clique em Salvar.');
-      abrir();preencher(ed,ch);
-    };
-  }
-  function proximo(){
-    if(ST.fim)return;
-    var s=ST.fila.shift();
-    if(!s){encerrar('Venda aberta no Faturamento ✓');return;}
-    s();
-  }
-  function montar(passos){var tot=passos.length;ST.fila=passos.map(function(p,i){return function(){p.f(p.ed,p.ch,tot,i+1);};});proximo();}
-  function iniciar(){
-    limpar();
-    if(typeof acessoTotal==='function'&&!acessoTotal()){encerrar('Seu perfil não cadastra contratos. Peça ao Financeiro para abrir/revisar esta venda.');return;}
-    showTab('clientes');
-    ST.ant=SEL.cliente;ST.antCt=SEL.contrato;
-    var ex=acharCliente(),editar=D.modo==='editar'&&D.anterior&&ex;
-    var pCliC=passo('cliente','salvarCliente',function(){openCliente('');},function(e,c){preencherCliente(false,c);});
-    var pCtrC=passo('contrato','salvarContrato',function(){openContrato(ST.cid,'');},function(e,c){preencherContrato(false,c);});
-    var pItmC=passo('serviço (valor mensal)','salvarItem',function(){openItem(ST.ctId,'');},function(e,c){preencherItem(false,c);});
-    if(!editar){
-      var ps=[];
-      if(ex){ST.cid=String(ex.id);aviso('Cliente já cadastrado: '+ex.Title+'. Abrindo novo contrato.');}
-      else ps.push({f:function(a,b,t,n){ST.cid=null;pCliC(a,b,t,n);},ed:false,ch:[]});
-      ps.push({f:function(a,b,t,n){if(!ST.cid){encerrar('Cliente não foi salvo: reenvie pelo Cockpit.');return;}pCtrC(a,b,t,n);},ed:false,ch:[]});
-      ps.push({f:function(a,b,t,n){if(!ST.ctId){encerrar('Contrato não foi salvo: reenvie pelo Cockpit.');return;}pItmC(a,b,t,n);},ed:false,ch:[]});
-      montar(ps);return;
+  return h + "</div>";
+}; })(painelFaturamento);
+openMedicao = (function(orig){ return function(cid, comp, uk){
+  orig.apply(this, arguments);
+  if (!ukPontual(uk)) return;
+  var med = medPorUk(cid, uk); if (!med) return;
+  var box = $("modalBody"), P = pontualDe(med);
+  box.querySelectorAll("button").forEach(function(b){
+    var oc = b.getAttribute("onclick") || "";
+    if (/acaoGerar/.test(oc)){ b.setAttribute("onclick", "openPontual('" + med.id + "')"); b.innerHTML = "&#9998; Editar serviço pontual"; }
+  });
+  box.querySelectorAll("p.small.muted").forEach(function(p){ if (/contrato versão/.test(p.textContent)) p.textContent = "Serviço pontual registrado por " + (P.coordNome || P.coordEmail || "—") + " em " + new Date(med.GeradoEm || Date.now()).toLocaleString("pt-BR") + (P.obs ? " · obs. para a NF: " + P.obs : ""); });
+  var tw = [].filter.call(box.querySelectorAll(".tbl-wrap"), function(w){ return /Valor mensal/.test(w.textContent); })[0];
+  if (tw) tw.outerHTML = tabelaPontual(med);
+  var ocIn = $("fOC");
+  if (ocIn){ var card = ocIn.closest(".card"), bt = card.querySelector("button"); card.querySelector(".card-title").textContent = "Nº do pedido do cliente (PO/OC)"; card.querySelector("p.small").textContent = "Digite o nº do pedido enviado pelo cliente na validação do serviço. É obrigatório para liberar ao financeiro e emitir a NF."; ocIn.placeholder = "Ex.: 4500123456"; if (bt) bt.textContent = "Salvar pedido"; }
+  var acoes = box.querySelector(".modal-actions");
+  if (acoes && !soOcorrencias()){ var d = document.createElement("div"); d.innerHTML = painelPagamentosDaMedicao(med); acoes.parentNode.insertBefore(d.firstChild, acoes.nextSibling); }
+}; })(openMedicao);
+
+function tabelaPontual(med){
+  var P = pontualDe(med);
+  return "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Item</th><th class='num'>Qtd.</th><th>Unidade</th><th class='num'>Valor unit.</th><th class='num'>Total</th></tr></thead><tbody>" + (P.itens || []).map(function(i){ var q = Number(i.qtd) || 0; return "<tr><td><b>" + esc(i.desc) + "</b></td><td class='num'>" + num(q, q % 1 ? 2 : 0) + "</td><td>" + esc(i.unid || "") + "</td><td class='num'>" + brl(i.unit) + "</td><td class='num'><b>" + brl(q * (Number(i.unit) || 0)) + "</b></td></tr>"; }).join("") +
+    "</tbody><tfoot><tr><td colspan='4'>Total do serviço</td><td class='num'>" + brl(med.ValorFaturar) + "</td></tr></tfoot></table></div>";
+}
+limiteNF = (function(orig){ return function(cid, comp, uk){
+  if (!ukPontual(uk)) return orig.apply(this, arguments);
+  var dia = diaLimiteDe(cid, comp); if (!dia) return null;
+  var base = previsaoFat(cid, comp, uk).data, mes = base.slice(0, 7), portal = mes + "-" + pad(Math.min(dia, daysInMonth(mes)));
+  if (portal < base){ mes = compAdd(mes, 1); portal = mes + "-" + pad(Math.min(dia, daysInMonth(mes))); }
+  return { dia:dia, portal:portal, interno: addDays(portal, -3) };
+}; })(limiteNF);
+
+// ---------- formulario do servico pontual ----------
+function clientesParaPontual(){ return S.clientes.filter(function(c){ return c.Ativo !== false; }).sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); }); }
+function openPontual(id){
+  var med = id ? byId("medicoes", id) : null, P = pontualDe(med), cli = med ? byId("clientes", med.ClienteId) : null;
+  if (med && med.Status !== "Rascunho"){ showToast("Só dá para editar o serviço em rascunho. Use \"Voltar para rascunho\" na medição.", true); return; }
+  window.__ptAreaTocada = !!med;
+  window.__ptItens = (P.itens && P.itens.length ? P.itens : [{ desc:"", qtd:1, unid:"hora", unit:"" }]).map(function(i){ return Object.assign({}, i); });
+  var comp = med ? med.Competencia : ($("medComp").value || curComp());
+  var cods = S.codigos.filter(function(c){ return c.Ativo !== false; }).sort(function(a, b){ return (a.Tipo === "Pontual" ? 0 : 1) - (b.Tipo === "Pontual" ? 0 : 1) || String(a.Codigo).localeCompare(String(b.Codigo)); });
+  var h = "<h3>" + (med ? "Editar serviço pontual" : "Novo serviço pontual") + "</h3><p class='msub'>Registre o serviço realizado. Depois o sistema prepara o e-mail para o cliente validar e devolver o nº do pedido; com o pedido, você libera ao financeiro, que emite a NF separada.</p><div class='form'>" +
+    "<div><label>Cliente</label><select id='pt_cli' onchange='ptCliRefresh()'>" + opt("", "Selecione...", cli ? cli.id : "") + clientesParaPontual().map(function(c){ return opt(c.id, c.Title, cli ? cli.id : ""); }).join("") + opt("__novo", "+ Cliente novo (ainda não cadastrado)", "") + "</select></div>" +
+    "<div><label>Área</label><select id='pt_area' onchange='window.__ptAreaTocada=true'>" + AREAS.map(function(a){ return opt(a, a, P.area || (cli && cli.Area) || ""); }).join("") + "</select></div>" +
+    "<div id='ptNovo' class='full hidden' style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px'><div><label>Nome do cliente</label><input id='pt_nNome' placeholder='Ex.: Empresa X – Unidade'></div><div><label>Razão social</label><input id='pt_nRazao'></div><div><label>CNPJ</label><input id='pt_nCnpj' placeholder='00.000.000/0000-00'></div></div>" +
+    "<div class='full'><label>Descrição do serviço</label><input id='pt_desc' value='" + esc(P.descricao || "") + "' placeholder='Ex.: Palestra SIPAT – ergonomia no trabalho'></div>" +
+    "<div><label>Data(s) de realização</label><input id='pt_datas' value='" + esc(P.datas || "") + "' placeholder='Ex.: 14 e 15/10/2026'></div>" +
+    "<div><label>Competência</label><input type='month' id='pt_comp' value='" + esc(comp) + "'><div class='hint'>Mês em que o serviço aparece em Medições e no Dashboard.</div></div>" +
+    "<div><label>Local</label><input id='pt_local' value='" + esc(P.local || "") + "' placeholder='Cidade / unidade do cliente'></div>" +
+    "<div><label>Código do serviço (NF)</label><select id='pt_cod'>" + opt("", cods.length ? "Selecione..." : "Cadastre em Códigos de serviço", P.codigoId || "") + cods.map(function(c){ return opt(c.id, c.Codigo + " – " + c.Descricao + (c.Tipo ? " (" + c.Tipo.toLowerCase() + ")" : ""), P.codigoId || ""); }).join("") + "</select></div>" +
+    "<div class='full'><label>Itens do serviço (preço negociado)</label><div id='ptItens'></div><button type='button' class='btn-ghost' onclick='ptAddItem()'>+ adicionar item</button></div>" +
+    "<div><label>E-mail do cliente para validar (Para)</label><input id='pt_para' value='" + esc(P.para || (cli && cli.AprovadorEmail) || "") + "' placeholder='focal@cliente.com.br'></div>" +
+    "<div><label>Cc</label><input id='pt_cc' value='" + esc(P.cc || "") + "' placeholder='opcional'></div>" +
+    "<div><label>Responsável que recebe a NF</label><input id='pt_nf' value='" + esc(P.nfPara || "") + "' placeholder='e-mail do responsável no cliente'><div class='hint'>Vai no e-mail de liberação ao financeiro.</div></div>" +
+    "<div><label>Observação para a NF</label><input id='pt_obs' value='" + esc(P.obs || "") + "' placeholder='opcional'></div>" +
+    "</div><div class='modal-actions'>" + (med ? "<button class='btn-o' onclick=\"reabrir(byId('medicoes','" + med.id + "'))\">Voltar</button>" : "<button class='btn-o' onclick='closeModal()'>Cancelar</button>") + "<button class='btn' onclick=\"salvarPontual('" + (med ? med.id : "") + "')\">Salvar serviço pontual</button></div>";
+  openModal(h, true); ptRenderItens(); ptCliRefresh();
+}
+function ptCliRefresh(){ var n = v("pt_cli") === "__novo"; $("ptNovo").classList.toggle("hidden", !n); var c = byId("clientes", v("pt_cli")); if (c && !v("pt_para") && c.AprovadorEmail) $("pt_para").value = c.AprovadorEmail; if (c && c.Area && !window.__ptAreaTocada) $("pt_area").value = c.Area; }
+function ptLerItens(){ var rows = document.querySelectorAll("#ptItens .pt-row:not(.pt-head):not(.pt-foot)"); if (!rows.length) return; window.__ptItens = [].map.call(rows, function(r){ return { desc: r.querySelector(".pt-desc").value.trim(), qtd: parseNum(r.querySelector(".pt-qtd").value), unid: r.querySelector(".pt-unid").value, unit: parseNum(r.querySelector(".pt-unit").value) }; }); }
+function ptRenderItens(){
+  var it = window.__ptItens || [];
+  $("ptItens").innerHTML = "<div class='pt-row pt-head'><span>Item</span><span>Qtd.</span><span>Unidade</span><span>Valor unit. (R$)</span><span class='num'>Total</span><span></span></div>" + it.map(function(i, k){
+    return "<div class='pt-row'><input class='pt-desc' value='" + esc(i.desc || "") + "' placeholder='Ex.: Palestra de 1h' oninput='ptTotais()'><input class='pt-qtd' inputmode='decimal' value='" + esc(i.qtd === "" ? "" : String(i.qtd).replace(".", ",")) + "' oninput='ptTotais()'><select class='pt-unid'>" + UNIDADES_PT.map(function(u){ return opt(u, u, i.unid || "hora"); }).join("") + "</select><input class='pt-unit' inputmode='decimal' value='" + esc(i.unit === "" || i.unit == null ? "" : String(i.unit).replace(".", ",")) + "' oninput='ptTotais()'><span class='num pt-tot'></span>" + (it.length > 1 ? "<button type='button' class='btn-ghost' title='Remover' onclick='ptDelItem(" + k + ")'>&times;</button>" : "<span></span>") + "</div>";
+  }).join("") + "<div class='pt-row pt-foot'><span>Total do serviço</span><span></span><span></span><span></span><b class='num' id='ptTotal'></b><span></span></div>";
+  ptTotais();
+}
+function ptTotais(){ ptLerItens(); var rows = document.querySelectorAll("#ptItens .pt-row:not(.pt-head):not(.pt-foot)"); (window.__ptItens || []).forEach(function(i, k){ if (rows[k]) rows[k].querySelector(".pt-tot").textContent = brl((i.qtd || 0) * (i.unit || 0)); }); if ($("ptTotal")) $("ptTotal").textContent = brl(totalItensPontual(window.__ptItens)); }
+function ptAddItem(){ ptLerItens(); window.__ptItens.push({ desc:"", qtd:1, unid:"hora", unit:"" }); ptRenderItens(); }
+function ptDelItem(k){ ptLerItens(); window.__ptItens.splice(k, 1); ptRenderItens(); }
+async function salvarPontual(id){
+  ptLerItens();
+  var med = id ? byId("medicoes", id) : null, cid = v("pt_cli"), desc = v("pt_desc"), comp = v("pt_comp"), para = emailsDe(v("pt_para")).join("; "), nfPara = emailsDe(v("pt_nf")).join("; ");
+  var itens = (window.__ptItens || []).filter(function(i){ return i.desc || i.unit; });
+  if (!cid){ showToast("Escolha o cliente.", true); return; }
+  if (cid === "__novo" && !v("pt_nNome")){ showToast("Informe o nome do cliente novo.", true); return; }
+  if (!desc){ showToast("Descreva o serviço realizado.", true); return; }
+  if (!/^\d{4}-\d{2}$/.test(comp)){ showToast("Informe a competência.", true); return; }
+  if (!itens.length || itens.some(function(i){ return !i.desc || !(i.qtd > 0) || !(i.unit > 0); })){ showToast("Preencha cada item com descrição, quantidade e valor unitário.", true); return; }
+  var inval = emailsDe(para).concat(emailsDe(v("pt_cc")), emailsDe(nfPara)).filter(function(e){ return !emailValido(e); });
+  if (inval.length){ showToast("E-mail inválido: " + inval.join(", "), true); return; }
+  var tot = totalItensPontual(itens);
+  await safe(async function(){
+    if (cid === "__novo"){
+      var nc = await api.create("clientes", { Title: v("pt_nNome"), RazaoSocial: v("pt_nRazao") || v("pt_nNome"), CNPJ: v("pt_nCnpj"), Area: v("pt_area"), AprovadorEmail: para, EmailsCopia: emailsDe(v("pt_cc")).join("; "), Coordenador: CURRENT_USER.name, CoordenadorEmail: CURRENT_USER.email, Ativo: true, Observacoes: "Cadastrado a partir de serviço pontual em " + fmtDate(todayISO()) + "." });
+      cid = String(nc.id);
     }
-    /* ---- modo editar ---- */
-    ST.cid=String(ex.id);
-    var ct=acharContrato(ex.id);
-    if(!ct){aviso('Contrato não localizado no Faturamento: abrindo como novo contrato.');
-      montar([{f:function(a,b,t,n){pCtrC(a,b,t,n);},ed:false,ch:[]},{f:function(a,b,t,n){if(!ST.ctId){encerrar('Contrato não foi salvo: reenvie pelo Cockpit.');return;}pItmC(a,b,t,n);},ed:false,ch:[]}]);return;}
-    ST.ctId=String(ct.id);
-    var it=acharItem(ct.id),cC=mudou(CLI),cK=mudou(CTR),cI=mudou(ITM),ps2=[];
-    if(cC.length)ps2.push({ed:true,ch:cC,f:passo('cliente','salvarCliente',function(){openCliente(ex.id);},preencherCliente)});
-    if(cK.length)ps2.push({ed:true,ch:cK,f:passo('contrato','salvarContrato',function(){openContrato(ex.id,ct.id);},preencherContrato)});
-    if(cI.length){
-      if(it)ps2.push({ed:true,ch:cI,f:passo('serviço','salvarItem',function(){openItem(ct.id,it.id);},preencherItem)});
-      else aviso('Serviço não localizado no contrato: ajuste manualmente ('+rot(cI)+').',true);
+    var cli = byId("clientes", cid), Lold = med ? linhasDe(med) : {}, Pold = Lold.pontual || {};
+    var P = { descricao: desc, area: v("pt_area"), datas: v("pt_datas"), local: v("pt_local"), codigoId: v("pt_cod"), itens: itens, para: para, cc: emailsDe(v("pt_cc")).join("; "), nfPara: nfPara, obs: v("pt_obs"), coordEmail: Pold.coordEmail || CURRENT_USER.email, coordNome: Pold.coordNome || CURRENT_USER.name };
+    var lines = itens.map(function(i){ var t = r2(i.qtd * i.unit); return { tipo:"pontual", itemId:"", rel:"", servico: i.desc + " (" + num(i.qtd, i.qtd % 1 ? 2 : 0) + " " + i.unid + " × " + brl(i.unit) + ")", cargo:"", padrao:t, desconto:0, acrescimo:0, horas:0, pct:100, just:[], final:t }; });
+    var uk = med ? med.Unidade : "P:" + Date.now().toString(36);
+    var hist = historicoDe(med); hist.push({ s:"Rascunho", d:new Date().toISOString(), p:CURRENT_USER.name, o: med ? "Serviço pontual alterado" : "Serviço pontual registrado" });
+    var f = { Title: cli.Title + " · " + desc + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:"", ValorPadrao:tot, Descontos:0, Acrescimos:0, ValorFaturar:tot, Status:"Rascunho", Unidade:uk, UnidadeNome:desc, Tomador:"", TipoFat:"Pontual",
+      Linhas: JSON.stringify({ pontual:P, lines:lines, ocorrIds:[], oc: Lold.oc || "" }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString(), ObsNF: P.obs };
+    if (med) await api.update("medicoes", med.id, f); else med = await api.create("medicoes", f);
+  }, "Serviço pontual salvo.");
+  if ($("medComp")) $("medComp").value = med.Competencia;
+  fillSelects(); openMedicao(med.ClienteId, med.Competencia, med.Unidade); renderCurrent();
+}
+
+// ============================================================
+// PAGAMENTOS A PROFISSIONAIS
+// ============================================================
+var MODALIDADES_PAG = ["com RPA", "sem RPA", "com NF", "sem NF", "sem DOC"];
+var MEIOS_PAG = {
+  "pix qr code": { l:"Código PIX copia e cola (do QR code)", ph:"00020126...", ml:true },
+  "pix cpf": { l:"CPF da chave PIX", ph:"000.000.000-00" },
+  "pix telefone": { l:"Telefone da chave PIX", ph:"(11) 90000-0000" },
+  "pix cnpj": { l:"CNPJ da chave PIX", ph:"00.000.000/0000-00" },
+  "pix chave": { l:"Chave PIX aleatória", ph:"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" },
+  "pix e-mail": { l:"E-mail da chave PIX", ph:"nome@email.com" },
+  "TED": { l:"Banco, agência, conta, tipo de conta e CPF/CNPJ do titular", ph:"Banco 000 · Ag. 0000 · C/C 00000-0 · CPF 000.000.000-00", ml:true },
+  "FOPAG": { l:"Folha de pagamento", ph:"", def:"Pagamento via folha (FOPAG)" },
+  "Boleto": { l:"Linha digitável do boleto (ou anexe o boleto no documento fiscal)", ph:"00000.00000 00000.000000 ...", ml:true },
+  "outro": { l:"Descreva como pagar", ph:"", ml:true }
+};
+var MOTIVOS_PAG = ["Serviço pontual", "Cobertura", "Renovação", "Hora extra", "Outro"];
+var EMPRESAS_PAG = ["Elevalife", "Eleva Saúde"];
+var STATUS_PAG = ["Solicitado", "Em análise", "Agendado", "Pago", "Pendência", "Cancelado"];
+var STATUS_PAG_BADGE = { "Solicitado":"b-blue", "Em análise":"b-amber", "Agendado":"b-purple", "Pago":"b-green", "Pendência":"b-red", "Cancelado":"b-gray" };
+var ORIGENS_PROF = ["Cadastro manual", "Grupo de credenciados (WhatsApp)", "Banco de Talentos"];
+var PG_VIEW = "sol";
+function podeVerPagamentos(){ var p = perfilAcesso(); return p !== "ocorrencias"; }
+function privilegioPag(){ return isGestor() || soPrestador(); }
+function veDadosPag(pg){ return privilegioPag() || (pg && String(pg.SolicitanteEmail || "").toLowerCase() === meuEmail()); }
+function mascarar(t){ return String(t || "").split(/\n/).map(function(l){ l = l.trim(); if (!l) return ""; return l.length <= 5 ? "•••••" : l.slice(0, 2) + "•••••" + l.slice(-3); }).join("\n"); }
+function pagamentosVisiveis(){ var all = S.pagamentos || []; if (acessoTotal() || privilegioPag()) return all; return all.filter(function(p){ return String(p.SolicitanteEmail || "").toLowerCase() === meuEmail() || (p.MedicaoId && byId("medicoes", p.MedicaoId) && visivel(byId("clientes", byId("medicoes", p.MedicaoId).ClienteId) || {})); }); }
+function profissionaisAtivos(){ return (S.profissionais || []).filter(function(p){ return p.Ativo !== false; }).sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); }); }
+function historicoPag(pg){ return jparse(pg && pg.HistoricoPag, []); }
+function diaUtilPag(iso){ var d = parseISO(iso).getDay(); return d !== 0 && d !== 6 && !feriados("")[iso]; }
+function proximoDiaUtil(iso){ var d = iso; for (var i = 0; i < 15 && !diaUtilPag(d); i++) d = addDays(d, 1); return d; }
+function ultimoPago(profId, motivo){ var l = (S.pagamentos || []).filter(function(p){ return String(p.ProfissionalId) === String(profId) && p.StatusPag !== "Cancelado" && (!motivo || p.Motivo === motivo); }).sort(function(a, b){ return String(b.DataPagamento || "").localeCompare(String(a.DataPagamento || "")); }); return l[0] || null; }
+function webhookTeams(){ var p = S.parametros.filter(function(x){ return x.Tipo === "TeamsWebhook" && x.Texto; })[0]; return p ? String(p.Texto).trim() : ""; }
+
+// ---------- tela ----------
+function renderPagamentos(){
+  var avisoBase = $("pgBase");
+  if (!avisoBase){ avisoBase = document.createElement("div"); avisoBase.id = "pgBase"; var tb = document.querySelector("#panel-pagamentos .toolbar"); tb.parentNode.insertBefore(avisoBase, tb); }
+  var faltaBase = PAG_PENDENTE.some(function(k){ return k !== "TipoFat"; });
+  avisoBase.innerHTML = faltaBase ? "<div class='alert alert-amber'><span style='flex:1'>A base de pagamentos (listas FAT_Profissionais e FAT_Pagamentos) ainda não existe no SharePoint. Enquanto isso, as solicitações não podem ser gravadas." + (isGestor() ? "" : " Peça ao gestor para criar.") + "</span>" + (isGestor() ? "<button class='btn btn-s' onclick='criarBasePagamentos()'>Criar base agora</button>" : "") + "</div>" : "";
+  document.querySelectorAll("#panel-pagamentos .page-head button").forEach(function(b){ if (!/baixarPlanilha/.test(b.getAttribute("onclick") || "")) b.disabled = faltaBase; });
+  if (!$("pgStatusF").options.length) $("pgStatusF").innerHTML = opt("", "Todos") + opt("abertos", "Em aberto (não pagos)") + STATUS_PAG.map(function(s){ return opt(s, s); }).join("");
+  $("pgChips").innerHTML = [["sol", "Solicitações"], ["prof", "Profissionais"]].map(function(c){ return "<button class='chip" + (PG_VIEW === c[0] ? " active" : "") + "' onclick=\"PG_VIEW='" + c[0] + "';renderPagamentos()\">" + c[1] + "</button>"; }).join("");
+  ["pgStatusF", "pgMes", "pgLStatus", "pgLMes"].forEach(function(i){ if ($(i)) $(i).classList.toggle("hidden", PG_VIEW !== "sol"); });
+  if (PG_VIEW === "prof") return renderProfissionais();
+  var st = $("pgStatusF").value, mes = $("pgMes").value, q = norm($("pgBusca").value || ""), hoje = todayISO();
+  var all = pagamentosVisiveis();
+  var rows = all.filter(function(p){ return (!st || (st === "abertos" ? (p.StatusPag !== "Pago" && p.StatusPag !== "Cancelado") : p.StatusPag === st)) && (!mes || String(p.DataPagamento || "").slice(0, 7) === mes) && (!q || norm([p.Favorecido, p.Projeto, p.Descricao, p.Solicitante].join(" ")).indexOf(q) >= 0); })
+    .sort(function(a, b){ return String(a.DataPagamento || "").localeCompare(String(b.DataPagamento || "")) * (st === "Pago" ? -1 : 1); });
+  var aberto = all.filter(function(p){ return p.StatusPag !== "Pago" && p.StatusPag !== "Cancelado"; }), mesAt = hoje.slice(0, 7);
+  var sem7 = aberto.filter(function(p){ return p.DataPagamento && p.DataPagamento >= hoje && daysBetween(hoje, p.DataPagamento) <= 7; });
+  var pagoMes = all.filter(function(p){ return p.StatusPag === "Pago" && String(p.DataPago || p.DataPagamento || "").slice(0, 7) === mesAt; });
+  var soma = function(l){ return l.reduce(function(s, p){ return s + (Number(p.Valor) || 0); }, 0); };
+  $("pgKpis").innerHTML = kpi("Em aberto", brl(soma(aberto)), aberto.length + " solicitação(ões) não paga(s)") + kpi("Próximos 7 dias", brl(soma(sem7)), sem7.length + " pagamento(s) agendado(s)") + kpi("Pendências", String(all.filter(function(p){ return p.StatusPag === "Pendência"; }).length), "o BPO precisa de informação") + kpi("Pago no mês", brl(soma(pagoMes)), compLabel(mesAt));
+  if (!rows.length){ $("pgTable").innerHTML = "<tr><td class='empty'>Nenhuma solicitação" + (st || mes || q ? " com estes filtros" : " ainda. Clique em + Solicitar pagamento") + ".</td></tr>"; return; }
+  $("pgTable").innerHTML = "<thead><tr><th>Pagamento</th><th>Favorecido</th><th>Projeto / descrição</th><th>Modalidade · meio</th><th class='num'>Valor</th><th>Status</th><th>Docs</th><th></th></tr></thead><tbody>" + rows.map(function(p){
+    var atras = p.StatusPag !== "Pago" && p.StatusPag !== "Cancelado" && p.DataPagamento && p.DataPagamento < hoje;
+    return "<tr class='click' onclick=\"openPagamento('" + p.id + "')\"><td><b>" + fmtDate(p.DataPagamento) + "</b>" + (atras ? "<div><span class='badge b-red'>passou da data</span></div>" : "") + "<div class='small muted'>pedido " + fmtDate(p.DataSolicitacao) + "</div></td><td><b>" + esc(p.Favorecido || "") + "</b><div class='small muted'>" + esc(p.Empresa || "") + "</div></td><td>" + esc(p.Projeto || "") + "<div class='small muted'>" + esc(String(p.Descricao || "").slice(0, 90)) + "</div></td><td>" + esc(p.Modalidade || "") + "<div class='small muted'>" + esc(p.Meio || "") + "</div></td><td class='num'><b>" + brl(p.Valor) + "</b></td><td><span class='badge " + (STATUS_PAG_BADGE[p.StatusPag] || "b-gray") + "'>" + esc(p.StatusPag || "Solicitado") + "</span></td><td class='small'>" + (p.NFLink ? "&#128196; NF" : "") + (p.ComprovanteLink ? " &#9989; comprov." : "") + "</td><td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();openPagamento('" + p.id + "')\">Abrir</button></td></tr>";
+  }).join("") + "</tbody><tfoot><tr><td colspan='4'>Total (" + rows.length + ")</td><td class='num'>" + brl(soma(rows)) + "</td><td colspan='3'></td></tr></tfoot>";
+}
+function renderProfissionais(){
+  var q = norm($("pgBusca").value || ""), priv = privilegioPag();
+  var rows = (S.profissionais || []).filter(function(p){ return !q || norm([p.Title, p.Especialidade, p.Origem, p.Email].join(" ")).indexOf(q) >= 0; }).sort(function(a, b){ return (a.Ativo === false) - (b.Ativo === false) || String(a.Title).localeCompare(String(b.Title), "pt-BR"); });
+  var bt = rows.filter(function(p){ return p.Origem === "Banco de Talentos"; }).length;
+  $("pgKpis").innerHTML = kpi("Profissionais", String(rows.length), profissionaisAtivos().length + " ativo(s)") + kpi("Do Banco de Talentos", String(bt), "fonte oficial (Sistema de Gestão Operacional)") + kpi("Cadastro manual", String(rows.length - bt), "inclui o grupo de credenciados") + kpi("Dados bancários", priv ? "visíveis" : "ocultos", priv ? "seu perfil vê os dados completos" : "só gestores e o BPO veem completos");
+  if (!rows.length){ $("pgTable").innerHTML = "<tr><td class='empty'>Nenhum profissional cadastrado. Clique em + Profissional.</td></tr>"; return; }
+  $("pgTable").innerHTML = "<thead><tr><th>Profissional</th><th>Especialidade</th><th>Contato</th><th>Meio · dados para pagamento</th><th class='num'>Referência</th><th>Último pagamento</th></tr></thead><tbody>" + rows.map(function(p){
+    var u = ultimoPago(p.id);
+    return "<tr class='click' onclick=\"openProfissional('" + p.id + "')\"" + (p.Ativo === false ? " style='opacity:.55'" : "") + "><td><b>" + esc(p.Title) + "</b> <span class='badge " + (p.Origem === "Banco de Talentos" ? "b-purple" : "b-gray") + "'>" + esc(p.Origem || "Cadastro manual") + "</span>" + (p.Ativo === false ? " <span class='badge b-gray'>inativo</span>" : "") + "<div class='small muted'>" + esc(p.TipoPessoa || "") + (p.Documento ? " · " + esc(priv ? p.Documento : mascarar(p.Documento)) : "") + "</div></td><td>" + esc(p.Especialidade || "") + "</td><td class='small'>" + esc(p.Telefone || "") + (p.Email ? "<div class='muted'>" + esc(p.Email) + "</div>" : "") + "</td><td class='small'>" + esc(p.Meio || "") + (p.DadosPagamento ? "<div class='muted'>" + esc(priv ? p.DadosPagamento : mascarar(p.DadosPagamento)).replace(/\n/g, "<br>") + "</div>" : "") + "</td><td class='num small'>" + (Number(p.RemuneracaoRef) ? "rem. " + brl(p.RemuneracaoRef) : "") + (Number(p.AjudaCustoRef) ? "<div>ajuda " + brl(p.AjudaCustoRef) + "</div>" : "") + "</td><td class='small'>" + (u ? fmtDate(u.DataPagamento) + " · " + brl(u.Valor) + "<div class='muted'>" + esc(u.Motivo || "") + "</div>" : "<span class='muted'>—</span>") + "</td></tr>";
+  }).join("") + "</tbody>";
+}
+
+// ---------- cadastro de profissionais ----------
+function openProfissional(id, depois){
+  var p = id ? byId("profissionais", id) : { Ativo:true, Origem:"Cadastro manual", TipoPessoa:"PF" }, priv = privilegioPag() || !id;
+  window.__profDepois = depois || null;
+  var h = "<h3>" + (id ? "Profissional" : "Novo profissional") + "</h3><p class='msub'>Cadastro usado nas solicitações de pagamento. Documento e dados bancários ficam visíveis só para gestores e o BPO." + (id && !privilegioPag() ? " Para alterar esses dados, peça ao gestor." : "") + "</p><div class='form'>" +
+    "<div class='full'><label>Nome completo / razão social</label><input id='pf_nome' value='" + esc(p.Title || "") + "'></div>" +
+    "<div><label>Tipo</label><select id='pf_tipo'>" + opt("PF", "Pessoa física", p.TipoPessoa) + opt("PJ", "Pessoa jurídica (emite NF)", p.TipoPessoa) + "</select></div>" +
+    "<div><label>CPF / CNPJ</label><input id='pf_doc' value='" + esc(priv ? (p.Documento || "") : mascarar(p.Documento)) + "'" + (priv ? "" : " disabled") + "></div>" +
+    "<div><label>Especialidade</label><input id='pf_esp' list='dlCargos' value='" + esc(p.Especialidade || "") + "'>" + cargoDatalist() + "</div>" +
+    "<div><label>Origem do cadastro</label><select id='pf_orig'>" + ORIGENS_PROF.map(function(o){ return opt(o, o, p.Origem || "Cadastro manual"); }).join("") + "</select></div>" +
+    "<div><label>Telefone</label><input id='pf_tel' value='" + esc(p.Telefone || "") + "'></div>" +
+    "<div><label>E-mail</label><input id='pf_email' value='" + esc(p.Email || "") + "'></div>" +
+    "<div><label>Meio de pagamento padrão</label><select id='pf_meio'>" + opt("", "Selecione...", p.Meio || "") + Object.keys(MEIOS_PAG).map(function(m){ return opt(m, m, p.Meio || ""); }).join("") + "</select></div>" +
+    "<div><label>Dados para pagamento</label><textarea id='pf_dados' style='min-height:44px'" + (priv ? "" : " disabled") + ">" + esc(priv ? (p.DadosPagamento || "") : mascarar(p.DadosPagamento)) + "</textarea></div>" +
+    "<div><label>Remuneração de referência (R$)</label><input id='pf_rem' inputmode='decimal' value='" + (Number(p.RemuneracaoRef) ? esc(String(p.RemuneracaoRef).replace(".", ",")) : "") + "'><div class='hint'>Opcional. A solicitação sugere o último valor pago.</div></div>" +
+    "<div><label>Ajuda de custo de referência (R$)</label><input id='pf_aj' inputmode='decimal' value='" + (Number(p.AjudaCustoRef) ? esc(String(p.AjudaCustoRef).replace(".", ",")) : "") + "'></div>" +
+    "<div class='full'><label>Observação</label><textarea id='pf_obs' style='min-height:44px'>" + esc(p.Obs || "") + "</textarea></div>" +
+    "<div class='full'><label class='check'><input type='checkbox' id='pf_ativo'" + (p.Ativo !== false ? " checked" : "") + "> Ativo</label></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Cancelar</button><button class='btn' onclick=\"salvarProfissional('" + (id || "") + "')\">Salvar</button></div>";
+  openModal(h, true);
+}
+async function salvarProfissional(id, confirmado){
+  var p = id ? byId("profissionais", id) : null, priv = privilegioPag() || !id, nome = v("pf_nome");
+  if (!nome){ showToast("Informe o nome completo.", true); return; }
+  var dig = String(v("pf_doc")).replace(/\D/g, "");
+  if (!confirmado){
+    var dup = (S.profissionais || []).filter(function(x){ return String(x.id) !== String(id || "") && (norm(x.Title) === norm(nome) || (dig.length >= 11 && String(x.Documento || "").replace(/\D/g, "") === dig)); });
+    if (dup.length){
+      var old = $("pfDup"); if (old) old.remove();
+      var d = document.createElement("div"); d.id = "pfDup"; d.className = "alert alert-amber";
+      d.innerHTML = "<span style='flex:1'>Já existe um profissional parecido: <b>" + esc(dup.map(function(x){ return x.Title + " (" + (x.Origem || "Cadastro manual") + ")"; }).join(", ")) + "</b>. Confira para não duplicar o cadastro.</span><button type='button' class='btn-o btn-s' onclick=\"salvarProfissional('" + (id || "") + "', true)\">Salvar mesmo assim</button>";
+      var f = $("modalBody").querySelector(".form"); f.parentNode.insertBefore(d, f); return;
     }
-    if(!ps2.length){encerrar(cI.length?'Nenhuma tela para abrir: ajuste manualmente.':'Nenhuma alteração em relação ao último envio.');return;}
-    aviso('Reenvio: cliente e contrato já cadastrados. Abrindo só o que mudou.');
-    montar(ps2);
   }
-  function envolver(nome){var o=window[nome];if(typeof o!=='function')return;
-    window[nome]=async function(){var r=await o.apply(this,arguments);
-      try{
-        if(ST.aguarda===nome&&!ST.fim&&!byEl('modal').classList.contains('show')){
-          if(nome==='salvarCliente'&&!ST.cid&&SEL.cliente&&SEL.cliente!==ST.ant&&byId('clientes',SEL.cliente))ST.cid=String(SEL.cliente);
-          if(nome==='salvarContrato'&&!ST.ctId&&SEL.contrato&&SEL.contrato!==ST.antCt&&byId('contratos',SEL.contrato))ST.ctId=String(SEL.contrato);
-          ST.aguarda=null;proximo();
-        }
-      }catch(e){console.error(e);}
-      return r;};}
-  envolver('salvarCliente');envolver('salvarContrato');envolver('salvarItem');
-  var n=0,tm=setInterval(function(){
-    n++;
-    var ma=byEl('mainArea'),pronto=ma&&!ma.classList.contains('hidden')&&window.S&&S.clientes&&CURRENT_USER&&CURRENT_USER.email;
-    if(ST.fim){clearInterval(tm);return;}
-    if(pronto){clearInterval(tm);iniciar();return;}
-    if(n===1)banner('faça o login para abrir a venda de '+(D.cliente.nome||'cliente')+'.');
-    if(n>1500){clearInterval(tm);banner(null);}
-  },400);
-})();
+  var f = { Title:nome, TipoPessoa:v("pf_tipo"), Especialidade:v("pf_esp"), Origem:v("pf_orig"), Telefone:v("pf_tel"), Email:v("pf_email"), Meio:v("pf_meio"), RemuneracaoRef: parseNum(v("pf_rem")) || null, AjudaCustoRef: parseNum(v("pf_aj")) || null, Obs:v("pf_obs"), Ativo: v("pf_ativo") };
+  if (priv){ f.Documento = v("pf_doc"); f.DadosPagamento = v("pf_dados"); }
+  var o = await safe(function(){ return id ? api.update("profissionais", id, f) : api.create("profissionais", f); }, "Profissional salvo.");
+  var dep = window.__profDepois; window.__profDepois = null;
+  if (dep){ dep(o); return; }
+  closeModal(); renderCurrent();
+}
+
+// ---------- solicitacao de pagamento ----------
+function openSolicitacao(id, medId){
+  var pg = id ? byId("pagamentos", id) : null;
+  if (pg && pg.StatusPag && pg.StatusPag !== "Solicitado" && pg.StatusPag !== "Pendência" && !privilegioPag()){ showToast("O BPO já está tratando esta solicitação. Use a comunicação para pedir ajustes.", true); return; }
+  var med = medId ? byId("medicoes", medId) : (pg && pg.MedicaoId ? byId("medicoes", pg.MedicaoId) : null), cliM = med ? byId("clientes", med.ClienteId) : null;
+  var amanha = proximoDiaUtil(addDays(todayISO(), 1));
+  window.__spDescAuto = !pg; window.__spFavAuto = !pg; window.__spEditId = pg ? pg.id : "";
+  var x = pg || { Solicitante: CURRENT_USER.name, Empresa:"Elevalife", DataSolicitacao: todayISO(), DataPagamento: amanha, Motivo: med ? "Serviço pontual" : "", Area: med ? (pontualDe(med).area || (cliM && cliM.Area) || "") : "", Projeto: med ? cliM.Title + " · " + (pontualDe(med).descricao || med.UnidadeNome) : "", Modalidade:"", Meio:"", MedicaoId: med ? med.id : "" };
+  var projetos = uniqList(S.clientes.filter(function(c){ return c.Ativo !== false; }).map(function(c){ return c.Title; }).concat(S.medicoes.filter(ehPontual).map(function(m){ return (byId("clientes", m.ClienteId) || {}).Title + " · " + (pontualDe(m).descricao || m.UnidadeNome); })));
+  var pontuais = S.medicoes.filter(ehPontual).sort(function(a, b){ return String(b.Competencia).localeCompare(String(a.Competencia)); }).slice(0, 60);
+  var h = "<h3>" + (pg ? "Editar solicitação de pagamento" : "Solicitar pagamento a profissional") + "</h3><p class='msub'>Mesmos campos da planilha do BPO. Mínimo de 1 dia de antecedência; pagamento só em dia útil. O BPO recebe o aviso no Teams e consulta tudo aqui.</p><div class='form'>" +
+    "<div><label>Solicitante</label><input id='sp_sol' value='" + esc(x.Solicitante || CURRENT_USER.name) + "'></div>" +
+    "<div><label>Empresa</label><select id='sp_emp'>" + EMPRESAS_PAG.map(function(e){ return opt(e, e, x.Empresa); }).join("") + "</select></div>" +
+    "<div><label>Profissional (cadastro)</label><select id='sp_prof' onchange='spProfRefresh(true)'>" + opt("", "Selecione...", x.ProfissionalId || "") + profissionaisAtivos().map(function(p){ return opt(p.id, p.Title + (p.Especialidade ? " – " + p.Especialidade : ""), x.ProfissionalId || ""); }).join("") + opt("__novo", "+ Cadastrar profissional", "") + "</select></div>" +
+    "<div><label>Fornecedor / titular da conta</label><input id='sp_fav' value='" + esc(x.Favorecido || "") + "' placeholder='Nome completo / razão social'><div class='hint'>Pode ser diferente do profissional (ex.: conta da empresa dele).</div></div>" +
+    "<div><label>Data da solicitação</label><input type='date' id='sp_dsol' value='" + esc(x.DataSolicitacao || todayISO()) + "' disabled></div>" +
+    "<div><label>Data do pagamento</label><input type='date' id='sp_dpag' value='" + esc(x.DataPagamento || amanha) + "' min='" + esc(addDays(todayISO(), 1)) + "' onchange='spDataRefresh()'><div class='hint' id='spDataHint'></div></div>" +
+    "<div><label>Motivo</label><select id='sp_mot' onchange='spProfRefresh(false);spDescAuto()'>" + opt("", "Selecione...", x.Motivo || "") + MOTIVOS_PAG.map(function(m){ return opt(m, m, x.Motivo || ""); }).join("") + "</select></div>" +
+    "<div><label>Vincular a um serviço pontual (opcional)</label><select id='sp_med' onchange='spMedRefresh()'>" + opt("", "Nenhum", x.MedicaoId || "") + pontuais.map(function(m){ return opt(m.id, (byId("clientes", m.ClienteId) || {}).Title + " · " + (pontualDe(m).descricao || m.UnidadeNome) + " (" + compLabel(m.Competencia) + ")", x.MedicaoId || ""); }).join("") + "</select></div>" +
+    "<div><label>Remuneração (R$)</label><input id='sp_rem' inputmode='decimal' value='" + (x.Remuneracao != null && x.Remuneracao !== "" ? esc(String(x.Remuneracao).replace(".", ",")) : "") + "' oninput='spTotal()'></div>" +
+    "<div><label>Ajuda de custo (R$)</label><input id='sp_aj' inputmode='decimal' value='" + (x.AjudaCusto != null && x.AjudaCusto !== "" ? esc(String(x.AjudaCusto).replace(".", ",")) : "") + "' oninput='spTotal()'></div>" +
+    "<div class='full'><div class='alert alert-blue' id='spSug' style='margin:0'>Escolha o profissional e o motivo para ver o último valor pago.</div></div>" +
+    "<div><label>Valor total</label><input id='sp_valor' disabled></div>" +
+    "<div><label>Modalidade de pagamento</label><select id='sp_mod' onchange='spModRefresh()'>" + opt("", "Selecione...", x.Modalidade || "") + MODALIDADES_PAG.map(function(m){ return opt(m, m, x.Modalidade || ""); }).join("") + "</select></div>" +
+    "<div><label>Meio de pagamento</label><select id='sp_meio' onchange='spMeioRefresh(true)'>" + opt("", "Selecione...", x.Meio || "") + Object.keys(MEIOS_PAG).map(function(m){ return opt(m, m, x.Meio || ""); }).join("") + "</select></div>" +
+    "<div><label id='spLDados'>Dados para pagamento</label><textarea id='sp_dados' style='min-height:44px'>" + esc(pg ? (veDadosPag(pg) ? pg.DadosPagamento || "" : "") : "") + "</textarea><div class='hint' id='spDadosHint'>" + (pg && !veDadosPag(pg) ? "Dados ocultos para o seu perfil. Deixe em branco para manter." : "") + "</div></div>" +
+    "<div class='full'><label>Descrição (motivo + nome do recebedor)</label><textarea id='sp_desc' style='min-height:50px'>" + esc(x.Descricao || "") + "</textarea></div>" +
+    "<div><label>Área</label><select id='sp_area'>" + opt("", "Selecione...", x.Area || "") + AREAS.map(function(a){ return opt(a, a, x.Area || ""); }).join("") + "</select></div>" +
+    "<div><label>Projeto</label><input id='sp_proj' list='dlProjPag' value='" + esc(x.Projeto || "") + "' placeholder='Cliente / serviço'><datalist id='dlProjPag'>" + projetos.map(function(t){ return "<option value='" + esc(t) + "'>"; }).join("") + "</datalist></div>" +
+    "<div class='full'><label>OBS</label><input id='sp_obs' value='" + esc(x.Obs || "") + "'></div>" +
+    "<div class='full'><label id='spLNF'>Documento fiscal (NF / RPA / boleto)</label><div class='row' style='gap:8px;align-items:center;flex-wrap:wrap'><input type='file' id='sp_nfFile' accept='.pdf,.png,.jpg,.jpeg,.xml' style='max-width:300px'><input id='sp_nfLink' value='" + esc(x.NFLink || "") + "' placeholder='ou cole o link do arquivo' style='flex:1;min-width:200px'></div><div class='hint' id='spNFHint'>Arquivo até 4 MB. Fica na pasta Pagamentos Profissionais do SharePoint (site BPM).</div></div>" +
+    "</div><div class='modal-actions'>" + (pg ? "<button class='btn-o' onclick=\"openPagamento('" + pg.id + "')\">Voltar</button>" : "<button class='btn-o' onclick='closeModal()'>Cancelar</button>") + "<button class='btn' onclick=\"salvarSolicitacao('" + (pg ? pg.id : "") + "')\">" + (pg ? "Salvar alterações" : "Enviar solicitação ao BPO") + "</button></div>";
+  openModal(h, true);
+  window.__spProfOrig = x.ProfissionalId || "";
+  spProfRefresh(false); spMeioRefresh(false); spModRefresh(); spDataRefresh(); spTotal();
+}
+function spProf(){ return byId("profissionais", v("sp_prof")); }
+function spProfRefresh(trocou){
+  if (v("sp_prof") === "__novo"){ var keep = salvarRascunhoForm(); openProfissional("", function(o){ keep.sp_prof = o ? String(o.id) : ""; restaurarForm(keep); }); return; }
+  var p = spProf(), mot = v("sp_mot");
+  if (p && trocou){
+    if (!v("sp_fav") || window.__spFavAuto){ $("sp_fav").value = p.Title; window.__spFavAuto = true; }
+    if (p.Meio && (!v("sp_meio") || trocou)){ $("sp_meio").value = p.Meio; }
+    if (p.TipoPessoa === "PJ" && !v("sp_mod")) $("sp_mod").value = "com NF";
+    spMeioRefresh(true); spModRefresh(); spDescAuto();
+  }
+  var u = p ? ultimoPago(p.id, mot) : null, uq = p && !u ? ultimoPago(p.id) : null, el = $("spSug");
+  if (!p){ el.className = "alert alert-blue"; el.innerHTML = "Escolha o profissional e o motivo para ver o último valor pago."; return; }
+  var ref = u || uq, txt = "";
+  if (ref) txt = "Último pagamento a <b>" + esc(p.Title) + "</b>" + (u ? " por <b>" + esc(mot) + "</b>" : " (" + esc(ref.Motivo || "outro motivo") + ")") + ": remuneração " + brl(ref.Remuneracao) + " + ajuda de custo " + brl(ref.AjudaCusto) + " em " + fmtDate(ref.DataPagamento) + ".";
+  else if (Number(p.RemuneracaoRef) || Number(p.AjudaCustoRef)) txt = "Sem pagamentos anteriores. Referência do cadastro: remuneração " + brl(p.RemuneracaoRef) + " + ajuda de custo " + brl(p.AjudaCustoRef) + ".";
+  else txt = "Sem pagamentos anteriores nem valor de referência para " + esc(p.Title) + ". Informe os valores combinados.";
+  var rem = ref ? ref.Remuneracao : p.RemuneracaoRef, aj = ref ? ref.AjudaCusto : p.AjudaCustoRef;
+  el.className = "alert alert-blue"; el.innerHTML = "<span style='flex:1'>" + txt + "</span>" + ((Number(rem) || Number(aj)) ? "<button type='button' class='btn-o btn-s' onclick='spUsarSug(" + (Number(rem) || 0) + "," + (Number(aj) || 0) + ")'>Usar estes valores</button>" : "");
+  if (trocou && !v("sp_rem") && !v("sp_aj") && (Number(rem) || Number(aj))) spUsarSug(Number(rem) || 0, Number(aj) || 0);
+}
+function spUsarSug(rem, aj){ $("sp_rem").value = rem ? String(rem).replace(".", ",") : ""; $("sp_aj").value = aj ? String(aj).replace(".", ",") : ""; spTotal(); }
+function spTotal(){ $("sp_valor").value = brl(parseNum(v("sp_rem")) + parseNum(v("sp_aj"))); }
+function spMeioRefresh(trocou){
+  var m = MEIOS_PAG[v("sp_meio")] || { l:"Dados para pagamento", ph:"" }, p = spProf(), ta = $("sp_dados");
+  $("spLDados").textContent = m.l; ta.placeholder = m.ph || "";
+  if (trocou){
+    if (m.def){ ta.value = m.def; }
+    else if (p && p.DadosPagamento && p.Meio === v("sp_meio")){
+      if (privilegioPag()){ ta.value = p.DadosPagamento; $("spDadosHint").textContent = "Preenchido com o cadastro do profissional."; }
+      else { ta.value = ""; ta.placeholder = "Usando os dados do cadastro (ocultos para o seu perfil). Para trocar, digite aqui."; $("spDadosHint").textContent = "Dados do cadastro: " + mascarar(p.DadosPagamento); }
+    } else if (!privilegioPag()) $("spDadosHint").textContent = "";
+  }
+}
+function spModRefresh(){ var nf = v("sp_mod") === "com NF"; $("spLNF").textContent = "Documento fiscal (NF / RPA / boleto)" + (nf ? " · obrigatório para \"com NF\"" : ""); }
+function spDataRefresh(){
+  var d = v("sp_dpag"), el = $("spDataHint"); if (!d){ el.textContent = ""; return; }
+  var min = addDays(todayISO(), 1), fer = feriados("")[d], dw = parseISO(d).getDay();
+  el.className = "hint";
+  if (d < min){ el.textContent = "Mínimo de 1 dia de antecedência: a partir de " + fmtDate(min) + "."; el.style.color = "var(--red-tx)"; return; }
+  if (dw === 0 || dw === 6 || fer){ el.textContent = (fer ? "Feriado (" + fer + ")" : "Fim de semana") + ": escolha um dia útil. Próximo: " + fmtDate(proximoDiaUtil(d)) + "."; el.style.color = "var(--red-tx)"; return; }
+  el.style.color = ""; el.textContent = "Dia útil (" + DIAS_SEM_C[dw] + ").";
+}
+function spDescAuto(){
+  var ta = $("sp_desc"); if (ta.value && !window.__spDescAuto) return;
+  var mot = v("sp_mot"), fav = v("sp_fav"), proj = v("sp_proj");
+  if (!mot && !fav) return;
+  ta.value = [mot, proj, fav].filter(Boolean).join(" – "); window.__spDescAuto = true;
+}
+function spMedRefresh(){ var m = byId("medicoes", v("sp_med")); if (!m) return; var c = byId("clientes", m.ClienteId) || {}, P = pontualDe(m); $("sp_proj").value = c.Title + " · " + (P.descricao || m.UnidadeNome); if (!v("sp_area")) $("sp_area").value = P.area || c.Area || ""; if (!v("sp_mot")) $("sp_mot").value = "Serviço pontual"; spDescAuto(); }
+function salvarRascunhoForm(){ var o = {}; document.querySelectorAll("#modalBody input,#modalBody select,#modalBody textarea").forEach(function(el){ if (el.id && el.type !== "file") o[el.id] = el.value; }); o.__id = window.__spEditId || ""; return o; }
+function restaurarForm(o){ openSolicitacao(o.__id || "", ""); Object.keys(o).forEach(function(k){ if (k !== "__id" && $(k)) $(k).value = o[k]; }); spProfRefresh(true); spMeioRefresh(false); spModRefresh(); spDataRefresh(); spTotal(); }
+async function enviarArquivoPag(file){
+  if (!file) return "";
+  if (file.size > 4 * 1024 * 1024) throw new Error("arquivo maior que 4 MB; cole o link do arquivo no lugar");
+  var nome = Date.now().toString(36) + " " + safeName(file.name);
+  if (DEMO) return "https://elevalife.sharepoint.com/demo/" + encodeURIComponent(nome);
+  var pasta = ["Pagamentos Profissionais", todayISO().slice(0, 7)].map(encodeURIComponent).join("/");
+  var r = await graphRaw((await siteBase()) + "/drive/root:/" + pasta + "/" + encodeURIComponent(nome) + ":/content", { method:"PUT", headers:{ "Content-Type":"application/octet-stream" }, body: await file.arrayBuffer() });
+  var j = await r.json(); return j.webUrl || "";
+}
+async function salvarSolicitacao(id){
+  var pg = id ? byId("pagamentos", id) : null, p = spProf(), d = v("sp_dpag"), min = addDays(todayISO(), 1);
+  var rem = parseNum(v("sp_rem")), aj = parseNum(v("sp_aj")), valor = r2(rem + aj), meio = v("sp_meio"), mod = v("sp_mod");
+  var dados = v("sp_dados"); if (!dados && p && p.DadosPagamento && p.Meio === meio) dados = p.DadosPagamento; if (!dados && pg && !veDadosPag(pg)) dados = pg.DadosPagamento;
+  var file = $("sp_nfFile") && $("sp_nfFile").files[0], link = v("sp_nfLink");
+  var falta = [];
+  if (!v("sp_sol")) falta.push("solicitante");
+  if (!v("sp_fav")) falta.push("fornecedor/titular da conta");
+  if (!d) falta.push("data do pagamento");
+  if (!(valor > 0)) falta.push("valor");
+  if (!mod) falta.push("modalidade");
+  if (!meio) falta.push("meio de pagamento");
+  if (!dados) falta.push("dados para pagamento");
+  if (!v("sp_desc")) falta.push("descrição");
+  if (!v("sp_proj")) falta.push("projeto");
+  if (mod === "com NF" && !file && !link && !(pg && pg.NFLink)) falta.push("documento fiscal (NF)");
+  if (falta.length){ showToast("Preencha: " + falta.join(", ") + ".", true); return; }
+  if (!pg && d < min){ showToast("O pagamento precisa de no mínimo 1 dia de antecedência (a partir de " + fmtDate(min) + ").", true); return; }
+  if (!diaUtilPag(d)){ showToast("A data do pagamento cai em fim de semana ou feriado. Próximo dia útil: " + fmtDate(proximoDiaUtil(d)) + ".", true); return; }
+  if (v("sp_desc").indexOf(v("sp_fav").split(" ")[0]) < 0){ showToast("Inclua o nome do recebedor na descrição.", true); return; }
+  var med = byId("medicoes", v("sp_med"));
+  var o = await safe(async function(){
+    var nfUrl = file ? await enviarArquivoPag(file) : (link || (pg && pg.NFLink) || "");
+    var hist = historicoPag(pg); hist.push({ s: pg ? (pg.StatusPag || "Solicitado") : "Solicitado", d:new Date().toISOString(), p:CURRENT_USER.name, o: pg ? "Solicitação alterada" : "Solicitação criada" });
+    var f = { Title: v("sp_fav") + " – " + fmtDate(d), Solicitante:v("sp_sol"), SolicitanteEmail: pg ? pg.SolicitanteEmail : CURRENT_USER.email, ProfissionalId: p ? String(p.id) : "", Favorecido:v("sp_fav"), Empresa:v("sp_emp"), DataSolicitacao: pg ? pg.DataSolicitacao : todayISO(), DataPagamento:d, Valor:valor, Remuneracao:rem, AjudaCusto:aj, Modalidade:mod, Meio:meio, DadosPagamento:dados, Motivo:v("sp_mot"), Descricao:v("sp_desc"), Area:v("sp_area"), Projeto:v("sp_proj"), Obs:v("sp_obs"), NFLink:nfUrl, MedicaoId: med ? String(med.id) : "", ClienteId: med ? String(med.ClienteId) : "", HistoricoPag: JSON.stringify(hist) };
+    if (!pg){ f.StatusPag = "Solicitado"; }
+    else if (pg.StatusPag === "Pendência"){ f.StatusPag = "Solicitado"; hist[hist.length - 1].o = "Pendência respondida: solicitação alterada"; f.HistoricoPag = JSON.stringify(hist); }
+    var r = pg ? await api.update("pagamentos", pg.id, f) : await api.create("pagamentos", f);
+    if (med) await registrarComunicacao(med, (pg ? "Solicitação de pagamento alterada: " : "Pagamento solicitado ao BPO: ") + f.Favorecido + ", " + brl(valor) + " em " + fmtDate(d) + ".", "sistema").catch(function(){});
+    return r;
+  }, pg ? "Solicitação atualizada." : "Solicitação enviada ao BPO.");
+  var avisou = await avisarTeams(o, !!pg);
+  openPagamento(o.id, avisou ? "Aviso enviado ao canal do Teams." : (webhookTeams() ? "" : "Aviso no Teams ainda não configurado: use \"Copiar aviso para o Teams\"."));
+  renderCurrent();
+}
+async function avisarTeams(pg, alterada){
+  var url = webhookTeams(); if (!url || DEMO) return false;
+  var fatos = [["Favorecido", pg.Favorecido], ["Valor", brl(pg.Valor)], ["Data do pagamento", fmtDate(pg.DataPagamento)], ["Empresa", pg.Empresa], ["Projeto", pg.Projeto], ["Modalidade", pg.Modalidade + " · " + pg.Meio], ["Solicitante", pg.Solicitante]];
+  var card = { type:"AdaptiveCard", $schema:"http://adaptivecards.io/schemas/adaptive-card.json", version:"1.4", body:[
+    { type:"TextBlock", size:"Medium", weight:"Bolder", text: (alterada ? "Solicitação de pagamento alterada" : "Nova solicitação de pagamento") },
+    { type:"FactSet", facts: fatos.map(function(f){ return { title:f[0], value:String(f[1] || "—") }; }) },
+    { type:"TextBlock", wrap:true, text:"Os dados completos estão no sistema Faturamento de Serviços › Pagamentos a profissionais." } ],
+    actions:[{ type:"Action.OpenUrl", title:"Abrir no sistema", url: location.origin + location.pathname }] };
+  try { await fetch(url, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"text/plain" }, body: JSON.stringify({ type:"message", attachments:[{ contentType:"application/vnd.microsoft.card.adaptive", contentUrl:null, content:card }] }) }); return true; }
+  catch (e){ console.warn("Teams:", e); return false; }
+}
+function textoAvisoTeams(pg){ return "Nova solicitação de pagamento\nFavorecido: " + pg.Favorecido + "\nValor: " + brl(pg.Valor) + "\nData do pagamento: " + fmtDate(pg.DataPagamento) + "\nEmpresa: " + pg.Empresa + "\nProjeto: " + pg.Projeto + "\nSolicitante: " + pg.Solicitante + "\nDados completos no sistema Faturamento de Serviços › Pagamentos a profissionais."; }
+
+// ---------- visualizacao e tratamento pelo BPO ----------
+function openPagamento(id, aviso){
+  var pg = byId("pagamentos", id); if (!pg) return;
+  var ve = veDadosPag(pg), st = pg.StatusPag || "Solicitado", med = pg.MedicaoId ? byId("medicoes", pg.MedicaoId) : null;
+  var row = function(k, val, copiar){ return "<div class='copy-row'><span class='k'>" + esc(k) + "</span><span class='val'>" + (val ? esc(val).replace(/\n/g, "<br>") : "<span class='muted'>—</span>") + "</span>" + (val && copiar && ve ? "<button class='btn-ghost' onclick='copyText(" + JSON.stringify(String(val)).replace(/'/g, "&#39;") + ")'>Copiar</button>" : "") + "</div>"; };
+  var lnk = function(k, url){ return "<div class='copy-row'><span class='k'>" + esc(k) + "</span><span class='val'>" + (url ? "<a href='" + esc(url) + "' target='_blank' rel='noopener'>Abrir arquivo</a>" : "<span class='muted'>—</span>") + "</span></div>"; };
+  var h = "<h3>Pagamento · " + esc(pg.Favorecido || "") + "</h3><p class='msub'><span class='badge " + (STATUS_PAG_BADGE[st] || "b-gray") + "'>" + esc(st) + "</span> " + brl(pg.Valor) + " em " + fmtDate(pg.DataPagamento) + (pg.DataPago ? " · pago em " + fmtDate(pg.DataPago) : "") + "</p>";
+  if (aviso) h += "<div class='alert alert-blue'>" + esc(aviso) + "</div>";
+  if (st === "Pendência" && pg.MotivoStatus) h += "<div class='alert alert-red'>Pendência apontada pelo BPO: " + esc(pg.MotivoStatus) + "</div>";
+  h += row("Solicitante", pg.Solicitante) + row("Fornecedor / titular", pg.Favorecido, true) + row("Empresa", pg.Empresa) + row("Data da solicitação", fmtDate(pg.DataSolicitacao)) + row("Data do pagamento", fmtDate(pg.DataPagamento)) +
+    row("Valor", brl(pg.Valor) + (Number(pg.AjudaCusto) ? " (remuneração " + brl(pg.Remuneracao) + " + ajuda de custo " + brl(pg.AjudaCusto) + ")" : ""), false) + row("Modalidade", pg.Modalidade) + row("Meio de pagamento", pg.Meio) +
+    row("Dados para pagamento", ve ? pg.DadosPagamento : mascarar(pg.DadosPagamento) + " (oculto para o seu perfil)", true) + row("Descrição", pg.Descricao) + row("Área", pg.Area) + row("Projeto", pg.Projeto) + row("OBS", pg.Obs) +
+    lnk("Documento fiscal", pg.NFLink) + lnk("Comprovante", pg.ComprovanteLink) + (med ? "<div class='copy-row'><span class='k'>Serviço pontual</span><span class='val'><a href='#' onclick=\"event.preventDefault();reabrir(byId('medicoes','" + med.id + "'))\">" + esc((byId("clientes", med.ClienteId) || {}).Title + " · " + (pontualDe(med).descricao || med.UnidadeNome)) + "</a> · faturado " + brl(med.ValorFaturar) + "</span></div>" : "");
+  if (privilegioPag()){
+    h += "<div class='card' style='margin:14px 0 0;padding:12px 14px;border-left:4px solid var(--grena)'><p class='card-title' style='font-size:14px;margin:0 0 8px'>Tratamento pelo BPO</p><div class='form'>" +
+      "<div><label>Status</label><select id='bp_st' onchange='bpRefresh()'>" + STATUS_PAG.map(function(s){ return opt(s, s, st); }).join("") + "</select></div>" +
+      "<div id='bpWPago'><label>Data em que foi pago</label><input type='date' id='bp_dt' value='" + esc(pg.DataPago || todayISO()) + "'></div>" +
+      "<div class='full'><label>Observação / motivo (vai para o solicitante)</label><textarea id='bp_obs' style='min-height:44px'>" + esc(st === "Pendência" ? pg.MotivoStatus || "" : "") + "</textarea></div>" +
+      "<div class='full' id='bpWComp'><label>Comprovante de pagamento</label><div class='row' style='gap:8px;align-items:center;flex-wrap:wrap'><input type='file' id='bp_file' accept='.pdf,.png,.jpg,.jpeg' style='max-width:300px'><input id='bp_link' value='" + esc(pg.ComprovanteLink || "") + "' placeholder='ou cole o link' style='flex:1;min-width:200px'></div></div>" +
+      "</div><div class='modal-actions' style='margin-top:8px'><button class='btn' onclick=\"salvarStatusPag('" + pg.id + "')\">Salvar tratamento</button></div></div>";
+  }
+  var a = ["<button class='btn-o' onclick='closeModal()'>Fechar</button>", "<button class='btn-o' onclick='copyText(" + JSON.stringify(textoAvisoTeams(pg)).replace(/'/g, "&#39;") + ", \"Aviso copiado. Cole no canal do Teams.\")'>Copiar aviso para o Teams</button>"];
+  var dono = String(pg.SolicitanteEmail || "").toLowerCase() === meuEmail();
+  if ((dono || isGestor()) && (st === "Solicitado" || st === "Pendência")){ a.push("<button class='btn-o btn-danger' onclick=\"cancelarPagamento('" + pg.id + "')\">Cancelar solicitação</button>"); a.push("<button class='btn' onclick=\"window.__spEditId='" + pg.id + "';openSolicitacao('" + pg.id + "')\">" + (st === "Pendência" ? "Corrigir e reenviar" : "Editar") + "</button>"); }
+  h += "<div class='modal-actions'>" + a.join("") + "</div>";
+  var hist = historicoPag(pg);
+  if (hist.length) h += "<div style='margin-top:14px'><p class='card-title' style='font-size:14px'>Histórico</p>" + hist.slice().reverse().map(function(x){ return "<div class='small' style='padding:4px 0;border-bottom:1px solid var(--border)'><span class='badge " + (STATUS_PAG_BADGE[x.s] || "b-gray") + "'>" + esc(x.s) + "</span> " + new Date(x.d).toLocaleString("pt-BR") + " · " + esc(x.p || "") + (x.o ? " · " + esc(x.o) : "") + "</div>"; }).join("") + "</div>";
+  openModal(h, true); if (privilegioPag()) bpRefresh();
+}
+function bpRefresh(){ var s = v("bp_st"); $("bpWPago").classList.toggle("hidden", s !== "Pago"); $("bpWComp").classList.toggle("hidden", s !== "Pago" && s !== "Agendado"); }
+async function salvarStatusPag(id){
+  var pg = byId("pagamentos", id), st = v("bp_st"), obs = v("bp_obs"), file = $("bp_file") && $("bp_file").files[0], link = v("bp_link");
+  if (st === "Pendência" && !obs){ showToast("Descreva a pendência para o solicitante.", true); return; }
+  if (st === "Pago" && !file && !link && !pg.ComprovanteLink){ showToast("Anexe o comprovante (arquivo ou link) para marcar como pago.", true); return; }
+  await safe(async function(){
+    var comp = file ? await enviarArquivoPag(file) : (link || pg.ComprovanteLink || "");
+    var hist = historicoPag(pg); hist.push({ s:st, d:new Date().toISOString(), p:CURRENT_USER.name, o:obs });
+    await api.update("pagamentos", id, { StatusPag:st, MotivoStatus:obs, DataPago: st === "Pago" ? v("bp_dt") : (pg.DataPago || ""), ComprovanteLink:comp, HistoricoPag: JSON.stringify(hist) });
+    var med = pg.MedicaoId ? byId("medicoes", pg.MedicaoId) : null;
+    if (med) await registrarComunicacao(med, "Pagamento a " + pg.Favorecido + " (" + brl(pg.Valor) + "): " + st + (obs ? " – " + obs : ""), "sistema").catch(function(){});
+  }, "Status do pagamento: " + st + ".");
+  openPagamento(id); renderCurrent();
+}
+function cancelarPagamento(id){
+  askConfirm("Cancelar esta solicitação de pagamento? Ela continua registrada como Cancelada.", async function(){
+    var pg = byId("pagamentos", id), hist = historicoPag(pg); hist.push({ s:"Cancelado", d:new Date().toISOString(), p:CURRENT_USER.name, o:"Cancelada pelo solicitante" });
+    await safe(function(){ return api.update("pagamentos", id, { StatusPag:"Cancelado", HistoricoPag: JSON.stringify(hist) }); }, "Solicitação cancelada.");
+    renderCurrent();
+  }, "Cancelar solicitação");
+}
+// pagamentos ligados a um servico pontual (no painel da medicao)
+function painelPagamentosDaMedicao(med){
+  var l = (S.pagamentos || []).filter(function(p){ return String(p.MedicaoId) === String(med.id) && p.StatusPag !== "Cancelado"; });
+  var tot = l.reduce(function(s, p){ return s + (Number(p.Valor) || 0); }, 0), fat = Number(med.ValorFaturar) || 0;
+  return "<div class='card' style='margin:14px 0 0;padding:12px 14px;border-left:4px solid #1baf7a'><div style='display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap'><div><p class='card-title' style='font-size:14px;margin:0'>Pagamentos aos profissionais deste serviço</p><p class='small muted' style='margin:2px 0 0'>" + l.length + " solicitação(ões) · " + brl(tot) + (fat && tot && isGestor() ? " · margem bruta " + brl(fat - tot) + " (" + num((fat - tot) / fat * 100, 1) + "%)" : "") + "</p></div>" + (soPrestador() ? "" : "<button class='btn-o btn-s' onclick=\"window.__spEditId='';openSolicitacao('', '" + med.id + "')\">+ Solicitar pagamento</button>") + "</div>" +
+    (l.length ? "<div class='tbl-wrap' style='margin-top:8px'><table class='tbl'><tbody>" + l.map(function(p){ return "<tr class='click' onclick=\"openPagamento('" + p.id + "')\"><td>" + esc(p.Favorecido) + "<div class='small muted'>" + esc(p.Motivo || "") + "</div></td><td>" + fmtDate(p.DataPagamento) + "</td><td class='num'>" + brl(p.Valor) + "</td><td><span class='badge " + (STATUS_PAG_BADGE[p.StatusPag] || "b-gray") + "'>" + esc(p.StatusPag || "Solicitado") + "</span></td></tr>"; }).join("") + "</tbody></table></div>" : "") + "</div>";
+}
+// planilha no mesmo formato da que ia para o BPO
+function baixarPlanilhaPagamentos(){
+  if (typeof ExcelJS === "undefined"){ showToast("Biblioteca de Excel não carregou. Recarregue a página.", true); return; }
+  var mes = $("pgMes").value, st = $("pgStatusF").value;
+  var l = pagamentosVisiveis().filter(function(p){ return (!mes || String(p.DataPagamento || "").slice(0, 7) === mes) && (!st || (st === "abertos" ? (p.StatusPag !== "Pago" && p.StatusPag !== "Cancelado") : p.StatusPag === st)); }).sort(function(a, b){ return String(a.DataPagamento).localeCompare(String(b.DataPagamento)); });
+  var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Pagamentos");
+  var cols = [["Solicitante", 22], ["Fornecedor/Titular da conta", 32], ["Empresa", 13], ["Data da solicitação", 14], ["Data do pagamento", 14], ["Valor", 13], ["Modalidade pagamento", 16], ["Meio de pagamento", 16], ["Dados para pag", 36], ["Descrição", 44], ["Área", 16], ["Projeto", 30], ["OBS", 24], ["Documento fiscal", 30], ["Comprovante", 30], ["Status", 13]];
+  ws.columns = cols.map(function(c){ return { width:c[1] }; });
+  var hr = ws.getRow(1); hr.values = cols.map(function(c){ return c[0]; }); styleHeader(hr);
+  l.forEach(function(p, i){ ws.getRow(i + 2).values = [p.Solicitante, p.Favorecido, p.Empresa, fmtDate(p.DataSolicitacao), fmtDate(p.DataPagamento), Number(p.Valor) || 0, p.Modalidade, p.Meio, veDadosPag(p) ? p.DadosPagamento : mascarar(p.DadosPagamento), p.Descricao, p.Area, p.Projeto, p.Obs, p.NFLink, p.ComprovanteLink, p.StatusPag]; ws.getRow(i + 2).alignment = { vertical:"top", wrapText:true }; });
+  ws.getColumn(6).numFmt = '"R$" #,##0.00';
+  saveWorkbook(wb, "Pagamentos profissionais" + (mes ? " " + mes : "") + ".xlsx");
+}
+
+// ---------- integracao com as telas existentes ----------
+renderCurrent = (function(orig){ return function(){ if (CURRENT_TAB === "pagamentos"){ if (podeVerPagamentos()) renderPagamentos(); renderRenovBadge(); return; } return orig(); }; })(renderCurrent);
+aplicarPerfilMenu = (function(orig){ return function(){ orig(); var t = document.querySelector("#nav .tab[data-tab='pagamentos']"); if (t && !podeVerPagamentos()) t.classList.add("perfil-oculto"); if ($("btnPontual")) $("btnPontual").classList.toggle("hidden", soPrestador() || soOcorrencias()); }; })(aplicarPerfilMenu);
+parFormRefresh = (function(orig){ return function(){ orig(); var t = v("p_Tipo"), w = $("pwTexto"); if (!w) return; var lb = w.querySelector("label"); if (t === "TeamsWebhook"){ w.classList.remove("hidden"); lb.textContent = "Link (URL) do fluxo do Teams"; } else if (t === "Gestor") lb.textContent = "E-mail"; }; })(parFormRefresh);
+renderDashboard = (function(orig){ return function(){
+  orig();
+  var el = $("cardPagProf"); if (!el) return;
+  if (!podeVerPagamentos()){ el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  var comp = $("dashComp").value || curComp(), area = $("dashArea").value;
+  var l = pagamentosVisiveis().filter(function(p){ return p.StatusPag !== "Cancelado" && String(p.DataPagamento || "").slice(0, 7) === comp && (!area || p.Area === area); });
+  var soma = function(x){ return x.reduce(function(s, p){ return s + (Number(p.Valor) || 0); }, 0); };
+  var pago = l.filter(function(p){ return p.StatusPag === "Pago"; }), pend = l.filter(function(p){ return p.StatusPag === "Pendência"; }), aberto = l.filter(function(p){ return p.StatusPag !== "Pago"; });
+  var ponts = faturamentosDoMes(area, comp).filter(function(r){ return r.u.pontual && r.m; }).map(function(r){ return r.m; });
+  var fatP = ponts.reduce(function(s, m){ return s + (Number(m.ValorFaturar) || 0); }, 0);
+  var custoP = (S.pagamentos || []).filter(function(p){ return p.StatusPag !== "Cancelado" && ponts.some(function(m){ return String(m.id) === String(p.MedicaoId); }); }).reduce(function(s, p){ return s + (Number(p.Valor) || 0); }, 0);
+  var porMot = {}; l.forEach(function(p){ var k = p.Motivo || "Outro"; porMot[k] = (porMot[k] || 0) + (Number(p.Valor) || 0); });
+  el.innerHTML = vizHead("cardPagProf", "Serviços pontuais e pagamentos a profissionais", "Pagamentos com data no mês selecionado (por status e motivo) e os serviços pontuais da competência: valor faturado, pagamentos ligados a eles e margem bruta.") +
+    "<div class='mini-kpis'>" + miniKpi("Pontuais na competência", ponts.length + (ponts.length ? " · " + brlCurto(fatP) : ""), "b-grena") + (isGestor() ? miniKpi("Margem bruta dos pontuais", fatP ? brlCurto(fatP - custoP) + " · " + num((fatP - custoP) / fatP * 100, 0) + "%" : "–", "b-green") : "") + miniKpi("Pagamentos no mês", l.length + (l.length ? " · " + brlCurto(soma(l)) : ""), "b-blue") + miniKpi("Pagos", brlCurto(soma(pago)), "b-green") + miniKpi("Em aberto", brlCurto(soma(aberto)), "b-amber") + miniKpi("Pendências com o BPO", pend.length, "b-red") + "</div>" +
+    (Object.keys(porMot).length ? "<div class='viz-legend' style='border:0;padding-top:8px'>" + Object.keys(porMot).sort(function(a, b){ return porMot[b] - porMot[a]; }).map(function(k){ return "<div class='viz-leg'><span class='viz-sw' style='background:#1baf7a'></span>" + esc(k) + " · " + esc(brlCurto(porMot[k])) + "</div>"; }).join("") + "</div>" : "") +
+    "<div style='text-align:right;margin-top:6px'><button class='btn-ghost' onclick=\"showTab('pagamentos')\">Abrir Pagamentos a profissionais &rsaquo;</button></div>";
+}; })(renderDashboard);
+// demonstracao: um servico pontual e pagamentos de exemplo
+demoFaturamento = (function(orig){ return function(){
+  orig();
+  var hoje = todayISO(), comp = curComp(), cli = S.clientes[0]; if (!cli) return;
+  S.codigos.push({ id:"cd5", Codigo:"04.07.01", Descricao:"Medicina e enfermagem do trabalho (campanhas)", AliquotaISS:2, Retencoes:"INSS 11%", Tipo:"Pontual", Ativo:true });
+  var mk = function(id, desc, itens, st, extra){
+    var lines = itens.map(function(i){ var t = r2(i.qtd * i.unit); return { tipo:"pontual", itemId:"", rel:"", servico: i.desc + " (" + i.qtd + " " + i.unid + " × " + brl(i.unit) + ")", cargo:"", padrao:t, desconto:0, acrescimo:0, horas:0, pct:100, just:[], final:t }; });
+    var tot = totalItensPontual(itens), P = { descricao:desc, area:"Terapias", datas: fmtDate(addDays(hoje, -6)), local: cli.Local || "", codigoId:"cd4", itens:itens, para:"focal@exemplo.com.br", cc:"", nfPara:"contas.pagar@exemplo.com.br", obs:"", coordEmail:"demo@elevalife.com.br", coordNome:"Usuário demonstração" };
+    S.medicoes.push(Object.assign({ id:id, Title: cli.Title + " · " + desc, ClienteId:String(cli.id), Competencia:comp, ContratoId:"", ValorPadrao:tot, Descontos:0, Acrescimos:0, ValorFaturar:tot, Status:st, Unidade:"P:" + id, UnidadeNome:desc, Tomador:"", TipoFat:"Pontual", Linhas: JSON.stringify({ pontual:P, lines:lines, ocorrIds:[], oc:"" }), Historico:"[]", GeradoEm: new Date().toISOString() }, extra || {}));
+  };
+  mk("pt1", "Palestra SIPAT – ergonomia", [{ desc:"Palestra de 1h", qtd:3, unid:"sessão", unit:850 }, { desc:"Deslocamento", qtd:1, unid:"unidade", unit:180 }], "Enviada", { DataEnvio: addDays(hoje, -3) });
+  mk("pt2", "Campanha de vacinação", [{ desc:"Técnico de enfermagem", qtd:16, unid:"hora", unit:95 }], "Aprovada", { DataEnvio: addDays(hoje, -8), DataAprovacao: addDays(hoje, -2), AprovadoPor:"Focal do cliente" });
+  var m2 = S.medicoes.filter(function(m){ return m.id === "pt2"; })[0], L2 = linhasDe(m2); L2.oc = "PO-778812"; m2.Linhas = JSON.stringify(L2);
+  S.profissionais = [
+    { id:"pf1", Title:"Mariana Souza Lima", TipoPessoa:"PF", Documento:"123.456.789-00", Especialidade:"Técnico de Enfermagem", Telefone:"(11) 98888-1111", Email:"mariana@exemplo.com", Meio:"pix cpf", DadosPagamento:"123.456.789-00", Origem:"Banco de Talentos", Ativo:true, AjudaCustoRef:40 },
+    { id:"pf2", Title:"Rafael Torres Ergonomia ME", TipoPessoa:"PJ", Documento:"11.222.333/0001-44", Especialidade:"Ergonomista", Telefone:"(11) 97777-2222", Email:"rafael@exemplo.com", Meio:"pix cnpj", DadosPagamento:"11.222.333/0001-44", Origem:"Grupo de credenciados (WhatsApp)", Ativo:true, RemuneracaoRef:500 },
+    { id:"pf3", Title:"Ana Paula Ferreira", TipoPessoa:"PF", Documento:"987.654.321-00", Especialidade:"Fisioterapeuta", Telefone:"(12) 96666-3333", Email:"", Meio:"TED", DadosPagamento:"Banco 341 · Ag. 1234 · C/C 56789-0 · CPF 987.654.321-00", Origem:"Cadastro manual", Ativo:true }];
+  S.pagamentos = [
+    { id:"pg1", Title:"Mariana", Solicitante:"Usuário demonstração", SolicitanteEmail:"demo@elevalife.com.br", ProfissionalId:"pf1", Favorecido:"Mariana Souza Lima", Empresa:"Elevalife", DataSolicitacao: addDays(hoje, -2), DataPagamento: proximoDiaUtil(addDays(hoje, 2)), Valor:600, Remuneracao:560, AjudaCusto:40, Modalidade:"sem RPA", Meio:"pix cpf", DadosPagamento:"123.456.789-00", Motivo:"Serviço pontual", Descricao:"Serviço pontual – Campanha de vacinação – Mariana Souza Lima", Area:"Terapias", Projeto: cli.Title + " · Campanha de vacinação", Obs:"", NFLink:"", ComprovanteLink:"", StatusPag:"Agendado", MedicaoId:"pt2", ClienteId:String(cli.id), HistoricoPag:"[]" },
+    { id:"pg2", Title:"Rafael", Solicitante:"Usuário demonstração", SolicitanteEmail:"demo@elevalife.com.br", ProfissionalId:"pf2", Favorecido:"Rafael Torres Ergonomia ME", Empresa:"Elevalife", DataSolicitacao: addDays(hoje, -20), DataPagamento: proximoDiaUtil(addDays(hoje, -15)), Valor:1500, Remuneracao:1500, AjudaCusto:0, Modalidade:"com NF", Meio:"pix cnpj", DadosPagamento:"11.222.333/0001-44", Motivo:"Serviço pontual", Descricao:"Serviço pontual – Palestra – Rafael Torres Ergonomia ME", Area:"Ergonomia", Projeto:"Palestras", Obs:"", NFLink:"https://elevalife.sharepoint.com/demo/nf.pdf", ComprovanteLink:"https://elevalife.sharepoint.com/demo/comp.pdf", StatusPag:"Pago", DataPago: proximoDiaUtil(addDays(hoje, -15)), HistoricoPag:"[]" },
+    { id:"pg3", Title:"Ana Paula", Solicitante:"Usuário demonstração", SolicitanteEmail:"demo@elevalife.com.br", ProfissionalId:"pf3", Favorecido:"Ana Paula Ferreira", Empresa:"Eleva Saúde", DataSolicitacao: addDays(hoje, -1), DataPagamento: proximoDiaUtil(addDays(hoje, 3)), Valor:420, Remuneracao:420, AjudaCusto:0, Modalidade:"sem RPA", Meio:"TED", DadosPagamento:"Banco 341 · Ag. 1234 · C/C 56789-0 · CPF 987.654.321-00", Motivo:"Cobertura", Descricao:"Cobertura de férias – Ana Paula Ferreira", Area:"Terapias", Projeto: (S.clientes[1] || cli).Title, Obs:"", NFLink:"", ComprovanteLink:"", StatusPag:"Pendência", MotivoStatus:"Conta informada não confere com o CPF do titular.", HistoricoPag:"[]" }];
+}; })(demoFaturamento);
+
+// ---------- Ajuda V 1.16 ----------
+AJUDA_USO.push(
+  { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
+    "Em <b>Medições do mês</b>, clique em <b>+ Serviço pontual</b>. Escolha o cliente (ou <b>+ Cliente novo</b> para quem ainda não está cadastrado), a área, a descrição, as datas, o local e o código de serviço da NF.",
+    "Informe os <b>itens</b> com quantidade, unidade e valor unitário negociado. O total é calculado na hora.",
+    "Preencha o e-mail do cliente que valida o serviço e o e-mail do <b>responsável que recebe a NF</b>. Salve: o serviço aparece na lista da competência com o selo <b>Pontual</b>.",
+    "Abra o serviço e clique em <b>Preparar e-mail no Outlook</b>. O rascunho pede a validação dos valores e o número do pedido (PO/OC). Revise e envie pelo Outlook.",
+    "Quando o cliente responder, clique em <b>Cliente aprovou</b> e digite o nº do pedido. Sem pedido não é possível liberar o faturamento.",
+    "Clique em <b>Liberar faturamento ao prestador</b>: o e-mail ao financeiro já leva os dados validados, o código, o pedido e o e-mail do responsável que recebe a NF.",
+    "O painel, a comunicação, a criticidade, a NF, os Recebimentos e o Dashboard funcionam igual aos faturamentos recorrentes.",
+    "Enquanto estiver em rascunho, use <b>Editar serviço pontual</b> para corrigir. Depois de enviado, volte para rascunho antes de alterar."] },
+  { t:"Pagamentos a profissionais", obj:"Solicitar ao BPO o pagamento de profissionais (pontual, cobertura, renovação) com os mesmos campos da planilha, sem depender do recebimento do cliente.", perfis:"coord", passos:[
+    "Abra <b>Pagamentos a profissionais</b> e clique em <b>+ Solicitar pagamento</b>, ou use o botão no painel do serviço pontual (já vem vinculado ao projeto).",
+    "Escolha o profissional do cadastro. O sistema preenche o titular, o meio e os dados de pagamento e sugere o <b>último valor pago</b> a ele pelo mesmo motivo (remuneração + ajuda de custo). Todos os valores podem ser editados.",
+    "A data do pagamento precisa ter <b>no mínimo 1 dia de antecedência</b> e cair em dia útil (fins de semana e feriados de Parâmetros são bloqueados).",
+    "Modalidade: com RPA, sem RPA, com NF, sem NF ou sem DOC. Em <b>com NF</b> o documento fiscal é obrigatório (arquivo até 4 MB ou link).",
+    "A descrição precisa ter o motivo e o nome do recebedor; o projeto é obrigatório. Ao enviar, o BPO recebe o aviso no canal do Teams (quando configurado) ou você usa <b>Copiar aviso para o Teams</b>.",
+    "O BPO abre a solicitação, classifica o status (Em análise, Agendado, Pago, Pendência) e anexa o comprovante. Em <b>Pendência</b>, o solicitante vê o motivo e usa <b>Corrigir e reenviar</b>.",
+    "Em <b>Profissionais</b> ficam os cadastros (Banco de Talentos, grupo de credenciados ou cadastro manual). CPF/CNPJ e dados bancários aparecem completos só para gestores e o BPO.",
+    "<b>Baixar planilha</b> gera o Excel no mesmo formato da planilha que ia para o BPO."] }
+);
+AJUDA_FLUXOS.push(
+  { t:"Serviço pontual", d:"Do serviço realizado à NF separada enviada ao responsável no cliente.",
+    lanes:["Coordenador", "Cliente", "Financeiro (BPO)", "Sistema"],
+    steps:[ { l:0, k:"ini", x:"Serviço realizado" }, { l:0, x:"Registra o serviço pontual e os itens" }, { l:3, x:"Monta o resumo e o rascunho no Outlook" }, { l:0, x:"Envia ao cliente para validar" },
+      { l:1, x:"Valida e devolve o nº do pedido" }, { l:0, k:"gate", x:"Pedido recebido?", nao:"Não: Cobrar cliente" }, { l:0, x:"Libera o faturamento ao financeiro" },
+      { l:2, x:"Emite a NF separada com os dados validados" }, { l:2, x:"Envia a NF ao responsável no cliente" }, { l:2, k:"fim", x:"NF registrada" } ] },
+  { t:"Pagamento a profissional", d:"Solicitação com 1 dia de antecedência, aviso no Teams e tratamento pelo BPO.",
+    lanes:["Solicitante", "Sistema", "BPO"],
+    steps:[ { l:0, k:"ini", x:"Profissional a pagar" }, { l:0, x:"Preenche a solicitação (campos da planilha)" }, { l:1, k:"gate", x:"Data e documentos ok?", nao:"Não: ajusta antes de enviar" },
+      { l:1, x:"Avisa o canal do Teams" }, { l:2, x:"Consulta e classifica o status" }, { l:2, k:"gate", x:"Tudo certo?", nao:"Não: Pendência ao solicitante" }, { l:2, x:"Paga e anexa o comprovante" }, { l:2, k:"fim", x:"Pago" } ] }
+);
+AJUDA_IND.push({ g:"Pontuais e pagamentos", itens:[
+  ["Pontuais na competência", "Quantidade e valor dos serviços pontuais registrados no mês selecionado."],
+  ["Margem bruta dos pontuais", "Valor faturado dos pontuais − pagamentos a profissionais vinculados a eles (só gestores)."],
+  ["Pagamentos no mês", "Solicitações com data de pagamento no mês, exceto canceladas, separadas em pagas e em aberto."],
+  ["Pendências com o BPO", "Solicitações que o BPO devolveu por falta ou erro de informação."]
+]});
+AJUDA_VERSOES.unshift(["V 1.16", "03/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail."]]);
+
 </script>
 </body>
 </html>
