@@ -827,6 +827,8 @@ function clientesAtivos(area){
 function contratosDoCliente(cid){
   return S.contratos.filter(function(c){ return String(c.ClienteId) === String(cid); }).sort(function(a, b){ return (b.Versao||0) - (a.Versao||0); });
 }
+// 03/11/2026 — Contrato lançado pelo Comercial (SIGE) fica "Provisório" (ou "Retido") até o Financeiro conferir: NÃO entra no faturamento nem no fechamento.
+function ehContratoPendente(c){ return !!c && (c.Status === "Provisório" || c.Status === "Retido"); }
 function contratoCobre(ct, comp){
   var ini = comp + "-01", fim = lastDay(comp);
   // contrato "Em renovação" continua valendo depois do termino, ate entrar a nova versao
@@ -834,11 +836,11 @@ function contratoCobre(ct, comp){
 }
 function emRenovacao(ct, comp){ return !!(ct && ct.Status === "Em renovação" && ct.Fim && ct.Fim < comp + "-01"); }
 function contratoVigente(cid, comp){
-  var list = contratosDoCliente(cid).filter(function(c){ return c.Status !== "Encerrado" || (c.Fim && contratoCobre(c, comp)); });
+  var list = contratosDoCliente(cid).filter(function(c){ return !ehContratoPendente(c) && (c.Status !== "Encerrado" || (c.Fim && contratoCobre(c, comp))); });
   for (var i = 0; i < list.length; i++) if (contratoCobre(list[i], comp)) return list[i];
   return null;
 }
-function contratoAtual(cid){ return contratoVigente(cid, curComp()) || contratosDoCliente(cid)[0] || null; }
+function contratoAtual(cid){ return contratoVigente(cid, curComp()) || contratosDoCliente(cid).filter(function(c){ return !ehContratoPendente(c); })[0] || null; }
 function itensDoContrato(ctId){
   return S.itens.filter(function(i){ return String(i.ContratoId) === String(ctId); }).sort(function(a, b){ return (a.Ordem||0) - (b.Ordem||0); });
 }
@@ -1002,6 +1004,7 @@ function ehCoordenador(cli, email){ email = String(email || "").toLowerCase(); r
 function emailsLista(t){ return String(t || "").toLowerCase().split(/[;,\s]+/).filter(Boolean); }
 function pendenciasCliente(cli){
   var out = [], comp = curComp(), ct = contratoVigente(cli.id, comp) || contratoAtual(cli.id);
+  contratosDoCliente(cli.id).filter(ehContratoPendente).forEach(function(p){ out.push("Contrato " + (p.Status === "Retido" ? "retido" : "provisório") + " lançado pelo Comercial (v" + (p.Versao || 1) + ", nº " + (p.Title || "a informar") + ") aguardando validação: conferir nº, vigência, serviços e valor e, estando certo, mudar o Status para Vigente. Enquanto isso ele não fatura."); });
   if (!ct) out.push("Cadastrar o contrato (nº, início e término da vigência).");
   else {
     if (!ct.Fim) out.push("Informar o término da vigência do contrato.");
@@ -2269,7 +2272,7 @@ function renderClienteDetail(){
   h += "<div class='card'><div class='section-head'><h4>Contrato</h4><div style='display:flex;gap:8px;flex-wrap:wrap'>" + (ct ? "<button class='btn-o btn-s' onclick=\"openContrato('" + c.id + "','" + ct.id + "')\">Editar contrato</button><button class='btn btn-s' onclick=\"openRenovar('" + ct.id + "')\">Renovar / nova versão</button>" : "<button class='btn btn-s' onclick=\"openContrato('" + c.id + "')\">Cadastrar contrato</button>") + "</div></div>";
   if (cts.length > 1) h += "<div class='version-tabs'>" + cts.map(function(x){ return "<button class='chip" + (ct && String(x.id) === String(ct.id) ? " active" : "") + "' onclick=\"SEL.contrato='" + x.id + "';renderClienteDetail()\">Versão " + esc(x.Versao || 1) + (x.Inicio ? " · desde " + fmtDate(x.Inicio) : "") + "</button>"; }).join("") + "</div>";
   if (ct){
-    h += "<dl class='dl'>" + dl("Nº proposta / contrato", ct.Title) + dl("Versão", String(ct.Versao || 1)) + dl("Status", ct.Status) + dl("Início", fmtDate(ct.Inicio)) + dl("Término", fmtDate(ct.Fim)) + "<div><dt>Prazo</dt><dd>" + vigenciaBadge(ct) + "</dd></div>" + dl("Índice de reajuste", ct.IndiceReajuste) + dl("Mês do reajuste", ct.MesReajuste) + dl("Aviso prévio (dias)", ct.AvisoPrevioDias ? String(ct.AvisoPrevioDias) : "") + "</dl>" + (ct.LinkContrato ? "<p class='small' style='margin:12px 0 0'><a href='" + esc(ct.LinkContrato) + "' target='_blank' rel='noopener'>Abrir contrato (PDF)</a></p>" : "");
+    h += "<dl class='dl'>" + dl("Nº proposta / contrato", ct.Title) + dl("Versão", String(ct.Versao || 1)) + dl("Status", ehContratoPendente(ct) ? ct.Status + " · aguardando validação (não fatura)" : ct.Status) + dl("Início", fmtDate(ct.Inicio)) + dl("Término", fmtDate(ct.Fim)) + "<div><dt>Prazo</dt><dd>" + vigenciaBadge(ct) + "</dd></div>" + dl("Índice de reajuste", ct.IndiceReajuste) + dl("Mês do reajuste", ct.MesReajuste) + dl("Aviso prévio (dias)", ct.AvisoPrevioDias ? String(ct.AvisoPrevioDias) : "") + "</dl>" + (ct.LinkContrato ? "<p class='small' style='margin:12px 0 0'><a href='" + esc(ct.LinkContrato) + "' target='_blank' rel='noopener'>Abrir contrato (PDF)</a></p>" : "");
     var its = itensDoContrato(ct.id);
     h += "<div class='section-head' style='margin-top:18px'><h4>Serviços do contrato · " + brl(totalContrato(ct.id)) + "/mês</h4><button class='btn-o btn-s' onclick=\"openItem('" + ct.id + "')\">+ Adicionar serviço</button></div>";
     h += its.length ? "<div class='tbl-wrap'><table class='tbl'><thead><tr><th>Serviço</th><th>Cargo</th><th class='num'>Valor mensal</th><th>Regra de desconto</th><th class='num'>1 dia vale</th><th>NF</th></tr></thead><tbody>" + its.map(function(i){
@@ -2342,7 +2345,7 @@ function openContrato(cid, ctId){
   var ct = ctId ? byId("contratos", ctId) : { Status:"Vigente", Versao: (contratosDoCliente(cid)[0] || {}).Versao ? contratosDoCliente(cid)[0].Versao + 1 : 1 };
   var h = "<h3>" + (ctId ? "Editar contrato" : "Cadastrar contrato") + "</h3><p class='msub'>Preenchido pelo comercial a cada negociação.</p><div class='form'>" +
     "<div><label>Nº proposta / contrato</label><input id='k_Title' value='" + esc(ct.Title || "") + "'></div>" +
-    "<div><label>Status</label><select id='k_Status'>" + ["Vigente","Em renovação","Encerrado"].map(function(s){ return opt(s, s, ct.Status); }).join("") + "</select></div>" +
+    "<div><label>Status</label><select id='k_Status'>" + ["Vigente","Em renovação","Encerrado","Provisório","Retido"].map(function(s){ return opt(s, s, ct.Status); }).join("") + "</select></div>" +
     "<div><label>Início da vigência</label><input type='date' id='k_Inicio' value='" + esc(ct.Inicio || "") + "'></div>" +
     "<div><label>Término da vigência</label><input type='date' id='k_Fim' value='" + esc(ct.Fim || "") + "'></div>" +
     "<div><label>Índice de reajuste</label><input id='k_IndiceReajuste' value='" + esc(ct.IndiceReajuste || "") + "' placeholder='Ex.: IPCA, IGP-M, acordo coletivo'></div>" +
@@ -4155,6 +4158,7 @@ var AJUDA_IND = [
   ]}
 ];
 var AJUDA_VERSOES = [
+  ["V 1.16", "03/11/2026", ["Status de contrato \"Provisório\" e \"Retido\" (lançados pelo Comercial/SIGE): não entram no faturamento nem no fechamento, aparecem nas pendências do cliente até o Financeiro conferir e mudar para Vigente."]],
   ["V 1.15", "23/10/2026", ["Data limite, prazo de faturamento, código do serviço e regra do pedido editáveis no painel da medição pelo coordenador responsável."]],
   ["V 1.14", "22/10/2026", ["Contrato \"Em renovação\" continua faturando depois do término, com alerta na conferência, criticidade automática e destaque em Renovações e nas pendências."]],
   ["V 1.13", "21/10/2026", ["Perfil Faturamento (prestador) e tela Recebimentos (pago, não pago, previsão e inadimplência).", "Prazo de faturamento por serviço, mês de faturamento e Dashboard por competência ou por faturamento.", "Data limite da NF por cliente/contrato com prazo interno de 3 dias; regra de pedido obrigatório.", "Liberação de faturamento ao prestador por e-mail; prestador fora dos e-mails ao cliente.", "Coordenador e comunicação no painel da medição; criticidade com coordenador em cópia.", "Banco de Códigos de serviço; novos indicadores de faturamento e recebimento."]],
