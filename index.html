@@ -4991,5 +4991,168 @@ AJUDA_IND.push({ g:"Pontuais e pagamentos", itens:[
 AJUDA_VERSOES.unshift(["V 1.17", "03/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail."]]);
 
 </script>
+<script>
+/* Integração SIGE-novasreceitas -> Faturamento (#novo=, contrato v1). Dois modos:
+   criar  = abre cliente > contrato > serviço já preenchidos;
+   editar = (reenvio) localiza cliente/contrato/serviço já cadastrados e abre só as telas com campos alterados, preenchendo SOMENTE o que mudou (destacado).
+   Nada é salvo sem o usuário clicar em Salvar em cada etapa. O trecho depois do # não vai a servidor e é apagado do endereço. */
+(function(){
+  var D=null;
+  try{
+    var m=String(location.hash||'').match(/^#novo=([A-Za-z0-9_-]+)$/);
+    if(m){
+      var j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));
+      if(j&&j.v===1){D=j;try{sessionStorage.setItem('fatNovo',JSON.stringify(j));}catch(e){}}
+      try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+    }else{
+      var s0=null;try{s0=sessionStorage.getItem('fatNovo');}catch(e){}
+      if(s0)D=JSON.parse(s0);
+    }
+  }catch(e){D=null;}
+  if(!D||!D.cliente)return;
+  var ST={fila:[],aguarda:null,fim:false},byEl=function(i){return document.getElementById(i);};
+  var ROT={'cliente.nome':'Nome do cliente','cliente.razao':'Razão social','cliente.cnpj':'CNPJ','area':'Área','unidade':'Unidade','servico':'Serviço','contrato.coord':'Coordenador','contrato.coordEmail':'E-mail do coordenador','contrato.aprov':'Aprovador','contrato.aprovEmail':'E-mail do aprovador','item.condPag':'Condição de pagamento','contrato.numero':'Nº do contrato','contrato.inicio':'Início da vigência','contrato.fim':'Fim da vigência','contrato.numMeses':'Nº de meses','contrato.indice':'Índice de reajuste','contrato.mesReajuste':'Mês de reajuste','contrato.diaLimiteNF':'Dia limite da NF','contrato.valorMensal':'Valor mensal','item.codigo':'Código do serviço','item.prazoFat':'Prazo de faturamento','contrato.oc':'Pedido de compra'};
+  var CLI=['cliente.nome','cliente.razao','cliente.cnpj','area','unidade','contrato.coord','contrato.coordEmail','contrato.aprov','contrato.aprovEmail','item.condPag'];
+  var CTR=['contrato.numero','contrato.inicio','contrato.fim','contrato.numMeses','contrato.indice','contrato.mesReajuste','contrato.diaLimiteNF'];
+  var ITM=['servico','contrato.valorMensal','item.codigo','item.prazoFat','contrato.oc','area'];
+  function get(o,k){var p=k.split('.'),x=o;for(var i=0;i<p.length;i++){if(x==null)return '';x=x[p[i]];}return x==null?'':String(x).trim();}
+  function mudou(keys){var a=D.anterior||{};return keys.filter(function(k){return get(D,k)!==get(a,k);});}
+  function rot(keys){return keys.map(function(k){return ROT[k]||k;}).join(', ');}
+  function banner(t){
+    var b=byEl('novoBanner');
+    if(!t){if(b)b.remove();return;}
+    if(!b){b=document.createElement('div');b.id='novoBanner';b.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99999;background:#6e1423;color:#fff;padding:10px 14px;border-radius:10px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:380px';document.body.appendChild(b);}
+    b.innerHTML='<b>Venda (SIGE)</b> — '+t+' <a href="#" id="novoX" style="color:#fff;margin-left:8px;text-decoration:underline">cancelar</a>';
+    byEl('novoX').onclick=function(e){e.preventDefault();encerrar();};
+  }
+  function limpar(){try{sessionStorage.removeItem('fatNovo');}catch(e){}}
+  function encerrar(msg){ST.fim=true;ST.fila=[];ST.aguarda=null;limpar();banner(null);if(msg&&typeof showToast==='function')showToast(msg);}
+  function aviso(msg,erro){if(typeof showToast==='function')showToast(msg,!!erro);}
+  function sv(id,val,marca){var e=byEl(id);if(!e||val==null||String(val)==='')return;val=String(val);var ant=e.value;
+    if(e.tagName==='SELECT'){var ok=false;for(var i=0;i<e.options.length;i++)if(e.options[i].value===val){e.value=val;ok=true;break;}if(!ok)return;}else e.value=val;
+    if(marca&&ant!==e.value){e.style.outline='2px solid #C9822B';e.title='Valor atual no Faturamento: '+(ant||'(vazio)');}}
+  function iso(t){t=String(t||'').trim();var m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
+    return /^\d{4}-\d{2}-\d{2}$/.test(t)?t:'';}
+  function fimPorMeses(ini,n){n=parseInt(n,10);if(!ini||!n||n<1||n>120)return '';
+    var p=ini.split('-'),d=new Date(Date.UTC(+p[0],+p[1]-1+n,+p[2]-1));return d.toISOString().slice(0,10);}
+  function dig(x){return String(x||'').replace(/\D/g,'');}
+  var nm=function(s){return (typeof norm==='function'?norm:function(x){return String(x||'').toLowerCase();})(String(s||'').trim());};
+  function acharCliente(){
+    var c=D.cliente,cn=dig(c.cnpj),n1=nm(c.nome),n2=nm(c.razao);
+    var A=D.anterior&&D.anterior.cliente||{},ac=dig(A.cnpj),a1=nm(A.nome);
+    return (S.clientes||[]).filter(function(x){
+      var t=nm(x.Title),r=nm(x.RazaoSocial),xc=dig(x.CNPJ);
+      if(cn&&xc===cn)return true;if(ac&&xc===ac)return true;
+      if(cn&&String(x.Tomadores||'').replace(/\D/g,'').indexOf(cn)>=0)return true;
+      return (n1&&(t===n1||r===n1))||(n2&&(t===n2||r===n2))||(a1&&(t===a1));
+    })[0]||null;
+  }
+  function acharContrato(cid){
+    var lista=contratosDoCliente(cid),alvo=[get(D.anterior||{},'contrato.numero'),get(D,'contrato.numero')].filter(Boolean).map(nm);
+    for(var i=0;i<lista.length;i++)if(alvo.indexOf(nm(lista[i].Title))>=0)return lista[i];
+    return null;
+  }
+  function acharItem(ctId){
+    var its=itensDoContrato(ctId),alvo=[get(D.anterior||{},'servico'),get(D,'servico')].filter(Boolean).map(nm);
+    for(var i=0;i<its.length;i++)if(alvo.indexOf(nm(its[i].Title))>=0)return its[i];
+    return its.length===1?its[0]:null;
+  }
+  /* ---- telas ---- */
+  function preencherCliente(ed,ch){
+    var c=D.cliente,k=D.contrato||{},it=D.item||{};
+    function w(key,id,val){if(!ed||ch.indexOf(key)>=0)sv(id,val,ed);}
+    w('cliente.nome','c_Title',c.nome);w('cliente.razao','c_RazaoSocial',c.razao);w('cliente.cnpj','c_CNPJ',c.cnpj);w('area','c_Area',D.area);w('unidade','c_Unidade',D.unidade);
+    w('contrato.coord','c_Coordenador',k.coord);w('contrato.coordEmail','c_CoordenadorEmail',k.coordEmail);w('contrato.aprov','c_AprovadorNome',k.aprov);w('contrato.aprovEmail','c_AprovadorEmail',k.aprovEmail);
+    w('item.condPag','c_CondicaoPagamento',it.condPag);
+    if(!ed)sv('c_DiaLimiteNF',k.diaLimiteNF);
+  }
+  function preencherContrato(ed,ch){
+    var k=D.contrato||{},ini=iso(k.inicio),fim=iso(k.fim)||((!ed||ch.indexOf('contrato.numMeses')>=0||ch.indexOf('contrato.inicio')>=0)?fimPorMeses(ini,k.numMeses):'');
+    function w(key,id,val){if(!ed||ch.indexOf(key)>=0)sv(id,val,ed);}
+    w('contrato.numero','k_Title',k.numero);w('contrato.inicio','k_Inicio',ini);
+    if(!ed||ch.indexOf('contrato.fim')>=0||ch.indexOf('contrato.inicio')>=0||ch.indexOf('contrato.numMeses')>=0)sv('k_Fim',fim,ed);
+    w('contrato.indice','k_IndiceReajuste',k.indice);w('contrato.mesReajuste','k_MesReajuste',k.mesReajuste);w('contrato.diaLimiteNF','k_DiaLimiteNF',k.diaLimiteNF);
+    if(!ed)sv('k_Observacoes','Aberto a partir da venda no SIGE-novasreceitas.');
+  }
+  function preencherItem(ed,ch){
+    var k=D.contrato||{},it=D.item||{};
+    function w(key,id,val){if(!ed||ch.indexOf(key)>=0)sv(id,val,ed);}
+    w('servico','i_Title',D.servico||'');w('contrato.valorMensal','i_ValorMensal',k.valorMensal);
+    if(!ed||ch.indexOf('item.codigo')>=0){var sel=byEl('i_CodigoId'),cod=String(it.codigo||'').trim();
+      if(cod){var ok=false;if(sel)for(var i=0;i<sel.options.length;i++)if(sel.options[i].value&&sel.options[i].text.indexOf(cod)>=0){sel.value=sel.options[i].value;ok=true;break;}
+        if(!ok)sv('i_CodigoServicoNF',cod);}}
+    if(!ed||ch.indexOf('item.prazoFat')>=0){var pz=String(it.prazoFat||'');if(/imediat/i.test(pz))sv('i_PrazoFaturamento','0',ed);else{var d=dig(pz);if(d)sv('i_PrazoFaturamento',d,ed);}}
+    w('contrato.oc','i_NumPedido',k.oc);w('area','i_Area',D.area);
+    if(typeof itemPreview==='function')try{itemPreview();}catch(e){}
+    if(byEl('dv_p0'))aviso('Este cliente tem mais de um tomador: confira a divisão (%) e os pedidos antes de salvar.',true);
+  }
+  function passo(titulo,aguarda,abrir,preencher){
+    return function(ed,ch,tot,n){
+      ST.aguarda=aguarda;banner('passo '+n+' de '+tot+': '+titulo+(ed&&ch.length?' — alterado: '+rot(ch):'')+'. Revise e clique em Salvar.');
+      abrir();preencher(ed,ch);
+    };
+  }
+  function proximo(){
+    if(ST.fim)return;
+    var s=ST.fila.shift();
+    if(!s){encerrar('Venda aberta no Faturamento ✓');return;}
+    s();
+  }
+  function montar(passos){var tot=passos.length;ST.fila=passos.map(function(p,i){return function(){p.f(p.ed,p.ch,tot,i+1);};});proximo();}
+  function iniciar(){
+    limpar();
+    if(typeof acessoTotal==='function'&&!acessoTotal()){encerrar('Seu perfil não cadastra contratos. Peça ao Financeiro para abrir/revisar esta venda.');return;}
+    showTab('clientes');
+    ST.ant=SEL.cliente;ST.antCt=SEL.contrato;
+    var ex=acharCliente(),editar=D.modo==='editar'&&D.anterior&&ex;
+    var pCliC=passo('cliente','salvarCliente',function(){openCliente('');},function(e,c){preencherCliente(false,c);});
+    var pCtrC=passo('contrato','salvarContrato',function(){openContrato(ST.cid,'');},function(e,c){preencherContrato(false,c);});
+    var pItmC=passo('serviço (valor mensal)','salvarItem',function(){openItem(ST.ctId,'');},function(e,c){preencherItem(false,c);});
+    if(!editar){
+      var ps=[];
+      if(ex){ST.cid=String(ex.id);aviso('Cliente já cadastrado: '+ex.Title+'. Abrindo novo contrato.');}
+      else ps.push({f:function(a,b,t,n){ST.cid=null;pCliC(a,b,t,n);},ed:false,ch:[]});
+      ps.push({f:function(a,b,t,n){if(!ST.cid){encerrar('Cliente não foi salvo: reenvie pelo Cockpit.');return;}pCtrC(a,b,t,n);},ed:false,ch:[]});
+      ps.push({f:function(a,b,t,n){if(!ST.ctId){encerrar('Contrato não foi salvo: reenvie pelo Cockpit.');return;}pItmC(a,b,t,n);},ed:false,ch:[]});
+      montar(ps);return;
+    }
+    /* ---- modo editar ---- */
+    ST.cid=String(ex.id);
+    var ct=acharContrato(ex.id);
+    if(!ct){aviso('Contrato não localizado no Faturamento: abrindo como novo contrato.');
+      montar([{f:function(a,b,t,n){pCtrC(a,b,t,n);},ed:false,ch:[]},{f:function(a,b,t,n){if(!ST.ctId){encerrar('Contrato não foi salvo: reenvie pelo Cockpit.');return;}pItmC(a,b,t,n);},ed:false,ch:[]}]);return;}
+    ST.ctId=String(ct.id);
+    var it=acharItem(ct.id),cC=mudou(CLI),cK=mudou(CTR),cI=mudou(ITM),ps2=[];
+    if(cC.length)ps2.push({ed:true,ch:cC,f:passo('cliente','salvarCliente',function(){openCliente(ex.id);},preencherCliente)});
+    if(cK.length)ps2.push({ed:true,ch:cK,f:passo('contrato','salvarContrato',function(){openContrato(ex.id,ct.id);},preencherContrato)});
+    if(cI.length){
+      if(it)ps2.push({ed:true,ch:cI,f:passo('serviço','salvarItem',function(){openItem(ct.id,it.id);},preencherItem)});
+      else aviso('Serviço não localizado no contrato: ajuste manualmente ('+rot(cI)+').',true);
+    }
+    if(!ps2.length){encerrar(cI.length?'Nenhuma tela para abrir: ajuste manualmente.':'Nenhuma alteração em relação ao último envio.');return;}
+    aviso('Reenvio: cliente e contrato já cadastrados. Abrindo só o que mudou.');
+    montar(ps2);
+  }
+  function envolver(nome){var o=window[nome];if(typeof o!=='function')return;
+    window[nome]=async function(){var r=await o.apply(this,arguments);
+      try{
+        if(ST.aguarda===nome&&!ST.fim&&!byEl('modal').classList.contains('show')){
+          if(nome==='salvarCliente'&&!ST.cid&&SEL.cliente&&SEL.cliente!==ST.ant&&byId('clientes',SEL.cliente))ST.cid=String(SEL.cliente);
+          if(nome==='salvarContrato'&&!ST.ctId&&SEL.contrato&&SEL.contrato!==ST.antCt&&byId('contratos',SEL.contrato))ST.ctId=String(SEL.contrato);
+          ST.aguarda=null;proximo();
+        }
+      }catch(e){console.error(e);}
+      return r;};}
+  envolver('salvarCliente');envolver('salvarContrato');envolver('salvarItem');
+  var n=0,tm=setInterval(function(){
+    n++;
+    var ma=byEl('mainArea'),pronto=ma&&!ma.classList.contains('hidden')&&window.S&&S.clientes&&CURRENT_USER&&CURRENT_USER.email;
+    if(ST.fim){clearInterval(tm);return;}
+    if(pronto){clearInterval(tm);iniciar();return;}
+    if(n===1)banner('faça o login para abrir a venda de '+(D.cliente.nome||'cliente')+'.');
+    if(n>1500){clearInterval(tm);banner(null);}
+  },400);
+})();
+</script>
 </body>
 </html>
