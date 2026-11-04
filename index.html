@@ -4288,6 +4288,7 @@ S.profissionais = []; S.pagamentos = [];
 NUMERIC = {}; BOOLS = {};
 Object.keys(SCHEMA).forEach(function(k){ SCHEMA[k].cols.forEach(function(c){ if (c[1] === "n") NUMERIC[c[0]] = 1; if (c[1] === "b") BOOLS[c[0]] = 1; }); });
 TABS_PRESTADOR.push("pagamentos");
+["Fisioterapia", "Massoterapia", "Enfermagem", "Medicina", "RH", "DP", "MKT", "Comercial"].forEach(function(a){ if (AREAS.indexOf(a) < 0) AREAS.push(a); });
 PAR_TIPOS.TeamsWebhook = "Teams: aviso de novas solicitações de pagamento (link do fluxo)";
 
 // as listas novas sao opcionais: enquanto nao existirem, o sistema segue funcionando e a tela de Pagamentos avisa
@@ -4730,8 +4731,9 @@ var STATUS_PAG = ["Solicitado", "Em análise", "Agendado", "Pago", "Pendência",
 var STATUS_PAG_BADGE = { "Solicitado":"b-blue", "Em análise":"b-amber", "Agendado":"b-purple", "Pago":"b-green", "Pendência":"b-red", "Cancelado":"b-gray" };
 var ORIGENS_PROF = ["Cadastro manual", "Grupo de credenciados (WhatsApp)", "Banco de Talentos"];
 var PG_VIEW = "sol";
-function podeVerPagamentos(){ var p = perfilAcesso(); return p !== "ocorrencias"; }
-function privilegioPag(){ return isGestor() || soPrestador(); }
+// menu Pagamentos a profissionais e dados bancarios completos: so BPO (prestador) e gestores com acesso total
+function privilegioPag(){ return soPrestador() || (perfilAcesso() === "total" && isGestor()); }
+function podeVerPagamentos(){ return privilegioPag(); }
 function veDadosPag(pg){ return privilegioPag() || (pg && String(pg.SolicitanteEmail || "").toLowerCase() === meuEmail()); }
 function mascarar(t){ return String(t || "").split(/\n/).map(function(l){ l = l.trim(); if (!l) return ""; return l.length <= 5 ? "•••••" : l.slice(0, 2) + "•••••" + l.slice(-3); }).join("\n"); }
 function pagamentosVisiveis(){ var all = S.pagamentos || []; if (acessoTotal() || privilegioPag()) return all; return all.filter(function(p){ return String(p.SolicitanteEmail || "").toLowerCase() === meuEmail() || (p.MedicaoId && byId("medicoes", p.MedicaoId) && visivel(byId("clientes", byId("medicoes", p.MedicaoId).ClienteId) || {})); }); }
@@ -5039,6 +5041,7 @@ function baixarPlanilhaPagamentos(){
 
 // ---------- integracao com as telas existentes ----------
 renderCurrent = (function(orig){ return function(){ if (CURRENT_TAB === "pagamentos"){ if (podeVerPagamentos()) renderPagamentos(); renderRenovBadge(); return; } return orig(); }; })(renderCurrent);
+showTab = (function(orig){ return function(name){ if (name === "pagamentos" && !podeVerPagamentos()) name = "pontuais"; return orig.call(this, name); }; })(showTab);
 aplicarPerfilMenu = (function(orig){ return function(){ orig(); var t = document.querySelector("#nav .tab[data-tab='pagamentos']"); if (t && !podeVerPagamentos()) t.classList.add("perfil-oculto"); if ($("btnPontual")) $("btnPontual").classList.toggle("hidden", soPrestador() || soOcorrencias()); }; })(aplicarPerfilMenu);
 parFormRefresh = (function(orig){ return function(){ orig(); var t = v("p_Tipo"), w = $("pwTexto"); if (!w) return; var lb = w.querySelector("label"); if (t === "TeamsWebhook"){ w.classList.remove("hidden"); lb.textContent = "Link (URL) do fluxo do Teams"; } else if (t === "Gestor") lb.textContent = "E-mail"; }; })(parFormRefresh);
 renderDashboard = (function(orig){ return function(){
@@ -5155,7 +5158,42 @@ AJUDA_IND.push({ g:"Pontuais e pagamentos", itens:[
   ["Pagamentos no mês", "Solicitações com data de pagamento no mês, exceto canceladas, separadas em pagas e em aberto."],
   ["Pendências com o BPO", "Solicitações que o BPO devolveu por falta ou erro de informação."]
 ]});
-AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim.", "No cadastro do serviço pontual já dá para solicitar o pagamento de um ou mais profissionais, com os campos da planilha do BPO.", "Serviços pontuais ganham menu próprio, separado de Medições do mês."]]);
+AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim.", "No cadastro do serviço pontual já dá para solicitar o pagamento de um ou mais profissionais, com os campos da planilha do BPO.", "Serviços pontuais ganham menu próprio, separado de Medições do mês.", "Novas áreas: Fisioterapia, Massoterapia, Enfermagem, Medicina, RH, DP, MKT e Comercial.", "Menu Pagamentos a profissionais visível só para o BPO e os gestores; coordenadores solicitam pela tela do serviço pontual.", "Aviso automático de versão nova: a página se atualiza sozinha depois de cada publicação."]]);
+
+// ============================================================
+// AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
+// ============================================================
+var APP_BUILD = "20261104194804";
+(function(){
+  try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
+  var avisado = false, ultima = 0;
+  function recarregar(){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); location.replace(location.pathname + (q ? q + "&" : "?") + "u=" + Date.now()); }
+  function modalAberto(){ var m = document.getElementById("modal"); return !!(m && m.classList.contains("show")); }
+  function aviso(){
+    if (avisado) return; avisado = true;
+    var b = document.createElement("div"); b.id = "novaVersao";
+    b.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:100000;background:#6e1423;color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.3);font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;display:flex;gap:14px;align-items:center;max-width:92vw";
+    b.innerHTML = "<span><b>Há uma versão nova do sistema.</b> <span id='nvTxt'></span></span><button style='background:#fff;color:#6e1423;border:0;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer'>Atualizar agora</button>";
+    document.body.appendChild(b); b.querySelector("button").onclick = recarregar;
+    var seg = 10, tm = setInterval(function(){
+      var t = document.getElementById("nvTxt"); if (!t) return;
+      if (modalAberto()){ seg = 10; t.textContent = "Termine e salve o que está fazendo; a página atualiza ao fechar a janela."; return; }
+      t.textContent = "Atualizando em " + seg + "s…"; if (seg-- <= 0){ clearInterval(tm); recarregar(); }
+    }, 1000);
+  }
+  async function conferir(){
+    if (avisado || /[?&]demo=1/.test(location.search) || location.protocol === "file:") return;
+    var agora = Date.now(); if (agora - ultima < 60000) return; ultima = agora;
+    try {
+      var r = await fetch(location.pathname + "?nc=" + agora, { cache:"no-store" }); if (!r.ok) return;
+      var m = (await r.text()).match(/var APP_BUILD = "([^"]+)"/);
+      if (m && m[1] !== APP_BUILD && m[1] !== "__BUILD__") aviso();
+    } catch(e){}
+  }
+  setInterval(conferir, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) conferir(); });
+  setTimeout(conferir, 20000);
+})();
 
 </script>
 <script>
