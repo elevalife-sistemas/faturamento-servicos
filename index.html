@@ -302,6 +302,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <p class="tab-group-label">Faturamento</p>
       <div class="tab" data-tab="fechamento"><span class="tab-icon">&#9989;</span>Fechamento do mês</div>
       <div class="tab" data-tab="medicoes"><span class="tab-icon">&#129534;</span>Medições do mês</div>
+      <div class="tab" data-tab="pontuais"><span class="tab-icon">&#127919;</span>Serviços pontuais</div>
       <div class="tab" data-tab="ocorrencias"><span class="tab-icon">&#128221;</span>Ocorrências</div>
       <p class="tab-group-label">Contratos</p>
       <div class="tab" data-tab="clientes"><span class="tab-icon">&#127970;</span>Clientes e contratos</div>
@@ -388,7 +389,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <!-- MEDICOES -->
       <div class="panel" id="panel-medicoes">
         <div class="page-head"><div><h1 class="page-title">Medições do mês</h1><p class="page-sub">Gere o boletim de cada cliente a partir do contrato vigente e das ocorrências lançadas.</p></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-o" id="btnPontual" onclick="openPontual()">+ Serviço pontual</button><button class="btn" onclick="gerarTodas()">Gerar rascunhos da competência</button></div></div>
+          <button class="btn" onclick="gerarTodas()">Gerar rascunhos da competência</button></div>
         <div class="toolbar"><label>Competência</label><input type="month" id="medComp" onchange="renderMedicoes()"><label>Área</label><select id="medArea" onchange="renderMedicoes()"></select><label>Status</label><select id="medStatus" onchange="renderMedicoes()"></select></div>
         <div class="tbl-wrap"><table class="tbl" id="medTable"></table></div>
       </div>
@@ -463,6 +464,15 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
         <div class="toolbar"><label>Mostrar</label><select id="recFiltro" onchange="renderRecebimentos()"><option value="pendentes">Em aberto (a vencer e vencidos)</option><option value="vencidos">Vencidos / não pagos</option><option value="pagos">Pagos</option><option value="todos">Todos</option></select><label>Buscar</label><input id="recBusca" placeholder="Cliente ou nº da NF" oninput="renderRecebimentos()" style="max-width:240px"></div>
         <div class="kpi-grid" id="recKpis"></div>
         <div class="tbl-wrap"><table class="tbl" id="recTable"></table></div>
+      </div>
+
+      <!-- SERVICOS PONTUAIS -->
+      <div class="panel" id="panel-pontuais">
+        <div class="page-head"><div><h1 class="page-title">Serviços pontuais</h1><p class="page-sub">Palestras, campanhas e serviços avulsos: validação do cliente com pedido, liberação ao financeiro (NF separada) e pagamento aos profissionais.</p></div>
+          <button class="btn" id="btnPontual" onclick="openPontual()">+ Serviço pontual</button></div>
+        <div class="toolbar"><label>Competência</label><input type="month" id="ptfComp" onchange="renderPontuais()"><button class="btn-ghost" onclick="$('ptfComp').value='';renderPontuais()">todas</button><label>Área</label><select id="ptfArea" onchange="renderPontuais()"></select><label>Status</label><select id="ptfStatus" onchange="renderPontuais()"></select><label>Buscar</label><input id="ptfBusca" placeholder="Cliente, serviço ou pedido" oninput="renderPontuais()" style="max-width:220px"></div>
+        <div class="kpi-grid" id="ptfKpis"></div>
+        <div class="tbl-wrap"><table class="tbl" id="ptfTable"></table></div>
       </div>
 
       <!-- PAGAMENTOS A PROFISSIONAIS -->
@@ -4517,6 +4527,112 @@ limiteNF = (function(orig){ return function(cid, comp, uk){
   return { dia:dia, portal:portal, interno: addDays(portal, -3) };
 }; })(limiteNF);
 
+// ---------- pagamentos aos profissionais dentro do formulario do pontual ----------
+function ptPagVazio(){ return { prof:"", fav:"", emp:"Elevalife", dpag: proximoDiaUtil(addDays(todayISO(), 1)), rem:"", aj:"", mod:"", meio:"", dados:"", dadosCad:false, desc:"", descAuto:true, obs:"", nfLink:"", file:null }; }
+function ptRenderPags(){
+  var w = $("ptPagWrap"); if (!w) return;
+  var l = window.__ptPags || [], med = window.__ptPagMed ? byId("medicoes", window.__ptPagMed) : null;
+  var ja = med ? (S.pagamentos || []).filter(function(p){ return String(p.MedicaoId) === String(med.id) && p.StatusPag !== "Cancelado"; }) : [];
+  var profs = profissionaisAtivos(), sel = function(arr, cur){ return arr.map(function(x){ return opt(x, x, cur); }).join(""); };
+  var IS = "style='width:100%'";
+  var h = "<div style='border:1px solid var(--border);border-left:4px solid #1baf7a;border-radius:12px;padding:14px 16px;background:#fbfdfc'>" +
+    "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'><div><label style='margin:0'>Pagamento aos profissionais deste serviço</label><div class='hint' style='margin:2px 0 0'>Mesmos campos da planilha do BPO. Ao salvar, cada pagamento vai para o BPO com aviso no Teams. Mínimo de 1 dia de antecedência, só em dia útil.</div></div>" +
+    "<button type='button' class='btn-o btn-s' onclick='ptAddPag()'>+ Adicionar profissional</button></div>";
+  if (ja.length) h += "<div class='small' style='margin-top:10px'><b>Já solicitados:</b> " + ja.map(function(p){ return esc(p.Favorecido) + " · " + brl(p.Valor) + " em " + fmtDate(p.DataPagamento) + " (" + esc(p.StatusPag || "Solicitado") + ")"; }).join(" · ") + "</div>";
+  l.forEach(function(x, k){
+    var id = function(n){ return "pp_" + n + "_" + k; }, m = MEIOS_PAG[x.meio] || { l:"Dados para pagamento", ph:"" };
+    h += "<div class='pt-pag' style='border-top:1px dashed var(--border);margin-top:12px;padding-top:12px'><div style='display:flex;justify-content:space-between;align-items:center'><b style='color:#127a55'>Profissional " + (k + 1) + "</b><button type='button' class='btn-ghost' onclick='ptDelPag(" + k + ")'>remover</button></div>" +
+      "<div class='alert alert-blue' id='" + id("sug") + "' style='margin:8px 0;display:none'></div>" +
+      "<div style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px'>" +
+      "<div><label>Profissional (cadastro)</label><select id='" + id("prof") + "' onchange='ptPagProf(" + k + ")' " + IS + ">" + opt("", "Não cadastrado / outro", x.prof) + profs.map(function(p){ return opt(p.id, p.Title + (p.Especialidade ? " – " + p.Especialidade : ""), x.prof); }).join("") + "</select></div>" +
+      "<div><label>Fornecedor / titular da conta</label><input id='" + id("fav") + "' value='" + esc(x.fav) + "' placeholder='Nome completo ou razão social' oninput='ptPagDesc(" + k + ")'></div>" +
+      "<div><label>Empresa</label><select id='" + id("emp") + "'>" + sel(EMPRESAS_PAG, x.emp) + "</select></div>" +
+      "<div><label>Data do pagamento</label><input type='date' id='" + id("dpag") + "' value='" + esc(x.dpag) + "' min='" + esc(addDays(todayISO(), 1)) + "' onchange='ptPagData(" + k + ")'><div class='hint' id='" + id("dh") + "'></div></div>" +
+      "<div><label>Remuneração (R$)</label><input id='" + id("rem") + "' inputmode='decimal' value='" + esc(x.rem) + "' oninput='ptPagTot(" + k + ")'></div>" +
+      "<div><label>Ajuda de custo (R$)</label><input id='" + id("aj") + "' inputmode='decimal' value='" + esc(x.aj) + "' oninput='ptPagTot(" + k + ")'><div class='hint' id='" + id("tot") + "'></div></div>" +
+      "<div><label>Modalidade de pagamento</label><select id='" + id("mod") + "'>" + opt("", "Selecione...", x.mod) + sel(MODALIDADES_PAG, x.mod) + "</select></div>" +
+      "<div><label>Meio de pagamento</label><select id='" + id("meio") + "' onchange='ptPagMeio(" + k + ",true)'>" + opt("", "Selecione...", x.meio) + sel(Object.keys(MEIOS_PAG), x.meio) + "</select></div>" +
+      "<div><label id='" + id("ld") + "'>" + esc(m.l) + "</label><input id='" + id("dados") + "' value='" + esc(x.dados) + "' placeholder='" + esc(x.dadosCad ? "Usando os dados do cadastro (ocultos)" : (m.ph || "")) + "'><div class='hint' id='" + id("dhint") + "'></div></div>" +
+      "<div style='grid-column:1/-1'><label>Descrição (motivo + nome do recebedor)</label><input id='" + id("desc") + "' value='" + esc(x.desc) + "' oninput='window.__ptPags[" + k + "].descAuto=false'></div>" +
+      "<div><label>OBS</label><input id='" + id("obs") + "' value='" + esc(x.obs) + "'></div>" +
+      "<div style='grid-column:span 2'><label>Documento fiscal (obrigatório em \"com NF\")</label><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'><input type='file' id='" + id("file") + "' accept='.pdf,.png,.jpg,.jpeg,.xml' style='max-width:260px' onchange='ptPagFile(" + k + ")'><input id='" + id("nf") + "' value='" + esc(x.nfLink) + "' placeholder='ou cole o link' style='flex:1;min-width:160px'></div><div class='hint'>" + (x.file ? "Arquivo escolhido: " + esc(x.file.name) : "Arquivo até 4 MB.") + "</div></div>" +
+      "</div></div>";
+  });
+  if (!l.length) h += "<p class='small muted' style='margin:10px 0 0'>Nenhum pagamento a solicitar agora. Se o serviço tiver profissional a pagar, clique em + Adicionar profissional. Também dá para solicitar depois, pelo painel do serviço.</p>";
+  w.innerHTML = h + "</div>";
+  l.forEach(function(x, k){ ptPagData(k); ptPagTot(k); ptPagMeio(k, false); ptPagSug(k); });
+}
+function ptLerPags(){
+  (window.__ptPags || []).forEach(function(x, k){ var g = function(n){ var e = $("pp_" + n + "_" + k); return e ? e.value.trim() : ""; };
+    if (!$("pp_fav_" + k)) return;
+    x.prof = g("prof"); x.fav = g("fav"); x.emp = g("emp"); x.dpag = g("dpag"); x.rem = g("rem"); x.aj = g("aj"); x.mod = g("mod"); x.meio = g("meio"); x.dados = g("dados"); x.desc = g("desc"); x.obs = g("obs"); x.nfLink = g("nf"); });
+}
+function ptAddPag(){ ptLerPags(); window.__ptPags.push(ptPagVazio()); ptRenderPags(); ptPagDesc(window.__ptPags.length - 1); }
+function ptDelPag(k){ ptLerPags(); window.__ptPags.splice(k, 1); ptRenderPags(); }
+function ptPagFile(k){ var f = $("pp_file_" + k).files[0]; window.__ptPags[k].file = f || null; }
+function ptProjeto(){ var c = byId("clientes", v("pt_cli")); return ((c && c.Title) || v("pt_nNome") || "Cliente") + " · " + (v("pt_desc") || "serviço pontual"); }
+function ptPagDesc(k){ var x = window.__ptPags[k]; if (!x || !x.descAuto || !$("pp_desc_" + k)) return; $("pp_desc_" + k).value = ["Serviço pontual", ptProjeto(), v("pp_fav_" + k)].filter(Boolean).join(" – "); }
+function ptPagTot(k){ var e = $("pp_tot_" + k); if (e) e.textContent = "Total: " + brl(parseNum(v("pp_rem_" + k)) + parseNum(v("pp_aj_" + k))); }
+function ptPagData(k){
+  var d = v("pp_dpag_" + k), el = $("pp_dh_" + k); if (!el) return; if (!d){ el.textContent = ""; return; }
+  var min = addDays(todayISO(), 1), fer = feriados("")[d], dw = parseISO(d).getDay();
+  if (d < min){ el.textContent = "Mínimo 1 dia de antecedência (a partir de " + fmtDate(min) + ")."; el.style.color = "var(--red-tx)"; }
+  else if (dw === 0 || dw === 6 || fer){ el.textContent = (fer ? "Feriado" : "Fim de semana") + ". Próximo dia útil: " + fmtDate(proximoDiaUtil(d)) + "."; el.style.color = "var(--red-tx)"; }
+  else { el.textContent = "Dia útil (" + DIAS_SEM_C[dw] + ")."; el.style.color = ""; }
+}
+function ptPagMeio(k, trocou){
+  var x = window.__ptPags[k], meio = v("pp_meio_" + k), m = MEIOS_PAG[meio] || { l:"Dados para pagamento", ph:"" }, p = byId("profissionais", v("pp_prof_" + k)), inp = $("pp_dados_" + k);
+  if (!inp) return; $("pp_ld_" + k).textContent = m.l;
+  if (trocou){
+    x.dadosCad = false; inp.placeholder = m.ph || ""; $("pp_dhint_" + k).textContent = "";
+    if (m.def) inp.value = m.def;
+    else if (p && p.DadosPagamento && p.Meio === meio){
+      if (privilegioPag()){ inp.value = p.DadosPagamento; $("pp_dhint_" + k).textContent = "Preenchido com o cadastro do profissional."; }
+      else { inp.value = ""; x.dadosCad = true; inp.placeholder = "Usando os dados do cadastro (ocultos)"; $("pp_dhint_" + k).textContent = "Cadastro: " + mascarar(p.DadosPagamento); }
+    }
+  }
+}
+function ptPagProf(k){
+  ptLerPags(); var x = window.__ptPags[k], p = byId("profissionais", x.prof);
+  if (p){ x.fav = p.Title; x.meio = p.Meio || x.meio; if (p.TipoPessoa === "PJ" && !x.mod) x.mod = "com NF";
+    var u = ultimoPago(p.id, "Serviço pontual") || ultimoPago(p.id), rem = u ? u.Remuneracao : p.RemuneracaoRef, aj = u ? u.AjudaCusto : p.AjudaCustoRef;
+    if (!x.rem && !x.aj){ x.rem = Number(rem) ? String(rem).replace(".", ",") : ""; x.aj = Number(aj) ? String(aj).replace(".", ",") : ""; } }
+  ptRenderPags(); ptPagMeio(k, true); ptPagDesc(k);
+}
+function ptPagSug(k){
+  var el = $("pp_sug_" + k), p = byId("profissionais", v("pp_prof_" + k)); if (!el) return;
+  if (!p){ el.style.display = "none"; return; }
+  var u = ultimoPago(p.id, "Serviço pontual"), uq = u || ultimoPago(p.id);
+  el.style.display = "flex";
+  el.textContent = uq ? "Último pagamento a " + p.Title + (u ? " por serviço pontual" : " (" + (uq.Motivo || "outro motivo") + ")") + ": remuneração " + brl(uq.Remuneracao) + " + ajuda de custo " + brl(uq.AjudaCusto) + " em " + fmtDate(uq.DataPagamento) + ". Valores sugeridos; pode alterar."
+    : (Number(p.RemuneracaoRef) || Number(p.AjudaCustoRef)) ? "Sem pagamentos anteriores. Referência do cadastro: remuneração " + brl(p.RemuneracaoRef) + " + ajuda de custo " + brl(p.AjudaCustoRef) + "." : "Sem pagamentos anteriores nem valor de referência para " + p.Title + ".";
+}
+function ptValidarPags(pags){
+  var min = addDays(todayISO(), 1);
+  for (var k = 0; k < pags.length; k++){
+    var x = pags[k], p = byId("profissionais", x.prof), n = "Profissional " + (k + 1) + ": ", falta = [];
+    var dados = x.dados || (x.dadosCad && p ? p.DadosPagamento : "");
+    if (!x.fav) falta.push("fornecedor/titular"); if (!x.dpag) falta.push("data do pagamento"); if (!(parseNum(x.rem) + parseNum(x.aj) > 0)) falta.push("valor");
+    if (!x.mod) falta.push("modalidade"); if (!x.meio) falta.push("meio de pagamento"); if (!dados) falta.push("dados para pagamento"); if (!x.desc) falta.push("descrição");
+    if (x.mod === "com NF" && !x.file && !x.nfLink) falta.push("documento fiscal (NF)");
+    if (falta.length) return n + "preencha " + falta.join(", ") + ".";
+    if (x.dpag < min) return n + "o pagamento precisa de no mínimo 1 dia de antecedência (a partir de " + fmtDate(min) + ").";
+    if (!diaUtilPag(x.dpag)) return n + "a data cai em fim de semana ou feriado. Próximo dia útil: " + fmtDate(proximoDiaUtil(x.dpag)) + ".";
+    if (x.desc.indexOf(x.fav.split(" ")[0]) < 0) return n + "inclua o nome do recebedor na descrição.";
+    if (x.file && x.file.size > 4 * 1024 * 1024) return n + "o documento fiscal tem mais de 4 MB; cole o link no lugar.";
+  }
+  return "";
+}
+async function ptGravarPag(x, med, cli, P){
+  var p = byId("profissionais", x.prof), rem = parseNum(x.rem), aj = parseNum(x.aj), valor = r2(rem + aj), dados = x.dados || (x.dadosCad && p ? p.DadosPagamento : "");
+  var nfUrl = x.file ? await enviarArquivoPag(x.file) : x.nfLink;
+  var hist = [{ s:"Solicitado", d:new Date().toISOString(), p:CURRENT_USER.name, o:"Solicitado junto com o serviço pontual" }];
+  var f = { Title: x.fav + " – " + fmtDate(x.dpag), Solicitante: CURRENT_USER.name, SolicitanteEmail: CURRENT_USER.email, ProfissionalId: p ? String(p.id) : "", Favorecido: x.fav, Empresa: x.emp, DataSolicitacao: todayISO(), DataPagamento: x.dpag, Valor: valor, Remuneracao: rem, AjudaCusto: aj, Modalidade: x.mod, Meio: x.meio, DadosPagamento: dados, Motivo: "Serviço pontual", Descricao: x.desc, Area: P.area, Projeto: cli.Title + " · " + P.descricao, Obs: x.obs, NFLink: nfUrl, StatusPag: "Solicitado", MedicaoId: String(med.id), ClienteId: String(med.ClienteId), HistoricoPag: JSON.stringify(hist) };
+  var o = await api.create("pagamentos", f);
+  await registrarComunicacao(med, "Pagamento solicitado ao BPO: " + x.fav + ", " + brl(valor) + " em " + fmtDate(x.dpag) + ".", "sistema").catch(function(){});
+  return o;
+}
+
 // ---------- formulario do servico pontual ----------
 function clientesParaPontual(){ return S.clientes.filter(function(c){ return c.Ativo !== false; }).sort(function(a, b){ return String(a.Title).localeCompare(String(b.Title), "pt-BR"); }); }
 function openPontual(id){
@@ -4540,8 +4656,10 @@ function openPontual(id){
     "<div><label>Cc</label><input id='pt_cc' value='" + esc(P.cc || "") + "' placeholder='opcional'></div>" +
     "<div><label>Responsável que recebe a NF</label><input id='pt_nf' value='" + esc(P.nfPara || "") + "' placeholder='e-mail do responsável no cliente'><div class='hint'>Vai no e-mail de liberação ao financeiro.</div></div>" +
     "<div><label>Observação para a NF</label><input id='pt_obs' value='" + esc(P.obs || "") + "' placeholder='opcional'></div>" +
+    (PAG_PENDENTE.some(function(k){ return k !== "TipoFat"; }) ? "" : "<div class='full' id='ptPagWrap'></div>") +
     "</div><div class='modal-actions'>" + (med ? "<button class='btn-o' onclick=\"reabrir(byId('medicoes','" + med.id + "'))\">Voltar</button>" : "<button class='btn-o' onclick='closeModal()'>Cancelar</button>") + "<button class='btn' onclick=\"salvarPontual('" + (med ? med.id : "") + "')\">Salvar serviço pontual</button></div>";
-  openModal(h, true); ptRenderItens(); ptCliRefresh();
+  window.__ptPags = []; window.__ptPagMed = med ? String(med.id) : "";
+  openModal(h, true); ptRenderItens(); ptCliRefresh(); ptRenderPags();
 }
 function ptCliRefresh(){ var n = v("pt_cli") === "__novo"; $("ptNovo").classList.toggle("hidden", !n); var c = byId("clientes", v("pt_cli")); if (c && !v("pt_para") && c.AprovadorEmail) $("pt_para").value = c.AprovadorEmail; if (c && c.Area && !window.__ptAreaTocada) $("pt_area").value = c.Area; }
 function ptLerItens(){ var rows = document.querySelectorAll("#ptItens .pt-row:not(.pt-head):not(.pt-foot)"); if (!rows.length) return; window.__ptItens = [].map.call(rows, function(r){ return { desc: r.querySelector(".pt-desc").value.trim(), qtd: parseNum(r.querySelector(".pt-qtd").value), unid: r.querySelector(".pt-unid").value, unit: parseNum(r.querySelector(".pt-unit").value) }; }); }
@@ -4567,6 +4685,9 @@ async function salvarPontual(id){
   var inval = emailsDe(para).concat(emailsDe(v("pt_cc")), emailsDe(nfPara)).filter(function(e){ return !emailValido(e); });
   if (inval.length){ showToast("E-mail inválido: " + inval.join(", "), true); return; }
   var tot = totalItensPontual(itens);
+  (window.__ptPags || []).forEach(function(x, k){ ptPagDesc(k); });
+  ptLerPags(); var pags = window.__ptPags || [], erroPag = ptValidarPags(pags);
+  if (erroPag){ showToast(erroPag, true); return; }
   await safe(async function(){
     if (cid === "__novo"){
       var nc = await api.create("clientes", { Title: v("pt_nNome"), RazaoSocial: v("pt_nRazao") || v("pt_nNome"), CNPJ: v("pt_nCnpj"), Area: v("pt_area"), AprovadorEmail: para, EmailsCopia: emailsDe(v("pt_cc")).join("; "), Coordenador: CURRENT_USER.name, CoordenadorEmail: CURRENT_USER.email, Ativo: true, Observacoes: "Cadastrado a partir de serviço pontual em " + fmtDate(todayISO()) + "." });
@@ -4580,7 +4701,9 @@ async function salvarPontual(id){
     var f = { Title: cli.Title + " · " + desc + " – " + compLabel(comp), ClienteId:String(cid), Competencia:comp, ContratoId:"", ValorPadrao:tot, Descontos:0, Acrescimos:0, ValorFaturar:tot, Status:"Rascunho", Unidade:uk, UnidadeNome:desc, Tomador:"", TipoFat:"Pontual",
       Linhas: JSON.stringify({ pontual:P, lines:lines, ocorrIds:[], oc: Lold.oc || "" }), Historico: JSON.stringify(hist), GeradoEm: new Date().toISOString(), ObsNF: P.obs };
     if (med) await api.update("medicoes", med.id, f); else med = await api.create("medicoes", f);
-  }, "Serviço pontual salvo.");
+    for (var k = 0; k < pags.length; k++) pags[k].criado = await ptGravarPag(pags[k], med, cli, P);
+  }, "Serviço pontual salvo" + (pags.length ? " e " + pags.length + " pagamento(s) solicitado(s) ao BPO." : "."));
+  for (var k2 = 0; k2 < pags.length; k2++) if (pags[k2].criado) await avisarTeams(pags[k2].criado, false);
   if ($("medComp")) $("medComp").value = med.Competencia;
   fillSelects(); openMedicao(med.ClienteId, med.Competencia, med.Unidade); renderCurrent();
 }
@@ -4959,12 +5082,47 @@ demoFaturamento = (function(orig){ return function(){
     { id:"pg3", Title:"Ana Paula", Solicitante:"Usuário demonstração", SolicitanteEmail:"demo@elevalife.com.br", ProfissionalId:"pf3", Favorecido:"Ana Paula Ferreira", Empresa:"Eleva Saúde", DataSolicitacao: addDays(hoje, -1), DataPagamento: proximoDiaUtil(addDays(hoje, 3)), Valor:420, Remuneracao:420, AjudaCusto:0, Modalidade:"sem RPA", Meio:"TED", DadosPagamento:"Banco 341 · Ag. 1234 · C/C 56789-0 · CPF 987.654.321-00", Motivo:"Cobertura", Descricao:"Cobertura de férias – Ana Paula Ferreira", Area:"Terapias", Projeto: (S.clientes[1] || cli).Title, Obs:"", NFLink:"", ComprovanteLink:"", StatusPag:"Pendência", MotivoStatus:"Conta informada não confere com o CPF do titular.", HistoricoPag:"[]" }];
 }; })(demoFaturamento);
 
+// ============================================================
+// MENU "SERVICOS PONTUAIS" (separado de Medicoes do mes)
+// ============================================================
+TABS_PRESTADOR.push("pontuais");
+function pontuaisVisiveis(){
+  return S.medicoes.filter(ehPontual).filter(function(m){ var c = byId("clientes", m.ClienteId); return c && unidadeVisivel(c, { pontual:true, key:m.Unidade || "" }); });
+}
+function renderPontuais(){
+  if (!$("ptfStatus").options.length){ $("ptfStatus").innerHTML = opt("", "Todos") + opt("abertos", "Em andamento (sem NF)") + STATUS_MED.map(function(s){ return opt(s, s); }).join(""); $("ptfArea").innerHTML = areaOptions(""); }
+  var comp = $("ptfComp").value, st = $("ptfStatus").value, area = $("ptfArea").value, q = norm($("ptfBusca").value || "");
+  var all = pontuaisVisiveis().map(function(m){ var c = byId("clientes", m.ClienteId), P = pontualDe(m); return { m:m, c:c, P:P, pags:(S.pagamentos || []).filter(function(p){ return String(p.MedicaoId) === String(m.id) && p.StatusPag !== "Cancelado"; }) }; });
+  var rows = all.filter(function(r){ return (!comp || r.m.Competencia === comp) && (!area || (r.P.area || r.c.Area) === area) && (!st || (st === "abertos" ? r.m.Status !== "NF emitida" : r.m.Status === st)) && (!q || norm([r.c.Title, r.P.descricao, r.P.local, ocDe(r.m)].join(" ")).indexOf(q) >= 0); })
+    .sort(function(a, b){ return String(b.m.Competencia).localeCompare(String(a.m.Competencia)) || String(b.m.GeradoEm || "").localeCompare(String(a.m.GeradoEm || "")); });
+  var soma = function(l, f){ return l.reduce(function(s, x){ return s + (Number(f(x)) || 0); }, 0); };
+  var semPed = rows.filter(function(r){ return faltaOC(r.m); }), pags = [].concat.apply([], rows.map(function(r){ return r.pags; }));
+  var fat = soma(rows, function(r){ return r.m.ValorFaturar; }), custo = soma(pags, function(p){ return p.Valor; });
+  $("ptfKpis").innerHTML = kpi("Serviços pontuais", String(rows.length), comp ? compLabel(comp) : "todas as competências") + kpi("Valor a faturar", brl(fat), rows.filter(function(r){ return r.m.Status === "NF emitida"; }).length + " com NF emitida") +
+    kpi("Aguardando pedido", String(semPed.length), semPed.length ? brl(soma(semPed, function(r){ return r.m.ValorFaturar; })) + " parados" : "nenhum parado") +
+    kpi("Pagamentos a profissionais", brl(custo), pags.length + " solicitação(ões)" + (isGestor() && fat ? " · margem " + num((fat - custo) / fat * 100, 0) + "%" : ""));
+  if (!rows.length){ $("ptfTable").innerHTML = "<tr><td class='empty'>Nenhum serviço pontual" + (comp || st || area || q ? " com estes filtros" : "") + ". Clique em + Serviço pontual para registrar.</td></tr>"; return; }
+  $("ptfTable").innerHTML = "<thead><tr><th>Cliente / serviço</th><th>Competência</th><th>Status</th><th class='num'>Valor</th><th>Pedido / FR</th><th>Profissionais</th><th>Conferência</th><th></th></tr></thead><tbody>" + rows.map(function(r){
+    var conf = conferir(r.m.ClienteId, r.m.Competencia, r.m), nRed = conf.filter(function(x){ return x.n === "red"; }).length, nAmb = conf.filter(function(x){ return x.n === "amber"; }).length;
+    var call = "openMedicao('" + r.m.ClienteId + "','" + r.m.Competencia + "','" + ukArg(r.m.Unidade) + "')";
+    var pagTxt = r.pags.length ? r.pags.length + " · " + brl(soma(r.pags, function(p){ return p.Valor; })) + "<div class='small muted'>" + r.pags.filter(function(p){ return p.StatusPag === "Pago"; }).length + " pago(s)</div>" : "<span class='muted'>—</span>";
+    return "<tr class='click' onclick=\"" + call + "\"><td><b>" + esc(r.c.Title) + "</b><div style='font-weight:600;color:#127a55'>" + esc(r.P.descricao || r.m.UnidadeNome || "") + "</div><div class='small muted'>" + esc([r.P.datas, r.P.local, r.P.area || r.c.Area].filter(Boolean).join(" · ")) + "</div></td>" +
+      "<td>" + esc(compLabel(r.m.Competencia)) + "</td><td><span class='badge " + (STATUS_BADGE[r.m.Status] || "b-gray") + "'>" + esc(r.m.Status) + "</span>" + (faltaOC(r.m) ? "<div><span class='badge b-amber'>Falta pedido</span></div>" : "") + (liberada(r.m) && r.m.Status !== "NF emitida" ? "<div><span class='badge b-purple'>liberado</span></div>" : "") + "</td>" +
+      "<td class='num'><b>" + brl(r.m.ValorFaturar) + "</b></td><td class='small'>" + (ocDe(r.m) ? "Pedido " + esc(ocDe(r.m)) : "<span class='muted'>sem pedido</span>") + (linhasDe(r.m).folha ? "<div>FR " + esc(linhasDe(r.m).folha) + "</div>" : "") + "</td>" +
+      "<td class='small'>" + pagTxt + "</td><td>" + (nRed ? "<span class='badge b-red'>" + nRed + " crítica(s)</span>" : nAmb ? "<span class='badge b-amber'>" + nAmb + " alerta(s)</span>" : "<span class='badge b-green'>OK</span>") + "</td>" +
+      "<td class='num'><button class='btn-o btn-s' onclick=\"event.stopPropagation();" + call + "\">Abrir</button></td></tr>";
+  }).join("") + "</tbody><tfoot><tr><td colspan='3'>Total (" + rows.length + ")</td><td class='num'>" + brl(fat) + "</td><td colspan='4'></td></tr></tfoot>";
+}
+// Medicoes do mes passa a mostrar so os recorrentes
+renderMedicoes = (function(orig){ return function(){ var bk = faturamentosDoMes; faturamentosDoMes = function(a, c){ return bk(a, c).filter(function(r){ return !r.u.pontual; }); }; try { return orig.apply(this, arguments); } finally { faturamentosDoMes = bk; } }; })(renderMedicoes);
+renderCurrent = (function(orig){ return function(){ if (CURRENT_TAB === "pontuais"){ renderPontuais(); renderRenovBadge(); return; } return orig(); }; })(renderCurrent);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
-    "Em <b>Medições do mês</b>, clique em <b>+ Serviço pontual</b>. Escolha o cliente (ou <b>+ Cliente novo</b> para quem ainda não está cadastrado), a área, a descrição, as datas, o local e o código de serviço da NF.",
+    "No menu <b>Serviços pontuais</b> (abaixo de Medições do mês), clique em <b>+ Serviço pontual</b>. Escolha o cliente (ou <b>+ Cliente novo</b> para quem ainda não está cadastrado), a área, a descrição, as datas, o local e o código de serviço da NF.",
     "Informe os <b>itens</b> com quantidade, unidade e valor unitário negociado. O total é calculado na hora.",
-    "Preencha o e-mail do cliente que valida o serviço e o e-mail do <b>responsável que recebe a NF</b>. Salve: o serviço aparece na lista da competência com o selo <b>Pontual</b>.",
+    "Preencha o e-mail do cliente que valida o serviço e o e-mail do <b>responsável que recebe a NF</b>. Se houver profissional a pagar, use <b>+ Adicionar profissional</b> no mesmo formulário. Salve: o serviço aparece na lista de Serviços pontuais (não entra em Medições do mês, que fica só com os recorrentes).",
     "Abra o serviço e clique em <b>Preparar e-mail no Outlook</b>. O rascunho pede a validação dos valores e o número do pedido (PO/OC). Revise e envie pelo Outlook.",
     "Quando o cliente responder, clique em <b>Cliente aprovou</b> e digite o nº do pedido. Sem pedido não é possível liberar o faturamento.",
     "Clique em <b>Liberar faturamento ao prestador</b>: o e-mail ao financeiro já leva os dados validados, o código, o pedido e o e-mail do responsável que recebe a NF.",
@@ -4997,7 +5155,7 @@ AJUDA_IND.push({ g:"Pontuais e pagamentos", itens:[
   ["Pagamentos no mês", "Solicitações com data de pagamento no mês, exceto canceladas, separadas em pagas e em aberto."],
   ["Pendências com o BPO", "Solicitações que o BPO devolveu por falta ou erro de informação."]
 ]});
-AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim."]]);
+AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim.", "No cadastro do serviço pontual já dá para solicitar o pagamento de um ou mais profissionais, com os campos da planilha do BPO.", "Serviços pontuais ganham menu próprio, separado de Medições do mês."]]);
 
 </script>
 <script>
