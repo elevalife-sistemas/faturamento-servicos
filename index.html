@@ -469,7 +469,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <!-- SERVICOS PONTUAIS -->
       <div class="panel" id="panel-pontuais">
         <div class="page-head"><div><h1 class="page-title">Serviços pontuais</h1><p class="page-sub">Palestras, campanhas e serviços avulsos: validação do cliente com pedido, liberação ao financeiro (NF separada) e pagamento aos profissionais.</p></div>
-          <button class="btn" id="btnPontual" onclick="openPontual()">+ Serviço pontual</button></div>
+          <button class="btn" id="btnPontual" onclick="openPontual()">+ Incluir serviço pontual</button></div>
         <div class="toolbar"><label>Competência</label><input type="month" id="ptfComp" onchange="renderPontuais()"><button class="btn-ghost" onclick="$('ptfComp').value='';renderPontuais()">todas</button><label>Área</label><select id="ptfArea" onchange="renderPontuais()"></select><label>Status</label><select id="ptfStatus" onchange="renderPontuais()"></select><label>Buscar</label><input id="ptfBusca" placeholder="Cliente, serviço ou pedido" oninput="renderPontuais()" style="max-width:220px"></div>
         <div class="kpi-grid" id="ptfKpis"></div>
         <div class="tbl-wrap"><table class="tbl" id="ptfTable"></table></div>
@@ -4536,7 +4536,7 @@ function ptRenderPags(){
   var profs = profissionaisAtivos(), sel = function(arr, cur){ return arr.map(function(x){ return opt(x, x, cur); }).join(""); };
   var IS = "style='width:100%'";
   var h = "<div style='border:1px solid var(--border);border-left:4px solid #1baf7a;border-radius:12px;padding:14px 16px;background:#fbfdfc'>" +
-    "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'><div><label style='margin:0'>Pagamento aos profissionais deste serviço</label><div class='hint' style='margin:2px 0 0'>Mesmos campos da planilha do BPO. Ao salvar, cada pagamento vai para o BPO com aviso no Teams. Mínimo de 1 dia de antecedência, só em dia útil.</div></div>" +
+    "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'><div><label style='margin:0'>Quem vai receber por este serviço (pagamento ao profissional)</label><div class='hint' style='margin:2px 0 0'>Mesmos campos da planilha do BPO. Ao salvar, cada pagamento vai para o BPO com aviso no Teams. Mínimo de 1 dia de antecedência, só em dia útil.</div></div>" +
     "<button type='button' class='btn-o btn-s' onclick='ptAddPag()'>+ Adicionar profissional</button></div>";
   if (ja.length) h += "<div class='small' style='margin-top:10px'><b>Já solicitados:</b> " + ja.map(function(p){ return esc(p.Favorecido) + " · " + brl(p.Valor) + " em " + fmtDate(p.DataPagamento) + " (" + esc(p.StatusPag || "Solicitado") + ")"; }).join(" · ") + "</div>";
   l.forEach(function(x, k){
@@ -4642,7 +4642,7 @@ function openPontual(id){
   window.__ptItens = (P.itens && P.itens.length ? P.itens : [{ desc:"", qtd:1, unid:"hora", unit:"" }]).map(function(i){ return Object.assign({}, i); });
   var comp = med ? med.Competencia : ($("medComp").value || curComp());
   var cods = S.codigos.filter(function(c){ return c.Ativo !== false; }).sort(function(a, b){ return (a.Tipo === "Pontual" ? 0 : 1) - (b.Tipo === "Pontual" ? 0 : 1) || String(a.Codigo).localeCompare(String(b.Codigo)); });
-  var h = "<h3>" + (med ? "Editar serviço pontual" : "Novo serviço pontual") + "</h3><p class='msub'>Registre o serviço realizado. Depois o sistema prepara o e-mail para o cliente validar e devolver o nº do pedido; com o pedido, você libera ao financeiro, que emite a NF separada.</p><div class='form'>" +
+  var h = "<h3>" + (med ? "Editar serviço pontual" : "Incluir serviço pontual") + "</h3><p class='msub'>Registre o serviço realizado. Depois o sistema prepara o e-mail para o cliente validar e devolver o nº do pedido; com o pedido, você libera ao financeiro, que emite a NF separada.</p><div class='form'>" +
     "<div><label>Cliente</label><select id='pt_cli' onchange='ptCliRefresh()'>" + opt("", "Selecione...", cli ? cli.id : "") + clientesParaPontual().map(function(c){ return opt(c.id, c.Title, cli ? cli.id : ""); }).join("") + opt("__novo", "+ Cliente novo (ainda não cadastrado)", "") + "</select></div>" +
     "<div><label>Área</label><select id='pt_area' onchange='window.__ptAreaTocada=true'>" + AREAS.map(function(a){ return opt(a, a, P.area || (cli && cli.Area) || ""); }).join("") + "</select></div>" +
     "<div id='ptNovo' class='full hidden' style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px'><div><label>Nome do cliente</label><input id='pt_nNome' placeholder='Ex.: Empresa X – Unidade'></div><div><label>Razão social</label><input id='pt_nRazao'></div><div><label>CNPJ</label><input id='pt_nCnpj' placeholder='00.000.000/0000-00'></div></div>" +
@@ -5101,7 +5101,7 @@ function renderPontuais(){
   $("ptfKpis").innerHTML = kpi("Serviços pontuais", String(rows.length), comp ? compLabel(comp) : "todas as competências") + kpi("Valor a faturar", brl(fat), rows.filter(function(r){ return r.m.Status === "NF emitida"; }).length + " com NF emitida") +
     kpi("Aguardando pedido", String(semPed.length), semPed.length ? brl(soma(semPed, function(r){ return r.m.ValorFaturar; })) + " parados" : "nenhum parado") +
     kpi("Pagamentos a profissionais", brl(custo), pags.length + " solicitação(ões)" + (isGestor() && fat ? " · margem " + num((fat - custo) / fat * 100, 0) + "%" : ""));
-  if (!rows.length){ $("ptfTable").innerHTML = "<tr><td class='empty'>Nenhum serviço pontual" + (comp || st || area || q ? " com estes filtros" : "") + ". Clique em + Serviço pontual para registrar.</td></tr>"; return; }
+  if (!rows.length){ $("ptfTable").innerHTML = "<tr><td class='empty'>Nenhum serviço pontual" + (comp || st || area || q ? " com estes filtros" : "") + ". Clique em + Incluir serviço pontual para registrar.</td></tr>"; return; }
   $("ptfTable").innerHTML = "<thead><tr><th>Cliente / serviço</th><th>Competência</th><th>Status</th><th class='num'>Valor</th><th>Pedido / FR</th><th>Profissionais</th><th>Conferência</th><th></th></tr></thead><tbody>" + rows.map(function(r){
     var conf = conferir(r.m.ClienteId, r.m.Competencia, r.m), nRed = conf.filter(function(x){ return x.n === "red"; }).length, nAmb = conf.filter(function(x){ return x.n === "amber"; }).length;
     var call = "openMedicao('" + r.m.ClienteId + "','" + r.m.Competencia + "','" + ukArg(r.m.Unidade) + "')";
