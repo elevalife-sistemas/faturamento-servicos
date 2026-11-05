@@ -5053,7 +5053,7 @@ renderDashboard = (function(orig){ return function(){
   var l = pagamentosVisiveis().filter(function(p){ return p.StatusPag !== "Cancelado" && String(p.DataPagamento || "").slice(0, 7) === comp && (!area || p.Area === area); });
   var soma = function(x){ return x.reduce(function(s, p){ return s + (Number(p.Valor) || 0); }, 0); };
   var pago = l.filter(function(p){ return p.StatusPag === "Pago"; }), pend = l.filter(function(p){ return p.StatusPag === "Pendência"; }), aberto = l.filter(function(p){ return p.StatusPag !== "Pago"; });
-  var ponts = faturamentosDoMes(area, comp).filter(function(r){ return r.u.pontual && r.m; }).map(function(r){ return r.m; });
+  var ponts = pontuaisVisiveis().filter(function(m){ var c = byId("clientes", m.ClienteId) || {}; return m.Competencia === comp && (!area || (pontualDe(m).area || c.Area) === area); });
   var fatP = ponts.reduce(function(s, m){ return s + (Number(m.ValorFaturar) || 0); }, 0);
   var custoP = (S.pagamentos || []).filter(function(p){ return p.StatusPag !== "Cancelado" && ponts.some(function(m){ return String(m.id) === String(p.MedicaoId); }); }).reduce(function(s, p){ return s + (Number(p.Valor) || 0); }, 0);
   var porMot = {}; l.forEach(function(p){ var k = p.Motivo || "Outro"; porMot[k] = (porMot[k] || 0) + (Number(p.Valor) || 0); });
@@ -5120,6 +5120,10 @@ function renderPontuais(){
 renderMedicoes = (function(orig){ return function(){ var bk = faturamentosDoMes; faturamentosDoMes = function(a, c){ return bk(a, c).filter(function(r){ return !r.u.pontual; }); }; try { return orig.apply(this, arguments); } finally { faturamentosDoMes = bk; } }; })(renderMedicoes);
 renderCurrent = (function(orig){ return function(){ if (CURRENT_TAB === "pontuais"){ renderPontuais(); renderRenovBadge(); return; } return orig(); }; })(renderCurrent);
 
+// Pontuais ficam fora do fechamento mensal dos recorrentes (Fechamento do mês, Medições do mês, Dashboard e pendências),
+// mesmo em clientes que ja tem contrato: eles tem tela propria (Servicos pontuais) e quadro proprio no Dashboard.
+faturamentosDoMes = (function(orig){ return function(area, comp){ return orig(area, comp).filter(function(r){ return !(r.u && r.u.pontual); }); }; })(faturamentosDoMes);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5129,7 +5133,7 @@ AJUDA_USO.push(
     "Abra o serviço e clique em <b>Preparar e-mail no Outlook</b>. O rascunho pede a validação dos valores e o número do pedido (PO/OC). Revise e envie pelo Outlook.",
     "Quando o cliente responder, clique em <b>Cliente aprovou</b> e digite o nº do pedido. Sem pedido não é possível liberar o faturamento.",
     "Clique em <b>Liberar faturamento ao prestador</b>: o e-mail ao financeiro já leva os dados validados, o código, o pedido e o e-mail do responsável que recebe a NF.",
-    "O painel, a comunicação, a criticidade, a NF, os Recebimentos e o Dashboard funcionam igual aos faturamentos recorrentes.",
+    "O painel, a comunicação, a criticidade, a NF e os Recebimentos funcionam igual aos recorrentes. Os pontuais <b>não entram no Fechamento do mês</b> nem nos indicadores mensais dos recorrentes: ficam na tela Serviços pontuais e num quadro próprio do Dashboard.",
     "Enquanto estiver em rascunho, use <b>Editar serviço pontual</b> para corrigir. Depois de enviado, volte para rascunho antes de alterar."] },
   { t:"Pagamentos a profissionais", obj:"Solicitar ao BPO o pagamento de profissionais (pontual, cobertura, renovação) com os mesmos campos da planilha, sem depender do recebimento do cliente.", perfis:"coord", passos:[
     "Abra <b>Pagamentos a profissionais</b> e clique em <b>+ Solicitar pagamento</b>, ou use o botão no painel do serviço pontual (já vem vinculado ao projeto).",
@@ -5158,12 +5162,12 @@ AJUDA_IND.push({ g:"Pontuais e pagamentos", itens:[
   ["Pagamentos no mês", "Solicitações com data de pagamento no mês, exceto canceladas, separadas em pagas e em aberto."],
   ["Pendências com o BPO", "Solicitações que o BPO devolveu por falta ou erro de informação."]
 ]});
-AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim.", "No cadastro do serviço pontual já dá para solicitar o pagamento de um ou mais profissionais, com os campos da planilha do BPO.", "Serviços pontuais ganham menu próprio, separado de Medições do mês.", "Novas áreas: Fisioterapia, Massoterapia, Enfermagem, Medicina, RH, DP, MKT e Comercial.", "Menu Pagamentos a profissionais visível só para o BPO e os gestores; coordenadores solicitam pela tela do serviço pontual.", "Aviso automático de versão nova: a página se atualiza sozinha depois de cada publicação."]]);
+AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim.", "No cadastro do serviço pontual já dá para solicitar o pagamento de um ou mais profissionais, com os campos da planilha do BPO.", "Serviços pontuais ganham menu próprio, separado de Medições do mês.", "Novas áreas: Fisioterapia, Massoterapia, Enfermagem, Medicina, RH, DP, MKT e Comercial.", "Menu Pagamentos a profissionais visível só para o BPO e os gestores; coordenadores solicitam pela tela do serviço pontual.", "Aviso automático de versão nova: a página se atualiza sozinha depois de cada publicação.", "Serviços pontuais não entram no Fechamento do mês nem nos indicadores mensais dos recorrentes, mesmo em clientes com contrato; ficam só na tela Serviços pontuais e no quadro próprio do Dashboard."]]);
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261104194804";
+var APP_BUILD = "20261105143526";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
