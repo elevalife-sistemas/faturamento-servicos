@@ -347,7 +347,7 @@ body.sidebar-collapsed .tab-group-label{font-size:0;height:1px;padding:0;margin:
       <!-- DASHBOARD -->
       <div class="panel active" id="panel-dashboard">
         <div class="page-head"><div><h1 class="page-title">Dashboard</h1><p class="page-sub">Visão consolidada do faturamento do mês selecionado, pelo regime escolhido.</p></div></div>
-        <div class="toolbar"><label>Mês</label><input type="month" id="dashComp" onchange="renderDashboard()"><label>Área</label><select id="dashArea" onchange="renderDashboard()"></select><label>Regime</label><select id="dashBase" onchange="renderDashboard()"><option value="fat">Competência (mês do faturamento)</option><option value="caixa">Caixa (mês do recebimento)</option></select></div>
+        <div class="toolbar"><label>Mês</label><input type="month" id="dashComp" onchange="renderDashboard()"><label>Área</label><select id="dashArea" onchange="renderDashboard()"></select><label>Regime</label><select id="dashBase" onchange="renderDashboard()"><option value="comp">Competência (mês em que o serviço ocorreu)</option><option value="caixa">Caixa (mês em que será faturado)</option></select></div>
         <div class="dash-head"><h2 class="dash-mes" id="dashMes"></h2><span class="dash-escopo" id="dashEscopo"></span></div>
         <div class="kpi-grid" id="dashKpis"></div>
         <div class="grid3">
@@ -1413,8 +1413,8 @@ function renderFechamento(){
 }
 function statusDe(cid, comp, uk){ var m = medicaoDe(cid, comp, uk); return m ? m.Status : "Não gerada"; }
 function renderDashboard(){
-  var comp = $("dashComp").value || curComp(), area = $("dashArea").value, regime = ($("dashBase") && $("dashBase").value) || "fat";
-  var fats = regime === "caixa" ? faturamentosPorCaixa(area, comp) : faturamentosPorMesFat(area, comp);
+  var comp = $("dashComp").value || curComp(), area = $("dashArea").value, regime = ($("dashBase") && $("dashBase").value) || "comp";
+  var fats = regime === "caixa" ? faturamentosPorMesFat(area, comp) : faturamentosDoMes(area, comp);
   var clis = []; fats.forEach(function(r){ if (clis.indexOf(r.c) < 0) clis.push(r.c); });
   var meds = fats.map(function(r){ return r.m; }).filter(Boolean);
   // previsao: medicao salva quando existe; senao, previa calculada pelo contrato vigente + ocorrencias
@@ -3560,8 +3560,8 @@ function previaMes(area, comp){
 
 function renderDashVisual(comp, area, fats, prev, clis){
   $("dashMes").textContent = compLabel(comp).replace(/^./, function(x){ return x.toUpperCase(); });
-  var rg = ($("dashBase") && $("dashBase").value) || "fat";
-  $("dashEscopo").textContent = (rg === "caixa" ? "Regime de caixa: NFs recebidas no mês" : "Regime de competência: faturamentos do mês (NF)") + " (ocorrências e séries mensais seguem o mês do serviço)" + " · " + (area || "todas as áreas") + (soMeus() ? " · meus clientes" : "");
+  var rg = ($("dashBase") && $("dashBase").value) || "comp";
+  $("dashEscopo").textContent = (rg === "caixa" ? "Regime de caixa: o que será faturado no mês (competências anteriores, conforme o prazo de faturamento; ocorrências e séries mensais seguem o mês do serviço)" : "Regime de competência: serviços prestados no mês") + " · " + (area || "todas as áreas") + (soMeus() ? " · meus clientes" : "");
   // 1) reconhecimento
   var recV = prev.filter(function(r){ return r.ok; }).reduce(function(s, r){ return s + r.v; }, 0), tot = prev.reduce(function(s, r){ return s + r.v; }, 0), falta = Math.max(0, tot - recV);
   var nRec = prev.filter(function(r){ return r.ok; }).length, pct = tot ? Math.round(recV / tot * 100) : 0;
@@ -4218,7 +4218,7 @@ var AJUDA_IND = [
     ["Pendências", "Faturamentos sem medição, rascunhos (e desatualizados), enviados sem resposta há mais de 2 dias, aprovados sem OC ou sem NF, cadastros incompletos e ocorrências sem justificativa."]
   ]},
   { g:"Faturamento e recebimento (Dashboard)", itens:[
-    ["Ver por competência ou por mês de faturamento", "Em Ver por, escolha mês de faturamento para somar os faturamentos cujo mês previsto de NF é o escolhido (competência + prazo de faturamento). Ocorrências e séries mensais seguem a competência."],
+    ["Regime: competência ou caixa", "Competência soma os serviços prestados no mês escolhido. Caixa soma o que será faturado no mês escolhido: em geral a competência do mês anterior, ou mais antiga quando o serviço tem prazo de faturamento (ex.: 120 dias). Ocorrências e séries mensais seguem o mês do serviço."],
     ["Data limite das NFs", "Liberados aguardando NF; em risco (até 3 dias para o prazo interno, sem NF); atrasados (passou do prazo interno sem NF); e % de NFs emitidas até a data limite do portal."],
     ["Tempo médio por etapa", "Média de dias corridos entre rascunho → envio → aprovação → liberação ao prestador → NF."],
     ["Pedidos, criticidades e comunicação", "Faturamentos aprovados parados por falta de pedido/OC (quantidade e R$), criticidades abertas por motivo e mensagens registradas."],
@@ -5269,7 +5269,7 @@ async function criarAvisoComercial(){
     setLoading(false); openModal(avisoRascunho(r, "Rascunho para o Leonardo criado"));
   } catch (e){ setLoading(false); showToast("Não consegui criar o rascunho: " + e.message, true); }
 }
-renderDashboard = (function(orig){ return function(){ orig.apply(this, arguments); if ($("dashBase") && $("dashBase").value === "caixa"){ var k = document.querySelectorAll("#dashKpis .kpi-label"); if (k[0]) k[0].textContent = "Recebido no mês"; if (k[1]) k[1].textContent = "Reconhecido pelo coordenador"; } }; })(renderDashboard);
+renderDashboard = (function(orig){ return function(){ orig.apply(this, arguments); if ($("dashBase") && $("dashBase").value === "caixa"){ var k = document.querySelectorAll("#dashKpis .kpi-label"); if (k[0]) k[0].textContent = "A faturar no mês (caixa)"; } }; })(renderDashboard);
 
 // ============================================================
 // IMPORTAR PLANILHA DE CONTRATOS DO PRESTADOR (Configuração)
@@ -5408,6 +5408,80 @@ async function aplicarImportacao(){
   else $("impBody").innerHTML = "<div class='alert alert-green'>" + feitos + " alteração(ões) gravada(s). Se precisar, selecione a planilha de novo para ver o que ainda falta.</div>";
 }
 
+// ============================================================
+// V 1.19 — Cobrar o prestador: follow-up por e-mail das pendências de registro
+// (faturamentos liberados sem NF registrada e NFs vencidas sem situação de recebimento)
+// ============================================================
+function medVisivelUsuario(m){ var c = byId("clientes", m.ClienteId); if (!c || !visivel(c)) return false; return unidadeVisivel(c, ehPontual(m) ? { pontual:true, key:m.Unidade || "" } : unidadeDe(m.ClienteId, m.Competencia, m.Unidade || "")); }
+function pendenciasPrestador(){
+  var hoje = todayISO();
+  var semNF = S.medicoes.filter(function(m){ return liberada(m) && m.Status !== "NF emitida" && medVisivelUsuario(m); })
+    .map(function(m){ return { m:m, dias: daysBetween(m.DataLiberacao, hoje) }; }).sort(function(a, b){ return b.dias - a.dias; });
+  var semReceb = S.medicoes.filter(function(m){ if (m.Status !== "NF emitida" || m.PagStatus === "Pago" || !medVisivelUsuario(m)) return false; var venc = vencimentoDe(m); if (!venc || venc >= hoje) return false; return !(m.PagStatus === "Não pago" && m.DataPrevista && m.DataPrevista >= hoje); })
+    .map(function(m){ return { m:m, dias: daysBetween(vencimentoDe(m), hoje) }; }).sort(function(a, b){ return b.dias - a.dias; });
+  return { semNF:semNF, semReceb:semReceb, total: semNF.length + semReceb.length };
+}
+function nomeMed(m){ var c = byId("clientes", m.ClienteId) || {}; return c.Title + (m.UnidadeNome ? " · " + m.UnidadeNome : "") + (ehPontual(m) ? " (pontual)" : ""); }
+function botaoCobrarPrestador(){ if (soPrestador() || soOcorrencias()) return ""; var n = pendenciasPrestador().total; return "<button class='btn-o' onclick='cobrarPrestador()'" + (n ? "" : " title='Nenhuma pendência do prestador'") + ">&#9993; Cobrar prestador" + (n ? " (" + n + ")" : "") + "</button>"; }
+function corpoCobrancaPrestador(p, obs){
+  var F = "font-family:Calibri,Arial,sans-serif;font-size:14px;color:#1f2124;";
+  var th = function(t){ return "<th style='background:#6e1423;color:#fff;padding:6px 10px;text-align:left;border:1px solid #6e1423;font-size:12.5px'>" + t + "</th>"; };
+  var td = function(t, dest){ return "<td style='padding:6px 10px;border:1px solid #e5e6e9;font-size:13px" + (dest ? ";color:#b02a2a;font-weight:bold" : "") + "'>" + t + "</td>"; };
+  var h = "<div style='" + F + "'><p>" + saudacao() + ".</p><p>Seguem os faturamentos que ainda estão sem registro no sistema <b>Faturamento de Serviços</b>. Por favor, atualize cada um no sistema:</p>";
+  if (p.semNF.length) h += "<p style='margin:14px 0 6px'><b>1) Liberados para faturamento, sem NF registrada</b><br><span style='color:#6b6f76;font-size:12.5px'>Em Medições do mês (ou Serviços pontuais), abra o faturamento, clique em <b>Conferir e emitir a NF</b> e registre o nº e a data da NF emitida e enviada ao cliente.</span></p>" +
+    "<table style='border-collapse:collapse'><tr>" + th("Faturamento") + th("Competência") + th("Valor") + th("Liberado em") + th("Dias") + "</tr>" + p.semNF.map(function(x){ var lim = limiteNF(x.m.ClienteId, x.m.Competencia, x.m.Unidade || ""); return "<tr>" + td(esc(nomeMed(x.m))) + td(compLabel(x.m.Competencia)) + td(brl(x.m.ValorFaturar)) + td(fmtDate(x.m.DataLiberacao) + (lim ? "<br><span style='font-size:11.5px;color:#b02a2a'>NF até " + fmtDate(lim.interno) + "</span>" : "")) + td(String(x.dias), x.dias > 3) + "</tr>"; }).join("") + "</table>";
+  if (p.semReceb.length) h += "<p style='margin:16px 0 6px'><b>2) NFs vencidas sem situação de recebimento</b><br><span style='color:#6b6f76;font-size:12.5px'>Em Recebimentos, clique em <b>Registrar pagamento</b> e marque Pago (com a data) ou Não pago (com a previsão de recebimento).</span></p>" +
+    "<table style='border-collapse:collapse'><tr>" + th("Faturamento") + th("NF") + th("Valor") + th("Vencimento") + th("Dias em atraso") + "</tr>" + p.semReceb.map(function(x){ return "<tr>" + td(esc(nomeMed(x.m))) + td(esc(x.m.NumNF || "?") + " de " + fmtDate(x.m.DataNF)) + td(brl(x.m.ValorFaturar)) + td(fmtDate(vencimentoDe(x.m))) + td(String(x.dias), true) + "</tr>"; }).join("") + "</table>";
+  if (obs) h += "<p style='margin-top:14px'>" + esc(obs).replace(/\n/g, "<br>") + "</p>";
+  h += "<p style='margin-top:14px'>Acesso: <a href='https://elevalife-sistemas.github.io/faturamento-servicos/'>https://elevalife-sistemas.github.io/faturamento-servicos/</a></p><p>Obrigado.<br><b>" + esc(CURRENT_USER.name || "") + "</b><br>ElevaLife Saúde e Educação</p></div>";
+  return h;
+}
+function cobrarPrestador(medId){
+  var p = pendenciasPrestador();
+  if (medId){ var so = function(l){ return l.filter(function(x){ return String(x.m.id) === String(medId); }); }; p = { semNF: so(p.semNF), semReceb: so(p.semReceb) }; p.total = p.semNF.length + p.semReceb.length; }
+  if (!p.total){ showToast("Nenhuma pendência do prestador" + (medId ? " neste faturamento." : ". Todos os liberados têm NF registrada e as NFs vencidas têm situação de recebimento."), false); return; }
+  window.__cobrPrest = { ids: p.semNF.concat(p.semReceb).map(function(x){ return x.m.id; }), medId: medId || "" };
+  var h = "<h3>Cobrar prestador</h3><p class='msub'>O sistema cria no seu Outlook o e-mail de follow-up para o prestador registrar no sistema o que falta. Você revisa e clica em Enviar.</p>" +
+    "<div class='mini-kpis' style='margin-bottom:12px'>" + miniKpi("Liberados sem NF registrada", p.semNF.length, "b-purple") + miniKpi("NFs vencidas sem recebimento", p.semReceb.length, "b-red") + "</div>" +
+    "<div class='form'><div class='full'><label>Para</label><input id='cpPara' value='" + esc(emailsPrestador().join("; ")) + "'></div><div class='full'><label>Cc</label><input id='cpCc' value='" + esc(CURRENT_USER.email || "") + "'></div><div class='full'><label>Observação (opcional, vai no fim do e-mail)</label><textarea id='cpObs' style='min-height:50px' oninput='cpPrevia()'></textarea></div></div>" +
+    "<div class='card' id='cpPrev' style='margin:10px 0;padding:10px 12px;max-height:300px;overflow:auto'>" + corpoCobrancaPrestador(p, "") + "</div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"" + (medId ? "reabrir(byId('medicoes','" + medId + "'))" : "closeModal()") + "\">Voltar</button><button class='btn' onclick='criarCobrancaPrestador()'>Criar e-mail no Outlook</button></div>";
+  window.__cobrPrestP = p; openModal(h, true);
+}
+function cpPrevia(){ var el = $("cpPrev"); if (el) el.innerHTML = corpoCobrancaPrestador(window.__cobrPrestP, v("cpObs")); }
+async function criarCobrancaPrestador(){
+  var p = window.__cobrPrestP, para = emailsDe(v("cpPara")), cc = emailsDe(v("cpCc"));
+  if (!para.length){ showToast("Informe o e-mail do prestador.", true); return; }
+  try {
+    setLoading(true, "Criando o e-mail...");
+    var r = await rascunhoOutlook(para, cc, "Pendências de registro – Faturamento de Serviços – " + fmtDate(todayISO()) + " (" + p.total + ")", corpoCobrancaPrestador(p, v("cpObs")));
+    var lista = p.semNF.concat(p.semReceb);
+    for (var i = 0; i < lista.length; i++){ var m = lista[i].m; await registrarComunicacao(m, "Follow-up ao prestador: " + (p.semNF.indexOf(lista[i]) >= 0 ? "registrar a NF emitida" : "registrar a situação do recebimento") + " (e-mail criado no Outlook para " + para.join("; ") + ").", "sistema").catch(function(){}); }
+    setLoading(false);
+    openModal(avisoRascunho(r, "E-mail ao prestador criado") + (DEMO ? "<div class='alert alert-blue'>Modo demonstração: nenhum e-mail foi criado.</div>" : "") + "<div class='modal-actions'><button class='btn-o' onclick='closeModal()'>Fechar</button></div>");
+    renderCurrent();
+  } catch (e){ setLoading(false); showToast("Não consegui criar o e-mail: " + e.message, true); }
+}
+// botoes: Fechamento do mes, Recebimentos e painel do faturamento liberado
+function montarBotoesCobranca(){
+  ["fechamento", "recebimentos"].forEach(function(t){
+    var ph = document.querySelector("#panel-" + t + " .page-head"); if (!ph) return;
+    var w = ph.querySelector(".cobr-prest"); if (!w){ w = document.createElement("div"); w.className = "cobr-prest"; ph.appendChild(w); }
+    w.innerHTML = botaoCobrarPrestador();
+  });
+}
+renderFechamento = (function(orig){ return function(){ orig.apply(this, arguments); montarBotoesCobranca(); }; })(renderFechamento);
+renderRecebimentos = (function(orig){ return function(){ orig.apply(this, arguments); montarBotoesCobranca(); }; })(renderRecebimentos);
+openMedicao = (function(orig){ return function(cid, comp, uk){
+  orig.apply(this, arguments);
+  var med = medicaoDe(cid, comp, uk || "") || (ukPontual(uk) ? medPorUk(cid, uk) : null); if (!med || soPrestador() || soOcorrencias()) return;
+  var pend = pendenciasPrestador(), tem = pend.semNF.concat(pend.semReceb).some(function(x){ return String(x.m.id) === String(med.id); });
+  if (!tem) return;
+  var acoes = $("modalBody").querySelector(".modal-actions"); if (!acoes) return;
+  var b = document.createElement("button"); b.className = "btn-o"; b.innerHTML = "&#9993; Cobrar prestador"; b.onclick = function(){ cobrarPrestador(med.id); };
+  acoes.insertBefore(b, acoes.firstChild);
+}; })(openMedicao);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5447,17 +5521,23 @@ AJUDA_IND.push({ g:"Pontuais e pagamentos", itens:[
   ["Pendências com o BPO", "Solicitações que o BPO devolveu por falta ou erro de informação."]
 ]});
 AJUDA_VERSOES.unshift(["V 1.17", "04/11/2026", ["Serviços pontuais: registro com itens e preço negociado, e-mail de validação com pedido obrigatório, liberação ao financeiro com o responsável que recebe a NF (NF separada).", "Pagamentos a profissionais: solicitação com os campos da planilha do BPO, 1 dia de antecedência e dia útil, sugestão do último valor pago, documento fiscal e comprovante, status pelo BPO e aviso no Teams.", "Cadastro de profissionais (Banco de Talentos, credenciados e manual) com dados bancários visíveis só para gestores e BPO.", "Novo quadro no Dashboard: pontuais, margem bruta e pagamentos do mês.", "Ocorrência em serviço dividido pode ir para duas ou mais unidades escolhidas, na proporção do contrato entre elas.", "Opção no cadastro do cliente para enviar todos os boletins do mês em um único e-mail.", "Campo FR (folha de registro de serviço) ao lado da OC, na aprovação e na medição, levado à NF, à liberação e ao boletim.", "No cadastro do serviço pontual já dá para solicitar o pagamento de um ou mais profissionais, com os campos da planilha do BPO.", "Serviços pontuais ganham menu próprio, separado de Medições do mês.", "Novas áreas: Fisioterapia, Massoterapia, Enfermagem, Medicina, RH, DP, MKT e Comercial.", "Menu Pagamentos a profissionais visível só para o BPO e os gestores; coordenadores solicitam pela tela do serviço pontual.", "Aviso automático de versão nova: a página se atualiza sozinha depois de cada publicação.", "Serviços pontuais não entram no Fechamento do mês nem nos indicadores mensais dos recorrentes, mesmo em clientes com contrato; ficam só na tela Serviços pontuais e no quadro próprio do Dashboard."]]);
-AJUDA_VERSOES.unshift(["V 1.18", "06/11/2026", ["Cadastro do serviço: \"Colaborador alocado no cliente\" (sim/não), obrigatório ao cadastrar.", "Contrato: \"Retém ISS\" (sim/não), exibido no painel da medição, na conferência da NF e na liberação ao financeiro.", "Cliente: canal de envio da NF de cobrança (e-mail ou portal), com o e-mail ou o portal obrigatório, exibido no painel da medição e na liberação.", "Cliente: grupo empresarial (razão social do grupo) para clientes com várias unidades; filtros de Grupo e Unidade (cidade) nas telas principais.", "Dashboard: \"Mês\" no lugar de \"Competência\" e filtro \"Regime\" (competência = mês do faturamento; caixa = mês do recebimento).", "Códigos de serviço com NBS, CNAE, atividade e % IBPT, importados da planilha de contratos.", "Aviso ao Comercial: rascunho no Outlook com os campos novos para o painel comercial."]]);
+AJUDA_VERSOES.unshift(["V 1.18", "06/11/2026", ["Cadastro do serviço: \"Colaborador alocado no cliente\" (sim/não), obrigatório ao cadastrar.", "Contrato: \"Retém ISS\" (sim/não), exibido no painel da medição, na conferência da NF e na liberação ao financeiro.", "Cliente: canal de envio da NF de cobrança (e-mail ou portal), com o e-mail ou o portal obrigatório, exibido no painel da medição e na liberação.", "Cliente: grupo empresarial (razão social do grupo) para clientes com várias unidades; filtros de Grupo e Unidade (cidade) nas telas principais.", "Dashboard: \"Mês\" no lugar de \"Competência\" e filtro \"Regime\" (competência = mês em que o serviço ocorreu; caixa = mês em que será faturado).", "Códigos de serviço com NBS, CNAE, atividade e % IBPT, importados da planilha de contratos.", "Aviso ao Comercial: rascunho no Outlook com os campos novos para o painel comercial."]]);
 AJUDA_USO.push({ t:"Grupo empresarial, unidade e envio da NF", obj:"Cadastrar clientes com várias unidades e o canal de envio da NF de cobrança.", perfis:"coord", passos:[
   "No cadastro do cliente, informe o <b>canal de envio da NF</b>: por e-mail (informe os e-mails) ou pelo portal do cliente (informe o endereço ou o nome do portal). O campo é obrigatório.",
   "Se o cliente faz parte de um grupo com mais de uma unidade no contrato, marque <b>Faz parte de um grupo empresarial</b> e informe o nome do grupo (a razão social). Use o mesmo nome em todas as unidades; a unidade é a cidade.",
   "Nas telas Dashboard, Fechamento, Medições, Serviços pontuais, Ocorrências, Renovações, Valores dos Contratos e Clientes aparecem os filtros <b>Grupo</b> e <b>Unidade</b>.",
   "No painel da medição aparecem o canal de envio da NF, se o contrato retém ISS e o grupo. As mesmas informações vão no e-mail de liberação ao financeiro."] });
+AJUDA_VERSOES.unshift(["V 1.19", "10/11/2026", ["Dashboard, filtro Regime: Competência mostra os serviços do mês em que ocorreram; Caixa mostra o que será faturado no mês (competência anterior, conforme o prazo de faturamento de cada serviço).", "Botão \"Cobrar prestador\" (Fechamento do mês, Recebimentos e painel do faturamento): cria no Outlook o e-mail de follow-up com os faturamentos liberados sem NF registrada e as NFs vencidas sem situação de recebimento, e registra na comunicação de cada faturamento."]]);
+AJUDA_USO.push({ t:"Cobrar o prestador", obj:"Lembrar o prestador de registrar no sistema a NF emitida e, depois, a situação do recebimento.", perfis:"coord", passos:[
+  "Em <b>Fechamento do mês</b> ou <b>Recebimentos</b>, clique em <b>Cobrar prestador</b>. O número entre parênteses mostra quantas pendências existem.",
+  "O e-mail lista (1) os faturamentos liberados sem NF registrada, com os dias desde a liberação e a data limite, e (2) as NFs vencidas sem situação de recebimento.",
+  "Revise, escreva uma observação se quiser e clique em <b>Criar e-mail no Outlook</b>. Envie pelo Outlook.",
+  "No painel de um faturamento liberado e ainda sem NF, o mesmo botão cobra só aquele faturamento."] });
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261106180249";
+var APP_BUILD = "20261110174827";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
