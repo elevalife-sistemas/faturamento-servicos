@@ -1388,7 +1388,7 @@ function etapaFechamento(r, comp){
   c.env = st === "Contestada" ? cell(false, "contestado", "b-red") : m && m.DataEnvio ? cell(true, fmtDate(m.DataEnvio)) : cell(false, "–");
   c.apr = m && m.DataAprovacao && (st === "Aprovada" || st === "NF emitida") ? cell(true, fmtDate(m.DataAprovacao)) : st === "Enviada" ? cell(false, "aguardando" + (dias ? " · " + dias + "d" : ""), dias > 2 ? "b-amber" : "b-gray") : cell(false, "–");
   c.oc = !m || !ocObrigatoria(m) ? cell(true, "não exige", "b-gray") : ocDe(m) ? cell(true, ocDe(m)) : cell(false, "falta", (st === "Aprovada") ? "b-amber" : "b-gray");
-  c.nf = st === "NF emitida" ? cell(true, "nº " + (m.NumNF || "?")) : cell(false, "–");
+  c.nf = st === "NF emitida" ? cell(true, "nº " + (m.NumNF || "?")) : (m && notasSalvas(m).length ? cell(false, notasSalvas(m).length + " de " + gruposNF(m).length + " NFs", "b-amber") : cell(false, "–"));
   var uk = ukArg(r.u.key), btn = function(txt, call, primary){ return "<button class='" + (primary ? "btn" : "btn-o") + " btn-s' onclick=\"" + call + "\">" + txt + "</button>"; };
   var passo, quem;
   if (!m){ passo = btn("Gerar rascunho", "acaoGerar('" + r.c.id + "','" + comp + "','" + uk + "').then(renderFechamento)", true); quem = "eu"; }
@@ -4027,7 +4027,7 @@ function renderDashFaturamento(comp, area, fats){
   // 5) inadimplencia (todas as NFs, independente do periodo)
   var nfs = S.medicoes.filter(function(m){ var c = byId("clientes", m.ClienteId); return m.Status === "NF emitida" && c && (!area || c.Area === area) && visivel(c); });
   var faixas = [["1–30", 1, 30], ["31–60", 31, 60], ["61–90", 61, 90], ["> 90", 91, 99999]], fv = [0, 0, 0, 0], venc = 0, aberto = 0, tot = 0, prevMes = {};
-  nfs.forEach(function(m){ var s = situacaoPag(m), val = Number(m.ValorFaturar) || 0; tot += val; if (s.k !== "pago"){ aberto += val; var dPrev = (m.PagStatus === "Não pago" && m.DataPrevista) ? m.DataPrevista : vencimentoDe(m); if (dPrev){ var mk = dPrev.slice(0, 7); prevMes[mk] = (prevMes[mk] || 0) + val; } }
+  nfs.forEach(function(m){ var s = situacaoPag(m), val = Number(m.ValorFaturar) || 0; tot += val; val = valorAbertoMed(m); if (s.k !== "pago"){ aberto += val; var dPrev = (m.PagStatus === "Não pago" && m.DataPrevista) ? m.DataPrevista : vencimentoDe(m); if (dPrev){ var mk = dPrev.slice(0, 7); prevMes[mk] = (prevMes[mk] || 0) + val; } }
     if (s.dias > 0 && s.k !== "pago"){ venc += val; faixas.forEach(function(f, i){ if (s.dias >= f[1] && s.dias <= f[2]) fv[i] += val; }); } });
   var mesesPrev = [0, 1, 2].map(function(k){ return compAdd(hoje.slice(0, 7), k); });
   var atrasados = Object.keys(prevMes).filter(function(k){ return k < hoje.slice(0, 7); }).reduce(function(s, k){ return s + prevMes[k]; }, 0);
@@ -5482,6 +5482,214 @@ openMedicao = (function(orig){ return function(cid, comp, uk){
   acoes.insertBefore(b, acoes.firstChild);
 }; })(openMedicao);
 
+// ============================================================
+// V 1.20 — Uma NF por código de serviço (a Prefeitura aceita um código por nota)
+// Notas ficam em Medicoes.NotasNF (JSON): [{cod, valor, num, data, venc, pag, dataPag, prev}]
+// O faturamento continua com NumNF/DataNF/PagStatus agregados (compatível com o resto do sistema)
+// ============================================================
+SCHEMA.medicoes.cols.push(["NotasNF", "ml"]);
+function codNum(s){ return String(s || "").split(" – ")[0].split(" / ")[0].trim(); }
+function notasSalvas(med){ var a = jparse(med && med.NotasNF, []); return Array.isArray(a) ? a.filter(function(x){ return x && x.num; }) : []; }
+// grupos de NF: linhas do faturamento agrupadas pelo código de serviço de cada serviço
+function gruposNF(med){
+  var n = nfInfo(med), tot = Number(med.ValorFaturar) || 0;
+  var unico = function(){ return [{ cod: codNum(n.codigos) || "Sem código", label: n.codigos || "", valor: r2(tot), retencoes: n.retencoes || "", disc: n.disc }]; };
+  if (ehPontual(med)) return unico();
+  var L = linhasDe(med), map = {}, ordem = [];
+  (L.lines || []).forEach(function(l){
+    var it = byId("itens", l.itemId || l.rel || ""), lab = it ? codigoItem(it) : "", k = codNum(lab) || "Sem código";
+    if (!map[k]){ map[k] = { cod:k, label: lab || "", valor:0, ret:[], linhas:[] }; ordem.push(k); }
+    var g = map[k]; g.valor += Number(l.final) || 0; g.linhas.push(l);
+    var cd = it && it.CodigoId ? byId("codigos", it.CodigoId) : null, rt = (it && it.Retencoes) || (cd && cd.Retencoes) || "";
+    if (rt && g.ret.indexOf(rt) < 0) g.ret.push(rt);
+  });
+  var gs = ordem.map(function(k){ return map[k]; });
+  if (gs.length < 2) return unico();
+  var soma = gs.reduce(function(s, g){ return s + g.valor; }, 0), dif = r2(tot - soma);
+  if (Math.abs(dif) >= 0.01){ var maior = gs.slice().sort(function(a, b){ return b.valor - a.valor; })[0]; maior.valor += dif; }
+  gs.forEach(function(g){ g.valor = r2(g.valor); g.retencoes = g.ret.join(" / ");
+    g.disc = "Prestação de serviços referente a " + compLabel(med.Competencia) + ":\n" + g.linhas.map(function(l){ return "- " + l.servico + ": " + brl(l.final); }).join("\n") + "\nTotal: " + brl(g.valor); });
+  return gs;
+}
+// notas registradas (faturamentos antigos com um único nº viram 1 nota)
+function notasDe(med){
+  var a = notasSalvas(med);
+  if (!a.length && med && med.NumNF && med.Status === "NF emitida") a = [{ cod: codNum(nfInfo(med).codigos) || "", valor: Number(med.ValorFaturar) || 0, num: med.NumNF, data: med.DataNF || "", venc: med.DataVencimento || "", pag: med.PagStatus || "Aberto", dataPag: med.DataPagamento || "", prev: med.DataPrevista || "", legado:true }];
+  return a;
+}
+function vencNota(med, nt){ return nt.venc || (nt.data ? addDays(nt.data, diasCondicao(byId("clientes", med.ClienteId))) : ""); }
+function situacaoNota(med, nt){
+  var venc = vencNota(med, nt), hoje = todayISO();
+  if (nt.pag === "Pago") return { k:"pago", cls:"b-green", txt:"Pago" + (nt.dataPag ? " em " + fmtDate(nt.dataPag) : ""), dias:0 };
+  var atraso = venc && hoje > venc ? daysBetween(venc, hoje) : 0;
+  if (nt.pag === "Não pago") return { k:"inad", cls:"b-red", txt:"Não pago" + (atraso ? " · " + atraso + " dia(s) de atraso" : "") + (nt.prev ? " · previsão " + fmtDate(nt.prev) : ""), dias:atraso };
+  if (atraso) return { k:"vencido", cls:"b-red", txt:"Vencido há " + atraso + " dia(s)", dias:atraso };
+  return { k:"aberto", cls:"b-blue", txt:"A vencer" + (venc ? " em " + fmtDate(venc) : ""), dias:0 };
+}
+function minD(l){ l = l.filter(Boolean).sort(); return l[0] || ""; }
+function maxD(l){ l = l.filter(Boolean).sort(); return l[l.length - 1] || ""; }
+// campos agregados do faturamento a partir das notas
+function agregadoNotas(med, ns){
+  var pagas = ns.filter(function(n){ return n.pag === "Pago"; }), abertas = ns.filter(function(n){ return n.pag !== "Pago"; });
+  var f = { NotasNF: JSON.stringify(ns.map(function(n){ var o = Object.assign({}, n); delete o.legado; return o; })) };
+  if (!abertas.length){ f.PagStatus = "Pago"; f.DataPagamento = maxD(pagas.map(function(n){ return n.dataPag; })); f.DataPrevista = ""; f.DataVencimento = minD(ns.map(function(n){ return vencNota(med, n); })); }
+  else {
+    f.PagStatus = pagas.length ? "Parcial" : abertas.some(function(n){ return n.pag === "Não pago"; }) ? "Não pago" : "Aberto";
+    f.DataPagamento = pagas.length ? maxD(pagas.map(function(n){ return n.dataPag; })) : "";
+    f.DataVencimento = minD(abertas.map(function(n){ return vencNota(med, n); }));
+    f.DataPrevista = minD(abertas.map(function(n){ return n.prev; }));
+  }
+  return f;
+}
+function valorAbertoMed(med){
+  var ns = notasDe(med); if (!ns.length) return med.PagStatus === "Pago" ? 0 : Number(med.ValorFaturar) || 0;
+  return ns.filter(function(n){ return n.pag !== "Pago"; }).reduce(function(s, n){ return s + (Number(n.valor) || 0); }, 0);
+}
+situacaoPag = (function(orig){ return function(med){
+  var ns = notasSalvas(med); if (!ns.length) return orig(med);
+  var emis = med.Status === "NF emitida" ? "" : " · " + ns.length + " de " + gruposNF(med).length + " NFs emitidas";
+  var pagas = ns.filter(function(n){ return n.pag === "Pago"; }), abertas = ns.filter(function(n){ return n.pag !== "Pago"; });
+  if (!abertas.length) return { k:"pago", cls:"b-green", txt:"Pago" + (ns.length > 1 ? " (" + ns.length + " NFs)" : "") + " em " + fmtDate(maxD(pagas.map(function(n){ return n.dataPag; }))) + emis, dias:0 };
+  var ss = abertas.map(function(n){ return situacaoNota(med, n); }), dias = Math.max.apply(null, ss.map(function(s){ return s.dias; }));
+  var k = ss.some(function(s){ return s.k === "inad"; }) ? "inad" : ss.some(function(s){ return s.k === "vencido"; }) ? "vencido" : "aberto";
+  if (ns.length === 1) return Object.assign({}, ss[0], { txt: ss[0].txt + emis });
+  var txt;
+  if (pagas.length){ var pg = pagas.reduce(function(s, n){ return s + (Number(n.valor) || 0); }, 0), tot = ns.reduce(function(s, n){ return s + (Number(n.valor) || 0); }, 0); txt = "Parcial: " + brl(pg) + " de " + brl(tot) + " recebido" + (dias ? " · " + dias + " dia(s) de atraso" : ""); }
+  else txt = k === "inad" ? "Não pago · " + abertas.length + " NFs" + (dias ? " · " + dias + " dia(s) de atraso" : "") : k === "vencido" ? "Vencido há " + dias + " dia(s)" : "A vencer · próxima em " + fmtDate(minD(abertas.map(function(n){ return vencNota(med, n); })));
+  return { k:k, cls: pagas.length ? "b-amber" : k === "aberto" ? "b-blue" : "b-red", txt: txt + emis, dias:dias };
+}; })(situacaoPag);
+
+// ---------- Conferir e emitir a NF: um bloco por código ----------
+dadosNF = function(id){
+  var med = byId("medicoes", id), n = nfInfo(med), emitida = med.Status === "NF emitida", gs = gruposNF(med), ns = notasDe(med);
+  var row = function(k, val, copy){ return "<div class='copy-row'><span class='k'>" + esc(k) + "</span><span class='val'>" + (val ? esc(val).replace(/\n/g, "<br>") : "<span class='muted'>não cadastrado</span>") + "</span>" + (val && copy !== false ? "<button class='btn-ghost' onclick='copyText(" + JSON.stringify(String(val)).replace(/'/g, "&#39;") + ")'>Copiar</button>" : "") + "</div>"; };
+  var blocos = emitida ? ns.map(function(nt){ var g = gs.filter(function(x){ return x.cod === nt.cod; })[0]; if (nt.legado || !g) g = { cod: nt.cod, label: nt.legado ? n.codigos : nt.cod, valor: nt.valor, retencoes: nt.legado ? n.retencoes : (g ? g.retencoes : ""), disc: nt.legado ? n.disc : (g ? g.disc : "") }; return { g:g, nt:nt }; })
+    : gs.map(function(g){ return { g:g, nt: ns.filter(function(x){ return x.cod === g.cod; })[0] || null }; });
+  var falta = blocos.filter(function(b){ return !b.nt; }).length;
+  var h = "<h3>" + (emitida ? "Dados da" + (blocos.length > 1 ? "s NFs emitidas" : " NF emitida") : "Conferir e emitir a" + (blocos.length > 1 ? "s NFs" : " NF")) + "</h3><p class='msub'>" + esc(n.cli.Title) + (med.UnidadeNome ? " · " + esc(med.UnidadeNome) : "") + " · " + compLabel(med.Competencia) + (emitida ? "" : ". Confira os dados, clique em \"Abrir site da Prefeitura\", emita a nota e registre o número abaixo.") + "</p>";
+  if (!emitida && faltaOC(med)) h += "<div class='alert alert-amber'>Falta a OC deste mês. Volte, digite a OC liberada pelo cliente e salve. Sem ela a NF não pode ser registrada.</div>";
+  if (!emitida && blocos.length > 1) h += "<div class='alert alert-blue'><div>Este faturamento tem <b>" + blocos.length + " códigos de serviço</b>. Emita <b>uma NF para cada código</b> (a Prefeitura aceita um código por nota) e registre o número de cada uma. " + (falta < blocos.length ? "Faltam " + falta + "." : "Pode registrar uma de cada vez.") + "</div></div>";
+  h += row("Tomador", n.tomador) + row("CNPJ", n.cnpj) + row("Nº do pedido", n.pedidos) + row("Envio da NF", n.envioNF, false) + (ehPontual(med) ? "" : row("Retém ISS", n.retemISS, false)) + row("FR (folha de registro)", n.fr) + (n.rateio ? row("Rateio", n.rateio) : "") + (blocos.length > 1 ? row("Valor total do faturamento", brl(med.ValorFaturar), false) : "");
+  blocos.forEach(function(b, i){
+    var feito = !!(b.nt && b.nt.num);
+    h += "<div class='card' style='margin:12px 0 0;padding:10px 12px;border-left:4px solid " + (feito ? "#1e7d38" : "#eda100") + "'><div style='display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px'><p class='card-title' style='font-size:14px;margin:0'>" + (blocos.length > 1 ? "NF " + (i + 1) + " de " + blocos.length + " · " : "") + esc(b.g.cod) + "</p>" + (feito ? "<span class='badge b-green'>NF nº " + esc(b.nt.num) + " de " + fmtDate(b.nt.data) + "</span>" : "<span class='badge b-amber'>a emitir</span>") + "</div>" +
+      row("Código do serviço", b.g.label || (b.g.cod === "Sem código" ? "" : b.g.cod)) + row("Valor", num(feito ? b.nt.valor : b.g.valor)) + row("Retenções", b.g.retencoes) + row("Discriminação", b.g.disc) +
+      (feito || emitida ? "" : "<div class='form' style='margin-top:8px'><div><label>Nº da NF emitida</label><input id='fNum" + i + "'></div><div><label>Data de emissão</label><input type='date' id='fDtNF" + i + "' value='" + todayISO() + "'></div></div>") + "</div>";
+  });
+  window.__nfBlocos = blocos.map(function(b){ return { cod: b.g.cod, valor: b.nt ? b.nt.valor : b.g.valor, feito: !!(b.nt && b.nt.num) }; });
+  if (blocos.some(function(b){ return b.g.cod === "Sem código"; }) && !emitida) h += "<div class='alert alert-amber' style='margin-top:10px'>Há serviço sem código de serviço no cadastro. Peça ao coordenador para completar o código em Valores dos Contratos.</div>";
+  h += "<div class='form' style='margin-top:14px'><div class='full'><label>Observação para a NF</label><textarea id='fObsNF' placeholder='Ex.: horas extras em nota separada; informar folha de registro...'>" + esc(med.ObsNF || "") + "</textarea></div></div>";
+  h += "<div class='modal-actions'><button class='btn-o' onclick=\"reabrir(byId('medicoes','" + med.id + "'))\">Voltar</button>" + (emitida ? "" : "<a class='btn-o' href='" + esc(linkPrefeituraNF()) + "' target='_blank' rel='noopener' style='text-decoration:none;display:inline-flex;align-items:center'>&#127963; Abrir site da Prefeitura (NFS-e)</a>") + "<button class='btn-o' onclick=\"salvarObsNF('" + id + "')\">Salvar observação</button>" + (emitida ? "" : "<button class='btn' onclick=\"registrarNF('" + id + "')\">" + (blocos.length > 1 ? "Registrar NFs emitidas" : "Registrar NF emitida") + "</button>") + "</div>";
+  openModal(h, true);
+};
+registrarNF = async function(id){
+  var med = byId("medicoes", id), blocos = window.__nfBlocos || [];
+  if (faltaOC(med)){ showToast("Informe a OC do mês antes de registrar a NF.", true); return; }
+  var ns = notasSalvas(med).slice(), novas = [];
+  for (var i = 0; i < blocos.length; i++){
+    var b = blocos[i]; if (b.feito || !$("fNum" + i)) continue;
+    var nf = v("fNum" + i).trim(), dt = v("fDtNF" + i); if (!nf) continue;
+    if (!dt){ showToast("Informe a data de emissão da NF " + nf + ".", true); return; }
+    ns = ns.filter(function(x){ return x.cod !== b.cod; }); var nt = { cod:b.cod, valor:b.valor, num:nf, data:dt, venc:"", pag:"Aberto", dataPag:"", prev:"" }; ns.push(nt); novas.push(nt);
+  }
+  if (!novas.length){ showToast(blocos.length > 1 ? "Informe o número de pelo menos uma NF." : "Informe o número da NF emitida.", true); return; }
+  var ordem = blocos.map(function(b){ return b.cod; }); ns.sort(function(a, b){ return ordem.indexOf(a.cod) - ordem.indexOf(b.cod); });
+  var todas = blocos.every(function(b){ return ns.some(function(x){ return x.cod === b.cod; }); });
+  var f = Object.assign(agregadoNotas(med, ns), { NumNF: ns.map(function(x){ return x.num; }).join(" / "), DataNF: minD(ns.map(function(x){ return x.data; })), ObsNF: v("fObsNF") });
+  var txt = novas.map(function(x){ return "NF " + x.num + (blocos.length > 1 ? " (" + x.cod + ", " + brl(x.valor) + ")" : ""); }).join("; ");
+  if (todas){ var hist = historicoDe(med); hist.push({ s:"NF emitida", d:new Date().toISOString(), p:CURRENT_USER.name, o: txt }); f.Status = "NF emitida"; f.Historico = JSON.stringify(hist); }
+  await safe(async function(){
+    await api.update("medicoes", id, f);
+    if (!todas) await registrarComunicacao(med, "NF registrada: " + txt + ". " + ns.length + " de " + blocos.length + " NFs emitidas.", "sistema").catch(function(){});
+  }, todas ? (blocos.length > 1 ? "NFs registradas." : "NF registrada.") : ns.length + " de " + blocos.length + " NFs registradas.");
+  reabrir(med); renderCurrent();
+};
+
+// ---------- recebimento: por nota ----------
+painelPagamento = function(med){
+  var s = situacaoPag(med); if (!s) return "";
+  var ns = notasDe(med);
+  var lista = ns.length > 1 ? "<div class='tbl-wrap' style='margin-top:8px'><table class='tbl'><tbody>" + ns.map(function(nt, i){ var sn = situacaoNota(med, nt); return "<tr><td><b>NF " + esc(nt.num) + "</b><div class='small muted'>" + esc(nt.cod) + " · emitida em " + fmtDate(nt.data) + "</div></td><td class='num'>" + brl(nt.valor) + "</td><td>venc. " + fmtDate(vencNota(med, nt)) + "</td><td><span class='badge " + sn.cls + "'>" + esc(sn.txt) + "</span></td><td style='text-align:right'><button class='btn-ghost' onclick=\"formPagamento('" + med.id + "'," + i + ")\">Registrar</button></td></tr>"; }).join("") + "</tbody></table></div>" : "";
+  return "<div class='card' style='margin:14px 0 0;padding:12px 14px;border-left:4px solid " + (s.k === "pago" ? "#1e7d38" : s.k === "aberto" ? "#2a78d6" : "#b02a2a") + "'><div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'><div><p class='card-title' style='font-size:14px;margin:0 0 4px'>Recebimento</p><span class='badge " + s.cls + "'>" + esc(s.txt) + "</span> <span class='small muted'>" + (ns.length > 1 ? ns.length + " NFs" : "vencimento " + (vencimentoDe(med) ? fmtDate(vencimentoDe(med)) : "—") + " · NF " + esc(med.NumNF || "?")) + "</span></div>" + (ns.length ? "<button class='btn-o btn-s' onclick=\"formPagamento('" + med.id + "')\">Registrar pagamento</button>" : "") + "</div>" + lista + "</div>";
+};
+formPagamento = function(id, k){
+  var med = byId("medicoes", id), cli = byId("clientes", med.ClienteId), ns = notasDe(med);
+  if (!ns.length){ showToast("Nenhuma NF registrada neste faturamento.", true); return; }
+  var idx = (k === undefined || k === null || k === "") ? ns.map(function(_, i){ return i; }) : [Number(k)];
+  window.__pgIdx = idx;
+  var h = "<h3>Recebimento · " + esc(cli.Title) + (med.UnidadeNome ? " · " + esc(med.UnidadeNome) : "") + "</h3><p class='msub'>" + compLabel(med.Competencia) + " · " + (ns.length > 1 ? ns.length + " NFs · total " : "") + brl(med.ValorFaturar) + " · condição: " + esc(cli.CondicaoPagamento || "30 dias") + "</p>";
+  idx.forEach(function(i){
+    var nt = ns[i], st = nt.pag || "Aberto";
+    h += "<div class='card' style='margin:0 0 10px;padding:10px 12px'><p class='card-title' style='font-size:13.5px;margin:0 0 8px'>NF " + esc(nt.num) + " de " + fmtDate(nt.data) + (nt.cod ? " · " + esc(nt.cod) : "") + " · " + brl(nt.valor) + "</p><div class='form'>" +
+      "<div><label>Situação</label><select id='pgSt" + i + "' onchange='pgRefresh()'>" + opt("Aberto", "Em aberto", st) + opt("Pago", "Pago", st) + opt("Não pago", "Não pago (inadimplente)", st) + "</select></div>" +
+      "<div><label>Vencimento</label><input type='date' id='pgVenc" + i + "' value='" + esc(vencNota(med, nt)) + "'><div class='hint'>Data da NF + condição de pagamento. Pode ajustar.</div></div>" +
+      "<div id='wPgPago" + i + "'><label>Data do pagamento</label><input type='date' id='pgData" + i + "' value='" + esc(nt.dataPag || todayISO()) + "'></div>" +
+      "<div id='wPgPrev" + i + "'><label>Previsão de recebimento</label><input type='date' id='pgPrev" + i + "' value='" + esc(nt.prev || "") + "'><div class='hint'>Data combinada com o cliente.</div></div></div></div>";
+  });
+  h += "<div class='form'><div class='full'><label>Observação (vai para a comunicação)</label><textarea id='pgObs'></textarea></div></div>" +
+    "<div class='modal-actions'><button class='btn-o' onclick=\"" + (CURRENT_TAB === "recebimentos" ? "closeModal()" : "reabrir(byId('medicoes','" + id + "'))") + "\">Voltar</button><button class='btn' onclick=\"salvarPagamento('" + id + "')\">Salvar</button></div>";
+  openModal(h); pgRefresh();
+};
+pgRefresh = function(){ (window.__pgIdx || []).forEach(function(i){ var st = v("pgSt" + i), a = $("wPgPago" + i), b = $("wPgPrev" + i); if (a) a.classList.toggle("hidden", st !== "Pago"); if (b) b.classList.toggle("hidden", st !== "Não pago"); }); };
+salvarPagamento = async function(id){
+  var med = byId("medicoes", id), ns = notasDe(med).map(function(n){ return Object.assign({}, n); }), obs = v("pgObs").trim(), log = [];
+  var idx = window.__pgIdx || [];
+  for (var j = 0; j < idx.length; j++){
+    var i = idx[j], nt = ns[i], st = v("pgSt" + i);
+    if (st === "Pago" && !v("pgData" + i)){ showToast("Informe a data do pagamento da NF " + nt.num + ".", true); return; }
+    var mud = st !== (nt.pag || "Aberto") || (st === "Pago" && v("pgData" + i) !== (nt.dataPag || "")) || (st === "Não pago" && v("pgPrev" + i) !== (nt.prev || "")) || v("pgVenc" + i) !== vencNota(med, nt);
+    nt.pag = st; nt.venc = v("pgVenc" + i); nt.dataPag = st === "Pago" ? v("pgData" + i) : ""; nt.prev = st === "Não pago" ? v("pgPrev" + i) : "";
+    if (mud) log.push((ns.length > 1 ? "NF " + nt.num + ": " : "") + (st === "Pago" ? "pago em " + fmtDate(nt.dataPag) : st === "Não pago" ? "não pago" + (nt.prev ? ", previsão " + fmtDate(nt.prev) : "") : "em aberto"));
+  }
+  var f = agregadoNotas(med, ns);
+  await safe(async function(){
+    await api.update("medicoes", id, f);
+    if (log.length || obs) await registrarComunicacao(med, "Recebimento: " + (log.join("; ") || "sem alteração") + (obs ? "\n" + obs : ""), "sistema").catch(function(){});
+  }, "Recebimento registrado.");
+  if (CURRENT_TAB === "recebimentos"){ closeModal(); renderCurrent(); } else { reabrir(med); renderCurrent(); }
+};
+
+// ---------- tela Recebimentos: ver por faturamento ou por nota ----------
+var REC_VER = (function(){ try { return localStorage.getItem("fat_recVer") || "fat"; } catch (e){ return "fat"; } })();
+function recVer(val){ REC_VER = val; try { localStorage.setItem("fat_recVer", val); } catch (e){} renderRecebimentos(); }
+renderRecebimentos = function(){
+  var fl = $("recFiltro"); if (fl && !$("recVerSel")){ var w = document.createElement("span"); w.style.cssText = "display:inline-flex;align-items:center;gap:6px;margin-left:8px"; w.innerHTML = "<label style='margin:0'>Ver por</label><select id='recVerSel' onchange='recVer(this.value)'><option value='fat'>Faturamento</option><option value='nota'>Nota fiscal</option></select>"; fl.parentNode.insertBefore(w, fl.nextSibling); }
+  if ($("recVerSel")) $("recVerSel").value = REC_VER;
+  var f = $("recFiltro").value || "pendentes", q = norm($("recBusca").value || ""), hoje = todayISO(), mes = hoje.slice(0, 7);
+  var meds = S.medicoes.filter(function(m){ return (m.Status === "NF emitida" || notasSalvas(m).length) && byId("clientes", m.ClienteId); });
+  var abertoV = 0, vencV = 0, recMes = 0, fatTot = 0, inadCli = {};
+  meds.forEach(function(m){ notasDe(m).forEach(function(nt){ var val = Number(nt.valor) || 0, s = situacaoNota(m, nt); fatTot += val; if (s.k !== "pago") abertoV += val; if (s.k === "vencido" || s.k === "inad"){ vencV += val; inadCli[m.ClienteId] = 1; } if (s.k === "pago" && String(nt.dataPag || "").slice(0, 7) === mes) recMes += val; }); });
+  $("recKpis").innerHTML = kpi("A receber", brl(abertoV), "NFs emitidas ainda não pagas") + kpi("Vencido", brl(vencV), Object.keys(inadCli).length + " cliente(s) com atraso") + kpi("Inadimplência", (fatTot ? num(vencV / fatTot * 100, 1) : "0") + "%", "vencido ÷ total das NFs registradas") + kpi("Recebido no mês", brl(recMes), compLabel(mes));
+  var passa = function(k){ return (f === "todos") || (f === "pendentes" && k !== "pago") || (f === "vencidos" && (k === "vencido" || k === "inad")) || (f === "pagos" && k === "pago"); };
+  var cliTd = function(c, m){ return "<td><b>" + esc(c.Title) + "</b>" + (m.UnidadeNome ? "<div class='small muted'>" + esc(m.UnidadeNome) + "</div>" : "") + "</td><td>" + esc(compLabel(m.Competencia)) + "</td>"; };
+  var html;
+  if (REC_VER === "nota"){
+    var rows = []; meds.forEach(function(m){ var c = byId("clientes", m.ClienteId); notasDe(m).forEach(function(nt, i){ rows.push({ m:m, c:c, nt:nt, i:i, s: situacaoNota(m, nt), venc: vencNota(m, nt) }); }); });
+    rows = rows.filter(function(r){ return passa(r.s.k) && (!q || norm(r.c.Title + " " + (r.m.UnidadeNome || "") + " " + r.nt.num + " " + r.nt.cod).indexOf(q) >= 0); }).sort(function(a, b){ return String(a.venc).localeCompare(String(b.venc)); });
+    html = rows.length ? "<thead><tr><th>Cliente / faturamento</th><th>Competência</th><th>NF</th><th>Código</th><th class='num'>Valor</th><th>Vencimento</th><th>Situação</th><th></th></tr></thead><tbody>" + rows.map(function(r){
+      return "<tr>" + cliTd(r.c, r.m) + "<td>" + esc(r.nt.num) + "<div class='small muted'>" + fmtDate(r.nt.data) + "</div></td><td class='small'>" + esc(r.nt.cod || "") + "</td><td class='num'>" + brl(r.nt.valor) + "</td><td>" + fmtDate(r.venc) + "</td><td><span class='badge " + r.s.cls + "'>" + esc(r.s.txt) + "</span></td><td style='text-align:right;white-space:nowrap'><button class='btn-o btn-s' onclick=\"formPagamento('" + r.m.id + "'," + r.i + ")\">Registrar</button> <button class='btn-ghost' onclick=\"reabrir(byId('medicoes','" + r.m.id + "'))\">Abrir</button></td></tr>"; }).join("") + "</tbody>" : "";
+  } else {
+    var rs = meds.map(function(m){ return { m:m, c:byId("clientes", m.ClienteId), s:situacaoPag(m) || situacaoNota(m, notasDe(m)[0] || {}), venc:vencimentoDe(m), ns:notasDe(m) }; })
+      .filter(function(r){ return passa(r.s.k) && (!q || norm(r.c.Title + " " + (r.m.UnidadeNome || "") + " " + (r.m.NumNF || "")).indexOf(q) >= 0); }).sort(function(a, b){ return String(a.venc).localeCompare(String(b.venc)); });
+    html = rs.length ? "<thead><tr><th>Cliente / faturamento</th><th>Competência</th><th>NF</th><th class='num'>Valor</th><th>Vencimento</th><th>Situação</th><th></th></tr></thead><tbody>" + rs.map(function(r){
+      var ab = valorAbertoMed(r.m), tot = Number(r.m.ValorFaturar) || 0;
+      return "<tr>" + cliTd(r.c, r.m) + "<td>" + (r.ns.length > 1 ? "<b>" + r.ns.length + " NFs</b><div class='small muted'>" + esc(r.ns.map(function(n){ return n.num; }).join(" / ")) + "</div>" : esc(r.m.NumNF || "") + "<div class='small muted'>" + fmtDate(r.m.DataNF) + "</div>") + "</td><td class='num'>" + brl(tot) + (ab > 0 && ab < tot ? "<div class='small muted'>em aberto " + brl(ab) + "</div>" : "") + "</td><td>" + fmtDate(r.venc) + "</td><td><span class='badge " + r.s.cls + "'>" + esc(r.s.txt) + "</span></td><td style='text-align:right;white-space:nowrap'><button class='btn-o btn-s' onclick=\"formPagamento('" + r.m.id + "')\">Registrar</button> <button class='btn-ghost' onclick=\"reabrir(byId('medicoes','" + r.m.id + "'))\">Abrir</button></td></tr>"; }).join("") + "</tbody>" : "";
+  }
+  $("recTable").innerHTML = html || "<tr><td class='empty'>Nenhuma NF nesta situação.</td></tr>";
+  if (typeof montarBotoesCobranca === "function") montarBotoesCobranca();
+};
+
+// ---------- e-mail de liberação: uma NF por código ----------
+corpoLiberacao = (function(orig){ return function(med){
+  var h = orig(med), gs = gruposNF(med); if (gs.length < 2) return h;
+  var th = function(t, r){ return "<th style='background:#6e1423;color:#fff;padding:6px 10px;text-align:" + (r ? "right" : "left") + ";border:1px solid #6e1423;font-size:12.5px'>" + t + "</th>"; };
+  var td = function(t, r){ return "<td style='padding:6px 10px;border:1px solid #e5e6e9;font-size:13px" + (r ? ";text-align:right;white-space:nowrap" : "") + "'>" + t + "</td>"; };
+  var bloco = "<p style='margin:16px 0 6px'><b style='color:#b02a2a'>EMITIR " + gs.length + " NFs, UMA POR CÓDIGO DE SERVIÇO:</b></p><table style='border-collapse:collapse'><tr>" + th("NF") + th("Código do serviço") + th("Valor", true) + th("Retenções") + "</tr>" +
+    gs.map(function(g, i){ return "<tr>" + td(String(i + 1)) + td(esc(g.label || g.cod)) + td("<b>" + brl(g.valor) + "</b>", true) + td(esc(g.retencoes || "—")) + "</tr>"; }).join("") + "</table>";
+  h = h.replace(">Valor da NF<", ">Valor total (" + gs.length + " NFs)<");
+  var k = h.indexOf("<p style='margin-top:14px'>Ao emitir"); return k > 0 ? h.slice(0, k) + bloco + h.slice(k) : h + bloco;
+}; })(corpoLiberacao);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5533,11 +5741,18 @@ AJUDA_USO.push({ t:"Cobrar o prestador", obj:"Lembrar o prestador de registrar n
   "O e-mail lista (1) os faturamentos liberados sem NF registrada, com os dias desde a liberação e a data limite, e (2) as NFs vencidas sem situação de recebimento.",
   "Revise, escreva uma observação se quiser e clique em <b>Criar e-mail no Outlook</b>. Envie pelo Outlook.",
   "No painel de um faturamento liberado e ainda sem NF, o mesmo botão cobra só aquele faturamento."] });
+AJUDA_VERSOES.unshift(["V 1.20", "11/11/2026", ["Uma NF por código de serviço: a tela Conferir e emitir a NF separa o faturamento por código, com valor, retenções e discriminação de cada nota, e registra o nº de cada NF (pode registrar uma de cada vez). O faturamento passa a NF emitida quando todas estiverem registradas.", "Recebimento por nota: cada NF tem o próprio vencimento e situação; o faturamento mostra Pago, Parcial (valor recebido e em aberto) ou Vencido.", "Recebimentos: opção Ver por Faturamento ou por Nota fiscal.", "E-mail de liberação ao financeiro lista as NFs a emitir, uma por código, com o valor de cada uma."]]);
+AJUDA_USO.push({ t:"Uma NF por código de serviço", obj:"Emitir e registrar uma NF para cada código de serviço do faturamento e controlar o recebimento de cada nota.", perfis:"coord", passos:[
+  "No faturamento liberado, clique em <b>Conferir e emitir a NF</b>. Se houver mais de um código de serviço, aparece um bloco para cada NF com o código, o valor, as retenções e a discriminação, todos com o botão Copiar.",
+  "Emita cada nota no site da Prefeitura e digite o <b>nº e a data</b> no bloco correspondente. Dá para registrar uma agora e a outra depois; o faturamento mostra \"1 de 2 NFs\" até completar.",
+  "Em <b>Recebimentos</b>, escolha <b>Ver por: Faturamento</b> (situação geral, com o valor em aberto) ou <b>Nota fiscal</b> (uma linha por NF, para conferir com o banco).",
+  "Em <b>Registrar</b>, informe a situação de cada NF (Pago com a data, Não pago com a previsão). Se só uma for paga, o faturamento fica <b>Parcial</b>.",
+  "Faturamentos antigos, com um único nº de NF, continuam funcionando como uma nota só."] });
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261110174827";
+var APP_BUILD = "20261111194047";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
