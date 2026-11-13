@@ -5690,6 +5690,68 @@ corpoLiberacao = (function(orig){ return function(med){
   var k = h.indexOf("<p style='margin-top:14px'>Ao emitir"); return k > 0 ? h.slice(0, k) + bloco + h.slice(k) : h + bloco;
 }; })(corpoLiberacao);
 
+// ============================================================
+// V 1.21 — Intervalo de almoço em coberturas e horas extras (não é cobrado do cliente)
+// Ocorrencias.Intervalo (horas): descontado do período diurno do dia da ocorrência
+// ============================================================
+SCHEMA.ocorrencias.cols.push(["Intervalo", "n"]);
+function tipoComIntervalo(tipo){ var t = TIPOS[tipo] || {}; return t.grupo === "variavel" && t.modo === "horario"; }
+// executa fn com splitHoras descontando o intervalo
+function comIntervalo(iv, fn){
+  iv = Number(iv) || 0; if (iv <= 0 || window.__ivAtivo) return fn();
+  var bk = splitHoras; window.__ivAtivo = true;
+  splitHoras = function(dateISO, hi, hf, hol){
+    var sp = bk.apply(this, arguments), c = Object.assign({}, sp.cats), resto = Math.min(iv, sp.total);
+    var domFer = parseISO(dateISO).getDay() === 0 || !!(hol || {})[dateISO], pref = [domFer ? "DomFerDiurno" : "Diurno", domFer ? "Diurno" : "DomFerDiurno", "Noturno", "DomFerNoturno"];
+    pref.forEach(function(k){ var tira = Math.min(c[k] || 0, resto); c[k] = (c[k] || 0) - tira; resto -= tira; });
+    return { cats: c, total: Math.max(0, sp.total - Math.min(iv, sp.total)) };
+  };
+  try { return fn(); } finally { splitHoras = bk; window.__ivAtivo = false; }
+}
+calcOcorrencia = (function(orig){ return function(o){
+  if (!o || !tipoComIntervalo(o.Tipo) || !(Number(o.Intervalo) > 0)) return orig(o);
+  var r = comIntervalo(o.Intervalo, function(){ return orig(o); });
+  if (r && r.detalhe !== undefined && !r.erro) r.detalhe = (r.detalhe ? r.detalhe + "\n" : "") + "Intervalo de " + hFmt(o.Intervalo) + " descontado (não cobrado)";
+  return r;
+}; })(calcOcorrencia);
+function intervaloForm(){
+  var w = $("wInt"); if (!w || w.classList.contains("hidden") || v("oIntSel") !== "sim") return 0;
+  return horasTexto(v("oIntH"));
+}
+ocoForm = (function(orig){ return function(){ var o = orig(); o.Intervalo = tipoComIntervalo(o.Tipo) ? intervaloForm() : 0; return o; }; })(ocoForm);
+openOcorrencia = (function(orig){ return function(id){
+  var o = id ? byId("ocorrencias", id) : null, iv = o ? Number(o.Intervalo) || 0 : 0;
+  window.__intTocado = !!(o && (iv > 0 || o.HoraInicio));
+  var bk = ocoFormRefresh; ocoFormRefresh = function(){};   // evita calcular antes do campo existir
+  try { orig.apply(this, arguments); } finally { ocoFormRefresh = bk; }
+  var fim = $("wFim");
+  if (fim){
+    var d = document.createElement("div"); d.id = "wInt"; d.className = "full";
+    d.innerHTML = "<label>Teve intervalo de almoço? (não é cobrado do cliente)</label><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>" +
+      "<select id='oIntSel' style='max-width:120px' onchange='window.__intTocado=true;ocoIntRefresh();ocoFormRefresh()'>" + opt("sim", "Sim", iv > 0 ? "sim" : "nao") + opt("nao", "Não", iv > 0 ? "sim" : "nao") + "</select>" +
+      "<span id='wIntH' style='display:inline-flex;gap:6px;align-items:center'><span class='small muted'>Duração</span><input id='oIntH' style='max-width:90px' value='" + esc(iv > 0 ? hhmm(iv) : "1:00") + "' oninput='window.__intTocado=true;ocoFormRefresh()'></span></div>" +
+      "<div class='hint'>Normalmente 1:00. O tempo do intervalo é descontado das horas cobradas.</div>";
+    fim.parentNode.insertBefore(d, fim.nextSibling);
+  }
+  ocoFormRefresh(true);
+}; })(openOcorrencia);
+function ocoIntRefresh(){ var h = $("wIntH"); if (h) h.style.display = v("oIntSel") === "sim" ? "inline-flex" : "none"; }
+ocoFormRefresh = (function(orig){ return function(){
+  var w = $("wInt"), tp = $("oTipo") ? v("oTipo") : "";
+  if (w){
+    var vis = tipoComIntervalo(tp); w.classList.toggle("hidden", !vis);
+    // sugestão: turno de 6h ou mais costuma ter 1h de almoço
+    if (vis && !window.__intTocado && v("oIni") && v("oFim")){ var dur = splitHoras(v("oData") || todayISO(), v("oIni"), v("oFim"), {}).total; $("oIntSel").value = dur >= 6 ? "sim" : "nao"; }
+    ocoIntRefresh();
+  }
+  var args = arguments, self = this;
+  return comIntervalo(w && tipoComIntervalo(tp) ? intervaloForm() : 0, function(){ return orig.apply(self, args); });
+}; })(ocoFormRefresh);
+salvarOcorrencia = (function(orig){ return function(id){
+  var iv = $("oTipo") && tipoComIntervalo(v("oTipo")) ? intervaloForm() : 0, self = this, args = arguments;
+  return comIntervalo(iv, function(){ return orig.apply(self, args); });   // a parte síncrona (cálculo) usa o intervalo
+}; })(salvarOcorrencia);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5748,11 +5810,12 @@ AJUDA_USO.push({ t:"Uma NF por código de serviço", obj:"Emitir e registrar uma
   "Em <b>Recebimentos</b>, escolha <b>Ver por: Faturamento</b> (situação geral, com o valor em aberto) ou <b>Nota fiscal</b> (uma linha por NF, para conferir com o banco).",
   "Em <b>Registrar</b>, informe a situação de cada NF (Pago com a data, Não pago com a previsão). Se só uma for paga, o faturamento fica <b>Parcial</b>.",
   "Faturamentos antigos, com um único nº de NF, continuam funcionando como uma nota só."] });
+AJUDA_VERSOES.unshift(["V 1.21", "13/11/2026", ["Ocorrências de Cobertura e Hora extra: pergunta \"Teve intervalo de almoço?\" com a duração (padrão 1:00). O intervalo é descontado das horas cobradas do cliente e aparece no detalhe do cálculo."]]);
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261111194047";
+var APP_BUILD = "20261113165943";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
