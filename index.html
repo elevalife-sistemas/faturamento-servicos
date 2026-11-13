@@ -5752,6 +5752,70 @@ salvarOcorrencia = (function(orig){ return function(id){
   return comIntervalo(iv, function(){ return orig.apply(self, args); });   // a parte síncrona (cálculo) usa o intervalo
 }; })(salvarOcorrencia);
 
+// ============================================================
+// V 1.21 — Dashboard: clicar nos cards (e nos pontos dos gráficos mensais) abre o relatório detalhado
+// ============================================================
+function prevDetalhe(area, comp, regime){
+  var fats = regime === "caixa" ? faturamentosPorMesFat(area, comp) : faturamentosDoMes(area, comp);
+  return fats.map(function(r){
+    var m = r.m, k = r.comp || comp, src = (m && m.Status !== "Rascunho") ? m : montarMedicao(r.c.id, k, r.u.key);
+    if (src.erro && m) src = m;
+    var lines = src.erro ? [] : (src.lines || linhasDe(src).lines || []);
+    return { c:r.c, u:r.u, m:m, comp:k, v: src.erro ? 0 : Number(src.ValorFaturar) || 0, d: src.erro ? 0 : Number(src.Descontos) || 0, a: src.erro ? 0 : Number(src.Acrescimos) || 0,
+      ok: !!(m && { "Enviada":1, "Aprovada":1, "NF emitida":1 }[m.Status]), st: m ? m.Status : "Não gerada", lines: lines, erro: src.erro || "" };
+  });
+}
+function nomeFat(r){ return r.c.Title + (r.u && r.u.nome ? " · " + r.u.nome : (r.m && r.m.UnidadeNome ? " · " + r.m.UnidadeNome : "")); }
+var DASH_DET = null;
+function abrirDetalheDash(tipo, comp, regime){
+  comp = comp || $("dashComp").value || curComp(); regime = regime || ($("dashBase") && $("dashBase").value) || "comp";
+  var area = $("dashArea").value, P = prevDetalhe(area, comp, regime), rows = [], cols, titulo, sub;
+  if (tipo === "desc" || tipo === "acr"){
+    var campo = tipo === "desc" ? "desconto" : "acrescimo";
+    P.forEach(function(r){ r.lines.forEach(function(l){ var val = Number(l[campo]) || 0; if (val < 0.005) return;
+      rows.push({ r:r, cols:[nomeFat(r), l.servico || "", (l.just || []).map(function(j){ return typeof j === "string" ? j : j.s; }).join("\n") || (tipo === "acr" && /Ajuste|Reembolso|Consumo/.test(l.servico || "") ? l.servico : "—"), r.st], val:val }); }); });
+    titulo = tipo === "desc" ? "Descontos" : "Acréscimos"; cols = ["Faturamento", "Serviço", "Ocorrências", "Status"];
+    sub = tipo === "desc" ? "Faltas, atrasos, serviços suspensos e ajustes de desconto, por faturamento e serviço." : "Horas extras, coberturas, reembolsos e ajustes de acréscimo, por faturamento e serviço.";
+  } else {
+    var lista = tipo === "rec" ? P.filter(function(r){ return r.ok; }) : P;
+    lista.forEach(function(r){ rows.push({ r:r, cols:[nomeFat(r), brl(r.v + r.d - r.a), (r.d ? "−" + brl(r.d) : "—") + " / " + (r.a ? "+" + brl(r.a) : "—"), r.st + (r.erro ? " (" + r.erro + ")" : "")], val:r.v }); });
+    titulo = tipo === "rec" ? "Reconhecido pelo coordenador" : (regime === "caixa" ? "A faturar no mês (caixa)" : "Valor a faturar");
+    cols = ["Faturamento", "Valor do contrato", "Descontos / acréscimos", "Status"];
+    sub = tipo === "rec" ? "Faturamentos já enviados ao cliente (enviada, aprovada ou com NF)." : "Todos os faturamentos do mês: medição salva ou prévia calculada pelo contrato e pelas ocorrências.";
+  }
+  rows.sort(function(a, b){ return b.val - a.val; });
+  var tot = rows.reduce(function(s, x){ return s + x.val; }, 0);
+  DASH_DET = { titulo:titulo, comp:comp, cols:cols, rows:rows, tot:tot };
+  var h = "<h3>" + esc(titulo) + " · " + esc(compLabel(comp)) + "</h3><p class='msub'>" + esc(sub) + " Clique numa linha para abrir o faturamento.</p>" +
+    "<div class='mini-kpis' style='margin-bottom:10px'>" + miniKpi("Total", brl(tot), tipo === "desc" ? "b-red" : tipo === "acr" ? "b-green" : "b-blue") + miniKpi("Linhas", rows.length, "b-gray") + "</div>" +
+    (rows.length ? "<div class='tbl-wrap' style='max-height:55vh;overflow:auto'><table class='tbl'><thead><tr><th>" + esc(cols[0]) + "</th><th>" + esc(cols[1]) + "</th><th>" + esc(cols[2]) + "</th><th>" + esc(cols[3]) + "</th><th class='num'>Valor</th></tr></thead><tbody>" +
+      rows.map(function(x, i){ return "<tr class='click' onclick='abrirFatDet(" + i + ")'><td><b>" + esc(x.cols[0]) + "</b></td><td>" + esc(x.cols[1]) + "</td><td class='small' style='white-space:pre-line;max-width:420px'>" + esc(x.cols[2]) + "</td><td><span class='badge b-gray'>" + esc(x.cols[3]) + "</span></td><td class='num'><b>" + brl(x.val) + "</b></td></tr>"; }).join("") +
+      "</tbody></table></div>" : "<div class='alert alert-blue'>Nada a mostrar nesta competência.</div>") +
+    "<div class='modal-actions'><button class='btn-o' onclick='baixarDetalheDash()'>Baixar Excel</button><button class='btn' onclick='closeModal()'>Fechar</button></div>";
+  openModal(h, true);
+}
+function abrirFatDet(i){ var x = DASH_DET && DASH_DET.rows[i]; if (!x) return; var r = x.r; closeModal(); if (r.m) reabrir(r.m); else openMedicao(r.c.id, r.comp, r.u.key); }
+async function baixarDetalheDash(){
+  if (!DASH_DET) return; var D = DASH_DET, wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Detalhe");
+  ws.columns = [{ width:44 }, { width:30 }, { width:70 }, { width:16 }, { width:16 }];
+  var hr = ws.addRow(D.cols.concat(["Valor"])); styleHeader(hr);
+  D.rows.forEach(function(x){ var row = ws.addRow(x.cols.concat([r2(x.val)])); row.getCell(3).alignment = { wrapText:true, vertical:"top" }; });
+  var t = ws.addRow(["Total", "", "", "", r2(D.tot)]); t.font = { bold:true }; ws.getColumn(5).numFmt = '"R$" #,##0.00';
+  var buf = await wb.xlsx.writeBuffer(), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); a.download = D.titulo + " " + D.comp + ".xlsx"; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); }, 500);
+}
+renderDashboard = (function(orig){ return function(){
+  orig.apply(this, arguments);
+  var tipos = ["fat", "rec", "desc", "acr"];
+  [].slice.call(document.querySelectorAll("#dashKpis .kpi")).slice(0, 4).forEach(function(k, i){ k.style.cursor = "pointer"; k.title = "Clique para ver o detalhamento"; k.onclick = function(){ abrirDetalheDash(tipos[i]); }; });
+  // gráficos mensais: clicar no ponto/barra abre o mês (regime competência)
+  var comp = $("dashComp").value || curComp(), meses = []; for (var k = -5; k <= 0; k++) meses.push(compAdd(comp, k));
+  var liga = function(id, tipoDe){ var ch = CHARTS[id]; if (!ch) return; ch.options.onClick = function(ev, els){ if (!els || !els.length) return; abrirDetalheDash(tipoDe(els[0].datasetIndex), meses[els[0].index], "comp"); };
+    ch.options.onHover = function(ev, els){ if (ev.native && ev.native.target) ev.native.target.style.cursor = els && els.length ? "pointer" : "default"; }; ch.update("none"); };
+  liga("chMesAjustes", function(ds){ return ds === 0 ? "acr" : "desc"; });
+  liga("chMesValor", function(ds){ return ds === 0 ? "rec" : "fat"; });
+}; })(renderDashboard);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5811,11 +5875,12 @@ AJUDA_USO.push({ t:"Uma NF por código de serviço", obj:"Emitir e registrar uma
   "Em <b>Registrar</b>, informe a situação de cada NF (Pago com a data, Não pago com a previsão). Se só uma for paga, o faturamento fica <b>Parcial</b>.",
   "Faturamentos antigos, com um único nº de NF, continuam funcionando como uma nota só."] });
 AJUDA_VERSOES.unshift(["V 1.21", "13/11/2026", ["Ocorrências de Cobertura e Hora extra: pergunta \"Teve intervalo de almoço?\" com a duração (padrão 1:00). O intervalo é descontado das horas cobradas do cliente e aparece no detalhe do cálculo."]]);
+AJUDA_VERSOES.unshift(["V 1.22", "13/11/2026", ["Dashboard: clicar nos cards Valor a faturar, Reconhecido, Descontos e Acréscimos (e nos pontos dos gráficos mensais de valor e de descontos/acréscimos) abre o relatório detalhado por faturamento e serviço, com as ocorrências, o link para o faturamento e o botão Baixar Excel."]]);
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261113165943";
+var APP_BUILD = "20261113175606";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
