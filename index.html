@@ -5816,6 +5816,117 @@ renderDashboard = (function(orig){ return function(){
   liga("chMesValor", function(ds){ return ds === 0 ? "rec" : "fat"; });
 }; })(renderDashboard);
 
+// ============================================================
+// V 1.23 — Lançar a mesma ocorrência em vários dias (período), escolhendo os dias da semana
+// Cada dia vira uma ocorrência própria, calculada com as regras do dia (fim de semana, feriado, intervalo)
+// ============================================================
+var DSEM_C = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+function repAtivo(){ var c = $("oRep"); return !!(c && c.checked && !window.__ocoEditId); }
+function diasRepCandidatos(){
+  var ini = v("oData"), fim = v("oAte"); if (!ini || !fim || fim < ini) return [];
+  var cli = byId("clientes", v("oCli")), hol = feriados(cli ? cli.Local : ""), semFer = $("oSemFer") && $("oSemFer").checked, out = [], d = ini, n = 0;
+  while (d <= fim && n++ < 400){
+    var dw = parseISO(d).getDay(), ok = $("oDw" + dw) && $("oDw" + dw).checked;
+    if (ok && !(semFer && hol[d])) out.push(d);
+    d = addDays(d, 1);
+  }
+  return out;
+}
+function diasRep(){
+  var fora = window.__repFora || {};
+  return diasRepCandidatos().filter(function(d){ return !fora[d]; });
+}
+function repResumo(dias){
+  var cli = byId("clientes", v("oCli")), hol = feriados(cli ? cli.Local : ""), c = { util:0, sab:0, dom:0, fer:0 };
+  dias.forEach(function(d){ var dw = parseISO(d).getDay(); if (hol[d]) c.fer++; else if (dw === 6) c.sab++; else if (dw === 0) c.dom++; else c.util++; });
+  var p = [c.util + " dia(s) de segunda a sexta"]; if (c.sab) p.push(c.sab + " sábado(s)"); if (c.dom) p.push(c.dom + " domingo(s)"); if (c.fer) p.push(c.fer + " feriado(s)");
+  var semFds = !$("oDw6").checked && !$("oDw0").checked;
+  return p.join(" · ") + (semFds ? " · sábados e domingos não incluídos" : "");
+}
+function repBaseOco(d){
+  var o = ocoForm(), t = TIPOS[o.Tipo] || {}, compFixa = v("oComp") && v("oComp") !== compOf(v("oData")) ? v("oComp") : "";
+  o.Data = d; o.Competencia = compFixa || compOf(d);
+  if (t.modo === "dias" && !o.HorasQtd) o.Dias = 1;   // cada dia lançado = 1 dia de ocorrência
+  return o;
+}
+function repCalcular(){
+  var dias = diasRep(), tot = 0, erros = [], linhas = [];
+  dias.forEach(function(d){ var o = repBaseOco(d), r = calcOcorrencia(o); if (r.erro){ erros.push(fmtDate(d) + ": " + r.erro); return; } tot += r.valor; linhas.push({ d:d, r:r, o:o }); });
+  return { dias:dias, tot:r2(tot), erros:erros, linhas:linhas };
+}
+function repRender(){
+  var w = $("wRepBox"); if (!w) return;
+  var on = $("oRep").checked; w.classList.toggle("hidden", !on);
+  var lD = document.querySelector("#oData") && document.querySelector("#oData").parentNode.querySelector("label"); if (lD) lD.textContent = on ? "De (primeiro dia)" : "Data";
+  if (!on) return;
+  var cand = diasRepCandidatos(), fora = window.__repFora || {}, cli = byId("clientes", v("oCli")), hol = feriados(cli ? cli.Local : "");
+  $("oRepDias").innerHTML = cand.length ? cand.map(function(d){ var dw = parseISO(d).getDay(); return "<label class='check' style='margin:2px 10px 2px 0;display:inline-flex;font-size:12.5px" + (dw === 0 || dw === 6 || hol[d] ? ";color:#b02a2a" : "") + "'><input type='checkbox' class='oRepD' value='" + d + "'" + (fora[d] ? "" : " checked") + " onchange='repToggleDia(this)'> " + DSEM_C[dw] + " " + d.slice(8, 10) + "/" + d.slice(5, 7) + (hol[d] ? " (feriado)" : "") + "</label>"; }).join("") : "<span class='small muted'>Informe o primeiro e o último dia do período.</span>";
+  var t = TIPOS[v("oTipo")] || {}, dias = diasRep();
+  $("oRepInfo").innerHTML = dias.length ? "<b>" + dias.length + " ocorrência(s) serão lançadas</b> · " + esc(repResumo(dias)) + (t.modo === "dias" && v("oUnid") !== "horas" ? "<br><span class='muted'>Cada dia lançado conta como 1 dia de " + esc(v("oTipo").toLowerCase()) + ".</span>" : "") : "";
+}
+function repToggleDia(el){ window.__repFora = window.__repFora || {}; if (el.checked) delete window.__repFora[el.value]; else window.__repFora[el.value] = 1; ocoFormRefresh(); }
+openOcorrencia = (function(orig){ return function(id){
+  window.__repFora = {};
+  orig.apply(this, arguments);
+  if (id) return;   // edição: uma ocorrência por vez
+  var dt = $("oData"); if (!dt) return; var cel = dt.parentNode;
+  var d = document.createElement("div"); d.id = "wRep"; d.className = "full";
+  d.innerHTML = "<label class='check'><input type='checkbox' id='oRep' onchange='ocoFormRefresh()'> Lançar em vários dias (período, ex.: cobertura de férias)</label>" +
+    "<div id='wRepBox' class='hidden' style='margin-top:8px;padding:10px 12px;border:1px dashed var(--border);border-radius:10px'>" +
+      "<div class='form' style='margin:0'><div><label>Até (último dia)</label><input type='date' id='oAte' onchange='window.__repFora={};ocoFormRefresh()'></div>" +
+      "<div><label>Dias da semana incluídos</label><div>" + [1, 2, 3, 4, 5, 6, 0].map(function(k){ return "<label class='check' style='margin:2px 8px 2px 0;display:inline-flex'><input type='checkbox' id='oDw" + k + "'" + (k >= 1 && k <= 5 ? " checked" : "") + " onchange='window.__repFora={};ocoFormRefresh()'> " + DSEM_C[k] + "</label>"; }).join("") + "</div></div>" +
+      "<div class='full'><label class='check'><input type='checkbox' id='oSemFer' checked onchange='window.__repFora={};ocoFormRefresh()'> Não lançar nos feriados cadastrados (Parâmetros)</label></div></div>" +
+      "<div style='margin-top:6px'><label>Dias que serão lançados <span class='small muted'>(desmarque um dia para pular)</span></label><div id='oRepDias' style='max-height:130px;overflow:auto'></div></div>" +
+      "<div id='oRepInfo' class='small' style='margin-top:6px'></div></div>";
+  // coloca logo depois da linha Data / Competência
+  var comp = $("oComp") ? $("oComp").parentNode : cel; comp.parentNode.insertBefore(d, comp.nextSibling);
+  ocoFormRefresh();
+}; })(openOcorrencia);
+ocoFormRefresh = (function(orig){ return function(){
+  var r = orig.apply(this, arguments);
+  if ($("oRep")){
+    repRender();
+    if (repAtivo() && $("oCalc")){
+      var c = repCalcular(), box = $("oCalc"), semValor = soOcorrencias();
+      if (!c.dias.length) box.innerHTML = "<div class='muted'>Informe o período e os dias da semana.</div>";
+      else if (c.erros.length && !(semValor && c.erros.every(erroDePreco))) box.innerHTML = "<div class='muted'>" + esc(c.erros[0]) + (c.erros.length > 1 ? " (e mais " + (c.erros.length - 1) + ")" : "") + "</div>";
+      else box.innerHTML = semValor ? "<div class='small muted'>Registro</div><div class='v' style='font-size:20px'>" + c.dias.length + " ocorrência(s)</div><div class='d'>" + esc(repResumo(c.dias)) + "\nO valor é calculado pelo sistema e conferido pelo coordenador.</div>"
+        : "<div class='small muted'>Valor total do período (" + c.dias.length + " dia(s))</div><div class='v'>" + (c.tot < 0 ? "−" : "+") + brl(Math.abs(c.tot)) + "</div><div class='d'>" + esc(repResumo(c.dias)) + (c.linhas[0] ? "\nPor dia (" + fmtDate(c.linhas[0].d) + "): " + brl(Math.abs(c.linhas[0].r.valor)) + "\n" + c.linhas[0].r.detalhe : "") + "</div>";
+    }
+  }
+  return r;
+}; })(ocoFormRefresh);
+salvarOcorrencia = (function(orig){ return function(id){
+  if (id || !repAtivo()) return orig.apply(this, arguments);
+  var base = ocoForm();
+  if (!base.ClienteId || !base.Data){ showToast("Informe cliente e o primeiro dia.", true); return; }
+  if (!v("oAte")){ showToast("Informe o último dia do período.", true); return; }
+  if (v("oManual") && !window.__manualOk && window.__consMsg && (TIPOS[base.Tipo] || {}).grupo !== "manual"){ showToast("Responda o aviso de valor consolidado antes de salvar.", true); return; }
+  var dias = diasRep(); if (!dias.length){ showToast("Nenhum dia selecionado no período.", true); return; }
+  var lote = [], tot = 0;
+  for (var i = 0; i < dias.length; i++){
+    var o = repBaseOco(dias[i]), r = calcOcorrencia(o), pend = false;
+    if (r.erro && soOcorrencias() && erroDePreco(r.erro)){
+      pend = true; var hs = comIntervalo(o.Intervalo, function(){ return o.HoraInicio && o.HoraFim ? splitHoras(o.Data, o.HoraInicio, o.HoraFim, feriados((byId("clientes", o.ClienteId) || {}).Local)).total : 0; });
+      r = { valor:0, custo:0, horas: r2(hs), detalhe:"VALOR PENDENTE: " + r.erro + (r.detalhe ? "\n" + r.detalhe : "") };
+    }
+    if (r.erro){ showToast(fmtDate(dias[i]) + ": " + r.erro, true); return; }
+    var cliO = byId("clientes", o.ClienteId), ctO = contratoVigente(o.ClienteId, o.Competencia);
+    if (cliO && cliO.FaturarPorServico && !o.ItemId && !(TIPOS[o.Tipo].grupo === "variavel" && ctO && itemPorCargo(itensDoContrato(ctO.id), o.Cargo))){ showToast("Este cliente fatura por serviço: selecione o serviço.", true); return; }
+    var it = byId("itens", idsDaOco(o)[0] || "");
+    lote.push(Object.assign({}, o, { Title: o.Tipo + " – " + fmtDate(o.Data) + (o.Profissional ? " – " + o.Profissional : ""), Valor:r.valor, Custo:r.custo || 0, Horas:r.horas || 0, Detalhe:r.detalhe || "", Cargo: o.Cargo || (it ? it.Cargo : ""), LancadoPor: CURRENT_USER.email, ValorPendente: pend }));
+    tot += r.valor;
+  }
+  var msg = "Lançar " + lote.length + " ocorrência(s) de " + base.Tipo + " de " + fmtDate(dias[0]) + " a " + fmtDate(dias[dias.length - 1]) + " (" + repResumo(dias) + ")" + (soOcorrencias() ? "?" : ", total " + brl(Math.abs(tot)) + "?");
+  askConfirm(msg, async function(){
+    try {
+      for (var k = 0; k < lote.length; k++){ setLoading(true, "Lançando " + (k + 1) + " de " + lote.length + "..."); await api.create("ocorrencias", lote[k]); }
+      setLoading(false); closeModal(); showToast(lote.length + " ocorrência(s) lançada(s).", false);
+      renderCurrent();
+    } catch (e){ setLoading(false); showToast("Erro ao lançar: " + e.message + ". Confira na lista o que já foi lançado antes de repetir.", true); renderCurrent(); }
+  }, "Lançar");
+}; })(salvarOcorrencia);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5876,11 +5987,18 @@ AJUDA_USO.push({ t:"Uma NF por código de serviço", obj:"Emitir e registrar uma
   "Faturamentos antigos, com um único nº de NF, continuam funcionando como uma nota só."] });
 AJUDA_VERSOES.unshift(["V 1.21", "13/11/2026", ["Ocorrências de Cobertura e Hora extra: pergunta \"Teve intervalo de almoço?\" com a duração (padrão 1:00). O intervalo é descontado das horas cobradas do cliente e aparece no detalhe do cálculo."]]);
 AJUDA_VERSOES.unshift(["V 1.22", "13/11/2026", ["Dashboard: clicar nos cards Valor a faturar, Reconhecido, Descontos e Acréscimos (e nos pontos dos gráficos mensais de valor e de descontos/acréscimos) abre o relatório detalhado por faturamento e serviço, com as ocorrências, o link para o faturamento e o botão Baixar Excel."]]);
+AJUDA_VERSOES.unshift(["V 1.23", "16/11/2026", ["Ocorrências: opção \"Lançar em vários dias\" para qualquer tipo (ex.: cobertura de férias). Informe o primeiro e o último dia, escolha os dias da semana (padrão segunda a sexta) e se pula os feriados; o sistema lança uma ocorrência por dia, calculada com as regras de cada dia (fim de semana, feriado e intervalo), e mostra o total do período antes de confirmar."]]);
+AJUDA_USO.push({ t:"Lançar ocorrência em vários dias", obj:"Lançar de uma vez a mesma ocorrência em um período, como uma cobertura de férias.", perfis:"coord", passos:[
+  "Em Ocorrências, clique em <b>+ Lançar ocorrência</b> e preencha cliente, tipo, serviço, cargo, profissional, horário e justificativa normalmente.",
+  "Marque <b>Lançar em vários dias</b>. Em <b>De</b> informe o primeiro dia e em <b>Até</b> o último.",
+  "Em <b>Dias da semana incluídos</b> marque os dias trabalhados (vem de segunda a sexta). Sábados, domingos e feriados aparecem em vermelho na lista.",
+  "Deixe marcado <b>Não lançar nos feriados</b> se a cobertura não acontece nos feriados. Desmarque na lista qualquer dia que deva ser pulado.",
+  "Confira o total do período e o resumo (dias úteis, sábados, domingos, feriados) e clique em <b>Salvar</b>. Confirme: o sistema cria uma ocorrência por dia."] });
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261113175606";
+var APP_BUILD = "20261116122928";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
