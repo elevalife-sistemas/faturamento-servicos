@@ -5927,6 +5927,29 @@ salvarOcorrencia = (function(orig){ return function(id){
   }, "Lançar");
 }; })(salvarOcorrencia);
 
+// ---------- preço de variável: tolera variações do nome do cargo (Enfermeira, Enfermagem, Enfermeiro do Trabalho...) ----------
+function chaveCargo(s){
+  var k = norm(s).replace(/\b(d[oa]s?|de)\s+trabalho\b/g, "").replace(/\s+/g, " ").trim();
+  k = k.replace(/\benfermagem\b(?!.*tecnic)/, "enfermeiro").replace(/\benfermeira\b/, "enfermeiro").replace(/\bmedica\b/, "medico").replace(/\btecnica\b/, "tecnico").replace(/\bmassoterapeuta\b/, "massoterapeuta");
+  return k;
+}
+precoVariavel = (function(orig){ return function(cid, cargo, varTipo, periodo, dateISO){
+  var p = orig.apply(this, arguments); if (p || !cargo) return p;
+  var alvo = chaveCargo(cargo);
+  var cargos = S.variaveis.filter(function(v){ return String(v.ClienteId) === String(cid) && v.Tipo === varTipo; }).map(function(v){ return v.Cargo; }).filter(function(c, i, a){ return a.indexOf(c) === i; });
+  var iguais = cargos.filter(function(c){ return chaveCargo(c) === alvo; });
+  if (iguais.length !== 1) return null;
+  return orig.call(this, cid, iguais[0], varTipo, periodo, dateISO);
+}; })(precoVariavel);
+calcOcorrencia = (function(orig){ return function(o){
+  var r = orig(o);
+  if (r && r.erro && /Não há preço cadastrado/.test(r.erro) && o && o.ClienteId){
+    var t = TIPOS[o.Tipo] || {}, cs = S.variaveis.filter(function(v){ return String(v.ClienteId) === String(o.ClienteId) && v.Tipo === t.varTipo; }).map(function(v){ return v.Cargo; }).filter(function(c, i, a){ return a.indexOf(c) === i; });
+    r.erro = "Não há preço de " + (o.Tipo || "").toLowerCase() + " para o cargo \"" + (o.Cargo || "") + "\" neste cliente." + (cs.length ? " Cargos com preço: " + cs.join(", ") + "." : " Cadastre o preço em Valores dos Contratos (+ Preço).");
+  }
+  return r;
+}; })(calcOcorrencia);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -5987,7 +6010,7 @@ AJUDA_USO.push({ t:"Uma NF por código de serviço", obj:"Emitir e registrar uma
   "Faturamentos antigos, com um único nº de NF, continuam funcionando como uma nota só."] });
 AJUDA_VERSOES.unshift(["V 1.21", "13/11/2026", ["Ocorrências de Cobertura e Hora extra: pergunta \"Teve intervalo de almoço?\" com a duração (padrão 1:00). O intervalo é descontado das horas cobradas do cliente e aparece no detalhe do cálculo."]]);
 AJUDA_VERSOES.unshift(["V 1.22", "13/11/2026", ["Dashboard: clicar nos cards Valor a faturar, Reconhecido, Descontos e Acréscimos (e nos pontos dos gráficos mensais de valor e de descontos/acréscimos) abre o relatório detalhado por faturamento e serviço, com as ocorrências, o link para o faturamento e o botão Baixar Excel."]]);
-AJUDA_VERSOES.unshift(["V 1.23", "16/11/2026", ["Ocorrências: opção \"Lançar em vários dias\" para qualquer tipo (ex.: cobertura de férias). Informe o primeiro e o último dia, escolha os dias da semana (padrão segunda a sexta) e se pula os feriados; o sistema lança uma ocorrência por dia, calculada com as regras de cada dia (fim de semana, feriado e intervalo), e mostra o total do período antes de confirmar."]]);
+AJUDA_VERSOES.unshift(["V 1.23", "16/11/2026", ["Ocorrências: opção \"Lançar em vários dias\" para qualquer tipo (ex.: cobertura de férias). Informe o primeiro e o último dia, escolha os dias da semana (padrão segunda a sexta) e se pula os feriados; o sistema lança uma ocorrência por dia, calculada com as regras de cada dia (fim de semana, feriado e intervalo), e mostra o total do período antes de confirmar. Cada dia entra na competência do seu mês (um período de novembro a dezembro gera os boletins e o faturamento separados).", "Preço de cobertura e hora extra reconhece variações do nome do cargo (Enfermeira, Enfermagem, Enfermeiro do Trabalho) e, quando falta o preço, a mensagem mostra os cargos que têm preço no cliente."]]);
 AJUDA_USO.push({ t:"Lançar ocorrência em vários dias", obj:"Lançar de uma vez a mesma ocorrência em um período, como uma cobertura de férias.", perfis:"coord", passos:[
   "Em Ocorrências, clique em <b>+ Lançar ocorrência</b> e preencha cliente, tipo, serviço, cargo, profissional, horário e justificativa normalmente.",
   "Marque <b>Lançar em vários dias</b>. Em <b>De</b> informe o primeiro dia e em <b>Até</b> o último.",
@@ -5998,7 +6021,7 @@ AJUDA_USO.push({ t:"Lançar ocorrência em vários dias", obj:"Lançar de uma ve
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261116122928";
+var APP_BUILD = "20261116124509";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
