@@ -5950,6 +5950,131 @@ calcOcorrencia = (function(orig){ return function(o){
   return r;
 }; })(calcOcorrencia);
 
+// ============================================================
+// V 1.24 — Área de acompanhamento por usuário, filtro de área por serviço e filtro Responsável (Dashboard)
+// - Usuario.Local guarda as áreas que a pessoa acompanha (ex.: "Ergonomia"): ela vê os valores dessas áreas
+//   em todos os clientes no Dashboard e em Valores dos Contratos, sem ser responsável (somente leitura).
+// - Com área ou responsável escolhidos, o Dashboard soma só as linhas dos serviços que atendem ao filtro.
+// ============================================================
+function areasAcomp(email){ var u = usuarioDe(email || CURRENT_USER.email); return u && u.Local ? String(u.Local).split(";").map(function(x){ return x.trim(); }).filter(Boolean) : []; }
+function modoAcomp(){ return perfilAcesso() === "atribuidos" && areasAcomp().length > 0; }
+var FILT_SERV = null;   // { area, resp, acomp:[areas] } enquanto o Dashboard calcula
+function servOk(it, cli){
+  var F = FILT_SERV; if (!F) return true;
+  var area = it ? areaItem(it, cli) : ((cli && cli.Area) || ""), resp = (it ? emailsLista(responsavelItem(it, cli)) : emailsLista(cli && cli.CoordenadorEmail)).map(function(x){ return x.toLowerCase(); });
+  if (F.area && area !== F.area) return false;
+  if (F.resp && resp.indexOf(F.resp) < 0) return false;
+  if (F.acomp && F.acomp.indexOf(area) < 0 && resp.indexOf(String(CURRENT_USER.email || "").toLowerCase()) < 0) return false;
+  return true;
+}
+function linhaOk(l, cli){ var it = byId("itens", l.itemId || l.rel || ""); return servOk(it, cli); }
+// medicao (ou previa) recortada pelas linhas que passam no filtro; null = nenhuma linha passa
+function recorteMed(src, cli){
+  if (!src || src.erro) return src;
+  var L = src.lines ? { lines: src.lines } : linhasDe(src), lines = L.lines || [];
+  if (!lines.length) return servOk(null, cli) ? src : null;
+  var ok = lines.filter(function(l){ return linhaOk(l, cli); });
+  if (ok.length === lines.length) return src;
+  if (!ok.length) return null;
+  var s = ok.reduce(function(a, l){ a.p += Number(l.padrao) || 0; a.d += Number(l.desconto) || 0; a.a += Number(l.acrescimo) || 0; a.f += Number(l.final) || 0; return a; }, { p:0, d:0, a:0, f:0 });
+  var c = Object.assign({}, src, { ValorPadrao: r2(s.p), Descontos: r2(s.d), Acrescimos: r2(s.a), ValorFaturar: r2(s.f), __recorte:true });
+  if (src.lines) c.lines = ok; else c.Linhas = JSON.stringify(Object.assign({}, linhasDe(src), { lines: ok }));
+  return c;
+}
+function clienteTemArea(c, areas){ var ct = contratoVigente(c.id, curComp()) || contratoAtual(c.id); return areas.indexOf(c.Area) >= 0 || (!!ct && itensDoContrato(ct.id).some(function(it){ return areas.indexOf(areaItem(it, c)) >= 0; })); }
+// executa fn com visibilidade ampliada para as áreas acompanhadas
+function comAcomp(fn){
+  var areas = modoAcomp() ? areasAcomp() : [];
+  if (!areas.length) return fn();
+  var bkV = visivel, bkU = unidadeVisivel;
+  visivel = function(c){ return bkV(c) || clienteTemArea(c, areas); };
+  unidadeVisivel = function(c, u){ if (bkU(c, u)) return true; if (u && u.itemId){ var it = byId("itens", u.itemId); return !!it && areas.indexOf(areaItem(it, c)) >= 0; } return clienteTemArea(c, areas); };
+  try { return fn(); } finally { visivel = bkV; unidadeVisivel = bkU; }
+}
+faturamentosDoMes = (function(orig){ return function(area, comp){
+  if (!FILT_SERV) return orig(area, comp);
+  var mont = window.__montarOrig || montarMedicao;
+  return orig("", comp).map(function(r){
+    var m = r.m, src = (m && m.Status !== "Rascunho") ? m : mont(r.c.id, comp, r.u.key);
+    if (src && src.erro){ if (m) src = m; else return servOk(r.u && r.u.itemId ? byId("itens", r.u.itemId) : null, r.c) ? r : null; }
+    var rc = recorteMed(src, r.c); if (!rc) return null;
+    if (m && m.Status !== "Rascunho") return Object.assign({}, r, { m: rc });
+    return r;   // rascunho/não gerada: a prévia é recortada no montarMedicao
+  }).filter(Boolean);
+}; })(faturamentosDoMes);
+montarMedicao = (function(orig){ window.__montarOrig = orig; return function(cid, comp, uk){
+  var r = orig.apply(this, arguments); if (!FILT_SERV || !r || r.erro) return r;
+  return recorteMed(r, byId("clientes", cid)) || Object.assign({}, r, { lines:[], ValorPadrao:0, Descontos:0, Acrescimos:0, ValorFaturar:0 });
+}; })(montarMedicao);
+function respDashOpcoes(){
+  var us = usuariosCadastrados().filter(function(p){ var n = Number(p.Valor); return n === 0 || n === 1; });
+  return opt("", "Todos", "") + us.map(function(p){ var e = String(p.Texto).toLowerCase(); return opt(e, p.Cargo || e.split("@")[0], ""); }).join("");
+}
+function comFiltroDash(fn){
+  var area = $("dashArea") ? $("dashArea").value : "", resp = $("dashResp") && !$("dashResp").closest(".hidden") ? $("dashResp").value : "";
+  var acomp = modoAcomp() ? areasAcomp() : null;
+  FILT_SERV = (area || resp || acomp) ? { area: area, resp: resp, acomp: acomp } : null;
+  try { return comAcomp(fn); } finally { FILT_SERV = null; }
+}
+renderDashboard = (function(orig){ return function(){
+  // filtro Responsável: só gestores com acesso a todos os clientes
+  var ar = $("dashArea");
+  if (ar && !$("dashResp")){ var lb = document.createElement("label"); lb.id = "lDashResp"; lb.textContent = "Responsável"; var sel = document.createElement("select"); sel.id = "dashResp"; sel.onchange = function(){ renderDashboard(); }; ar.parentNode.insertBefore(lb, ar.nextSibling); ar.parentNode.insertBefore(sel, lb.nextSibling); }
+  var podeResp = perfilAcesso() === "total" && isGestor();
+  if ($("dashResp")){ var cur = $("dashResp").value; $("dashResp").innerHTML = respDashOpcoes(); $("dashResp").value = cur; $("dashResp").classList.toggle("hidden", !podeResp); $("lDashResp").classList.toggle("hidden", !podeResp); if (!podeResp) $("dashResp").value = ""; }
+  var self = this, args = arguments;
+  comFiltroDash(function(){ orig.apply(self, args); });
+  var esc0 = $("dashEscopo");
+  if (esc0){
+    var extra = [];
+    if ($("dashResp") && $("dashResp").value){ var o = $("dashResp").options[$("dashResp").selectedIndex]; extra.push("responsável: " + (o ? o.textContent : $("dashResp").value)); }
+    if (modoAcomp()) extra.push("acompanhando " + areasAcomp().join(", ") + " em todos os clientes (somente leitura)");
+    if ($("dashArea") && $("dashArea").value) extra.push("valores só dos serviços de " + $("dashArea").value);
+    if (extra.length) esc0.textContent += " · " + extra.join(" · ");
+  }
+}; })(renderDashboard);
+abrirDetalheDash = (function(orig){ return function(){ var self = this, args = arguments; return comFiltroDash(function(){ return orig.apply(self, args); }); }; })(abrirDetalheDash);
+
+// ---------- Valores dos Contratos: área por serviço e acompanhamento (somente leitura) ----------
+clientesTabelaPrecos = (function(orig){ return function(){
+  var area = $("varArea") ? $("varArea").value : "", areas = modoAcomp() ? areasAcomp() : [], bkV = visivel;
+  var lista = comAcomp(function(){ return orig(); });
+  lista.forEach(function(L){
+    L.__leitura = areas.length && !bkV(L.c);
+    if (area || L.__leitura){
+      L.serv = L.serv.filter(function(s){ var a = areaItem(s.it, L.c); return (!area || a === area) && (!L.__leitura || areas.indexOf(a) >= 0); });
+      L.total = r2(L.serv.reduce(function(t, s){ return t + (Number(s.it.ValorMensal) || 0); }, 0));
+      if (L.__leitura){ var cg = L.serv.map(function(x){ return norm(x.it.Cargo || ""); }); L.acr = L.acr.filter(function(x){ return cg.indexOf(norm(x.Cargo)) >= 0; }); L.semPreco = []; L.futuros = []; }
+    }
+  });
+  window.__varLista = lista;
+  return lista.filter(function(L){ return L.serv.length || !area; });
+}; })(clientesTabelaPrecos);
+renderVariaveis = (function(orig){ return function(){
+  orig.apply(this, arguments);
+  var lista = window.__varLista || [], cards = [].slice.call(document.querySelectorAll("#varBody > .card")), vis = lista.filter(function(L){ return L.serv.length || !($("varArea") && $("varArea").value); });
+  cards.forEach(function(card, i){ var L = vis[i]; if (!L || !L.__leitura) return;
+    card.querySelectorAll("button").forEach(function(b){ if (!/Abrir cliente/.test(b.textContent)) b.remove(); });
+    var t = card.querySelector(".card-title"); if (t) t.insertAdjacentHTML("beforeend", " <span class='badge b-gray' style='font-size:11px'>somente leitura · " + esc(areasAcomp().join(", ")) + "</span>");
+  });
+}; })(renderVariaveis);
+
+// ---------- Configuração › Usuários: áreas acompanhadas ----------
+openUsuario = (function(orig){ return function(email){
+  orig.apply(this, arguments);
+  var form = document.querySelector("#modalBody .form"); if (!form) return;
+  var cur = email ? areasAcomp(email) : [];
+  var d = document.createElement("div"); d.className = "full";
+  d.innerHTML = "<label>Acompanha os valores da área (somente leitura)</label><div>" + AREAS.map(function(a){ return "<label class='check' style='display:inline-flex;margin:2px 12px 2px 0'><input type='checkbox' class='uAcomp' value='" + esc(a) + "'" + (cur.indexOf(a) >= 0 ? " checked" : "") + "> " + esc(a) + "</label>"; }).join("") + "</div>" +
+    "<div class='hint'>Para quem vê só os faturamentos atribuídos: no Dashboard e em Valores dos Contratos, a pessoa vê também os valores dessas áreas em todos os clientes, sem poder enviar ou alterar o que é de outro responsável.</div>";
+  form.appendChild(d);
+}; })(openUsuario);
+salvarUsuario = (function(orig){ return async function(){
+  var email = (v("u_Email") || "").trim().toLowerCase(), areas = [].slice.call(document.querySelectorAll(".uAcomp:checked")).map(function(x){ return x.value; }).join(";");
+  await orig.apply(this, arguments);
+  var p = usuarioDe(email); if (p && String(p.Local || "") !== areas){ try { await api.update("parametros", p.id, { Local: areas }); renderCurrent(); } catch (e){ showToast("Não consegui salvar as áreas acompanhadas: " + e.message, true); } }
+}; })(salvarUsuario);
+
 // ---------- Ajuda V 1.16 ----------
 AJUDA_USO.push(
   { t:"Serviços pontuais", obj:"Registrar um serviço pontual (palestra, campanha, cobertura avulsa), obter a validação e o pedido do cliente e liberar a NF separada ao financeiro.", perfis:"coord", passos:[
@@ -6017,11 +6142,12 @@ AJUDA_USO.push({ t:"Lançar ocorrência em vários dias", obj:"Lançar de uma ve
   "Em <b>Dias da semana incluídos</b> marque os dias trabalhados (vem de segunda a sexta). Sábados, domingos e feriados aparecem em vermelho na lista.",
   "Deixe marcado <b>Não lançar nos feriados</b> se a cobertura não acontece nos feriados. Desmarque na lista qualquer dia que deva ser pulado.",
   "Confira o total do período e o resumo (dias úteis, sábados, domingos, feriados) e clique em <b>Salvar</b>. Confirme: o sistema cria uma ocorrência por dia."] });
+AJUDA_VERSOES.unshift(["V 1.24", "18/11/2026", ["Usuários: campo \"Acompanha os valores da área\". Quem vê só os faturamentos atribuídos passa a ver, no Dashboard e em Valores dos Contratos, os valores dessa área em todos os clientes (ex.: o Alexandre vê toda a Ergonomia, inclusive Clariant, DSM e Ultragaz), em modo somente leitura.", "Filtro Área por serviço: no Dashboard e em Valores dos Contratos, a área considera cada serviço (a Ergonomia da Clariant entra em Ergonomia; a Enfermagem, em Terapias).", "Dashboard: filtro Responsável (gestores) mostra os valores dos serviços pelos quais cada pessoa responde."]]);
 
 // ============================================================
 // AVISO DE VERSAO NOVA: confere a cada 5 min (e ao voltar para a aba) se ha publicacao nova e atualiza a pagina
 // ============================================================
-var APP_BUILD = "20261116124509";
+var APP_BUILD = "20261118201446";
 (function(){
   try { if (/[?&]u=\d+/.test(location.search)){ var q = location.search.replace(/([?&])u=\d+&?/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } } catch(e){}
   var avisado = false, ultima = 0;
